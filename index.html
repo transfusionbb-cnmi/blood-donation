@@ -120,7 +120,7 @@
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('notFoundCard').style.display = 'none';
 
-      fetch(`https://script.google.com/macros/s/AKfycbwp5fdi6ThAmSkkxW0dvdAOJysUDV66OlzQG5EOwdkw_CZTRT2GcLQCda7FCmtPbIvoiA/exec?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
+      fetch(`${WEB_APP_URL}?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
         .then(response => response.json())
         .then(res => {
           btn.disabled = false;
