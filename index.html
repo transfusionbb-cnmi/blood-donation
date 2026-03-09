@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    /* CSS เดิมของคุณมัสทั้งหมด ไม่มีการแก้ไข */
     body { background-color: #f4f7f6; font-family: 'Kanit', sans-serif; color: #2d3436; }
     .main-card { background: white; border: none; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .hero-card { background: linear-gradient(135deg, #d63031 0%, #ff7675 100%); color: white; border: none; border-radius: 25px; box-shadow: 0 10px 20px rgba(214, 48, 49, 0.2); }
@@ -15,8 +16,7 @@
     .table-history { background: white; border-radius: 15px; overflow: hidden; font-size: 0.85rem; }
     .usage-text { color: #27ae60; font-weight: 600; }
     .fade-in-up {animation: fadeInUp 0.6s ease-out;} 
-    @keyframes fadeInUp {  from { opacity: 0; transform: translateY(20px); }  to { opacity: 1; transform: translateY(0); }}
-    
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); }}
     .btn-clear-cnmi { border: 2px solid #d63031; color: #d63031; background-color: transparent; border-radius: 15px; width: 60px; transition: all 0.5s ease; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;}
     .btn-clear-cnmi:hover { background-color: #fff5f5; border-color: #b32526; color: #b32526; }
   </style>
@@ -30,12 +30,12 @@
 
     <div class="card main-card p-4 mb-4 shadow-sm">
       <div class="mb-3">
-        <label class="form-label small fw-bold text-muted">ระบุ เลขผู้บริจาค หรือ เลขบัตรประชาชน</label>
-        <input type="text" id="donorId" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="เลขบัตร 13 หลัก หรือ Donor ID">
+        <label class="form-label small fw-bold text-muted">ระบุ เลขบัตรประชาชน</label>
+        <input type="tel" id="idCard" class="form-control text-center p-3" maxlength="13" style="border-radius:15px; border: 2px solid #eee;" placeholder="เลขบัตรประชาชน 13 หลัก">
       </div>
       <div class="mb-3">
         <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด (พ.ศ.)</label>
-        <input type="text" id="donorDob" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="เช่น 01/01/2530">
+        <input type="text" id="donorDob" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="เช่น 29/09/2535">
         <div class="form-text" style="font-size: 0.7rem;">*กรุณาระบุให้ตรงกับในฐานข้อมูล (วัน/เดือน/ปี พ.ศ.)</div>
       </div>
       <div class="d-flex gap-2 mb-2">
@@ -47,7 +47,8 @@
 
     <div id="notFoundCard" class="card main-card p-4 mt-2 text-center" style="display:none; border-top: 5px solid #bdc3c7;">
       <div class="mb-2"><span style="font-size: 3rem;">🔍</span></div>
-      <h5 class="fw-bold mb-3">ขออภัยครับ ไม่พบข้อมูลในระบบ</h5>
+      <h5 class="fw-bold mb-3">ไม่พบข้อมูล หรือวันเกิดไม่ถูกต้อง</h5>
+      <p class="text-muted small mb-3">หากท่านเคยบริจาคที่นี่แล้วหาข้อมูลไม่เจอ กรุณาติดต่อเจ้าหน้าที่</p>
       <a href="tel:028396050" class="btn btn-outline-secondary w-100 mb-2">📞 โทรสอบถาม: 02-839-6050</a>
     </div>
 
@@ -84,16 +85,15 @@
   </div>
 
   <script>
-    // --- ส่วนที่ต้องแก้ไข URL ---
-    // ใส่ URL ของ Web App ที่คุณมัสเปิดแล้วเห็น JSON ลงในช่องข้างล่างนี้ครับ
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyz5jsK2nTExUzjqemEPBjYpIikmwRGm_Wd4v4ULVU6AsgLlP7DvyZ0lgnmwxYInEM39w/exec"; 
+    // แทนที่ด้วย URL Web App ของคุณมัส
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwp5fdi6ThAmSkkxW0dvdAOJysUDV66OlzQG5EOwdkw_CZTRT2GcLQCda7FCmtPbIvoiA/exec"; 
 
     function clearSearch() {
-      document.getElementById('donorId').value = '';
-      document.getElementById('donorDob').value = ''; // เพิ่มการล้างค่าวันเกิด
+      document.getElementById('idCard').value = '';
+      document.getElementById('donorDob').value = '';
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('notFoundCard').style.display = 'none';
-      document.getElementById('donorId').focus();
+      document.getElementById('idCard').focus();
     }
 
     function getBloodStyle(group) {
@@ -107,31 +107,29 @@
 
     function runSearch() {
       const btn = document.getElementById('btnSearch');
-      const id = document.getElementById('donorId').value;
-      const dob = document.getElementById('donorDob').value; // ดึงค่าวันเกิดมาด้วย
+      const id = document.getElementById('idCard').value.trim();
+      const dob = document.getElementById('donorDob').value.trim();
       
-      // เช็คว่ากรอกครบทั้ง 2 ช่องไหม
-          if(!id || !dob) {
-            alert("กรุณากรอกทั้งเลขประจำตัว และ วันเกิดครับ");
-            return;
-            }
+      if(!id || !dob) {
+        alert("กรุณากรอกทั้งเลขบัตรประชาชน และ วันเกิดครับ");
+        return;
+      }
 
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังค้นหา...';
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('notFoundCard').style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังค้นหา...';
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('notFoundCard').style.display = 'none';
 
-      // แก้ไข URL ตรงนี้ให้ส่งทั้ง keyword และ dob ไปที่หลังบ้าน
-          fetch(`https://script.google.com/macros/s/AKfycbxw0MAbmPq7P77okdZJKr2CkNW3xkEaUFtC-sokZ_fi_s_2JQteA_lylVwLcoAp3O0aVQ/exec?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
-            .then(response => response.json())
-            .then(res => {
-            btn.disabled = false;
-            btn.innerHTML = '🔍 ค้นหาข้อมูล';
+      fetch(`${https://script.google.com/macros/s/AKfycbwp5fdi6ThAmSkkxW0dvdAOJysUDV66OlzQG5EOwdkw_CZTRT2GcLQCda7FCmtPbIvoiA/exec}?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
+        .then(response => response.json())
+        .then(res => {
+          btn.disabled = false;
+          btn.innerHTML = '🔍 ค้นหาข้อมูล';
           
           if(res.found) {
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('displayName').innerText = "คุณ " + res.name;
-            document.getElementById('displayId').innerHTML = "💳 เลขผู้บริจาค: " + res.id;
+            document.getElementById('displayId').innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + res.donorId;
             document.getElementById('displayDob').innerText = "🎂 วันเกิด: " + res.dob;
             
             const bStyle = getBloodStyle(res.blood);
