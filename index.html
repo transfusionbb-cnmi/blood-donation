@@ -122,7 +122,7 @@
             document.getElementById('notFoundCard').style.display = 'none';
 
       // แก้ไข URL ตรงนี้ให้ส่งทั้ง keyword และ dob ไปที่หลังบ้าน
-          fetch(`${WEB_APP_URL}?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
+          fetch(`https://script.google.com/macros/s/AKfycbxw0MAbmPq7P77okdZJKr2CkNW3xkEaUFtC-sokZ_fi_s_2JQteA_lylVwLcoAp3O0aVQ/exec?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
             .then(response => response.json())
             .then(res => {
             btn.disabled = false;
