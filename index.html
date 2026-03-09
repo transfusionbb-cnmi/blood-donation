@@ -31,7 +31,12 @@
     <div class="card main-card p-4 mb-4 shadow-sm">
       <div class="mb-3">
         <label class="form-label small fw-bold text-muted">ระบุ เลขผู้บริจาค หรือ เลขบัตรประชาชน</label>
-        <input type="text" id="donorId" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="ค้นหาข้อมูลของคุณ...">
+        <input type="text" id="donorId" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="เลขบัตร 13 หลัก หรือ Donor ID">
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด (พ.ศ.)</label>
+        <input type="text" id="donorDob" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="เช่น 01/01/2530">
+        <div class="form-text" style="font-size: 0.7rem;">*กรุณาระบุให้ตรงกับในฐานข้อมูล (วัน/เดือน/ปี พ.ศ.)</div>
       </div>
       <div class="d-flex gap-2 mb-2">
         <button onclick="runSearch()" id="btnSearch" class="btn btn-search flex-grow-1 p-3 shadow-sm">🔍 ค้นหาข้อมูล</button>
@@ -85,6 +90,7 @@
 
     function clearSearch() {
       document.getElementById('donorId').value = '';
+      document.getElementById('donorDob').value = ''; // เพิ่มการล้างค่าวันเกิด
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('notFoundCard').style.display = 'none';
       document.getElementById('donorId').focus();
@@ -102,19 +108,25 @@
     function runSearch() {
       const btn = document.getElementById('btnSearch');
       const id = document.getElementById('donorId').value;
-      if(!id) return;
+      const dob = document.getElementById('donorDob').value; // ดึงค่าวันเกิดมาด้วย
+      
+      // เช็คว่ากรอกครบทั้ง 2 ช่องไหม
+          if(!id || !dob) {
+            alert("กรุณากรอกทั้งเลขประจำตัว และ วันเกิดครับ");
+            return;
+            }
 
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังค้นหา...';
-      document.getElementById('dashboard').style.display = 'none';
-      document.getElementById('notFoundCard').style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังค้นหา...';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('notFoundCard').style.display = 'none';
 
-      // เปลี่ยนมาใช้ fetch เพื่อดึงข้อมูลจากหลังบ้านที่คืนค่าเป็น JSON
-      fetch(`${WEB_APP_URL}?keyword=${encodeURIComponent(id)}`)
-        .then(response => response.json())
-        .then(res => {
-          btn.disabled = false;
-          btn.innerHTML = '🔍 ค้นหาข้อมูล';
+      // แก้ไข URL ตรงนี้ให้ส่งทั้ง keyword และ dob ไปที่หลังบ้าน
+          fetch(`${WEB_APP_URL}?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
+            .then(response => response.json())
+            .then(res => {
+            btn.disabled = false;
+            btn.innerHTML = '🔍 ค้นหาข้อมูล';
           
           if(res.found) {
             document.getElementById('dashboard').style.display = 'block';
