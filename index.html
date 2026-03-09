@@ -54,7 +54,7 @@
 
     <div id="dashboard" style="display:none" class="fade-in-up">
       <div class="card hero-card p-4 mb-4 text-center">
-        <p class="mb-0 opacity-75">อีกกี่วันมาบริจาคได้?</p>
+        <p class="mb-0 opacity-75">อีกกี่วัน มาบริจาคได้?</p>
         <div id="displayCount" class="count-number"></div>
         <p id="daysLabel" class="mb-3 fw-bold">วัน</p>
         <div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; font-size: 0.9rem; border: 1px dashed white;">
@@ -86,7 +86,7 @@
 
   <script>
     // แทนที่ด้วย URL Web App ของคุณ
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyqb-vuQnSfdR3sf1MIvygxs-l445qqGL1XMfMC03Fl5czkg8Xi1hFzhwwXhzoXzSGcQQ/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyZK_t6Z5uC2nO3R23RNfZhqIVhG2cO3FJiUXcgXRu1V6IWgywErHwEduI1Ch4U55H-XQ/exec"; 
 
     function clearSearch() {
       document.getElementById('idCard').value = '';
@@ -120,7 +120,7 @@
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('notFoundCard').style.display = 'none';
 
-      fetch(`https://script.google.com/macros/s/AKfycbyqb-vuQnSfdR3sf1MIvygxs-l445qqGL1XMfMC03Fl5czkg8Xi1hFzhwwXhzoXzSGcQQ/exec?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
+      fetch(WEB_APP_URL + `?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
         .then(response => response.json())
         .then(res => {
           btn.disabled = false;
