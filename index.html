@@ -158,13 +158,18 @@
             bBadge.style.color = bStyle.text;
 
             // ส่วนตารางประวัติ
-            const rows = res.history.map(h => `
-              <tr>
-                <td class="ps-3 fw-bold text-muted small">${h.count}</td>
-                <td class="small">${h.date}<br><span class="text-primary" style="font-size:0.75rem">(${h.type})</span></td>
-                <td><span class="usage-text" style="font-size:0.85rem">✅ ${h.usage}</span></td>
-              </tr>
-            `).join('');
+            // เปลี่ยนไอคอนหน้าสถานะตามข้อความ
+            const rows = res.history.map(h => {
+              const icon = h.usage.includes("ติดต่อ") ? "⚠️" : "✅";
+              const textColor = h.usage.includes("ติดต่อ") ? "text-warning" : "usage-text";
+              return `
+                <tr>
+                  <td class="ps-3 fw-bold text-muted small">${h.count}</td>
+                  <td class="small">${h.date}<br><span class="text-primary" style="font-size:0.75rem">(${h.type})</span></td>
+                  <td><span class="${textColor}" style="font-size:0.85rem">${icon} ${h.usage}</span></td>
+                </tr>
+              `;
+            }).join('');
             document.getElementById('historyTableBody').innerHTML = rows;
           } else { 
             document.getElementById('notFoundCard').style.display = 'block'; 
