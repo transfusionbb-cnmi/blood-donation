@@ -126,24 +126,23 @@
           btn.disabled = false;
           btn.innerHTML = '🔍 ค้นหาข้อมูล';
           
-          if(res.found) {
+if(res.found) {
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('displayName').innerText = "คุณ " + res.name;
             document.getElementById('displayId').innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + res.donorId;
             document.getElementById('displayDob').innerText = "🎂 วันเกิด: " + res.dob;
             
-// --- ส่วนที่ต้องจัดการเรื่อง สี และ ข้อความแจ้งเตือน ---
             const heroCard = document.querySelector('.hero-card');
             
             if (res.needsContact) {
-              // ⚠️ กรณีตรวจพบคำว่า "กรุณาติดต่อ" (Infectious / หรือเหตุผลอื่นๆ)
+              // ⚠️ กรณีตรวจพบ "กรุณาติดต่อ"
               heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)"; 
-              document.getElementById('displayCount').innerText = "!"; // เปลี่ยนจาก 0 เป็น !
+              document.getElementById('displayCount').innerText = "!";
               document.getElementById('daysLabel').innerText = "โปรดติดต่อเจ้าหน้าที่";
-              document.getElementById('displayStatus').innerHTML = "<b>" + res.usageStatus + "</b>"; // โชว์ข้อความที่พิมพ์ใน Sheet
+              document.getElementById('displayStatus').innerHTML = "<b>" + res.usageStatus + "</b>"; 
               document.getElementById('displayNextDate').innerText = "กรุณาปรึกษาเจ้าหน้าที่";
             } else {
-              // ✅ กรณีปกติ (บริจาคได้ หรือ ยังไม่ถึงกำหนด)
+              // ✅ กรณีปกติ
               heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)";
               document.getElementById('displayCount').innerText = res.daysLeft <= 0 ? "0" : res.daysLeft;
               document.getElementById('daysLabel').innerText = res.daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
@@ -151,17 +150,14 @@
               document.getElementById('displayNextDate').innerText = res.nextDate;
             }
             
+            // ส่วนหมู่เลือด
             const bStyle = getBloodStyle(res.blood);
             const bBadge = document.getElementById('displayBlood');
             bBadge.innerText = "หมู่เลือด: " + res.blood;
             bBadge.style.backgroundColor = bStyle.bg; 
             bBadge.style.color = bStyle.text;
 
-            document.getElementById('displayCount').innerText = res.daysLeft <= 0 ? "0" : res.daysLeft;
-            document.getElementById('daysLabel').innerText = res.daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
-            document.getElementById('displayStatus').innerText = res.daysLeft <= 0 ? "❤️ วันนี้คุณพร้อมช่วยชีวิตเพื่อนมนุษย์แล้ว" : "❤️ อย่าลืมมาพบกันนะครับ";
-            document.getElementById('displayNextDate').innerText = res.nextDate;
-
+            // ส่วนตารางประวัติ (ต่อท้ายได้เลย ไม่ทับกัน)
             const rows = res.history.map(h => `
               <tr>
                 <td class="ps-3 fw-bold text-muted small">${h.count}</td>
@@ -170,7 +166,8 @@
               </tr>
             `).join('');
             document.getElementById('historyTableBody').innerHTML = rows;
-          } else { 
+          }
+          else { 
             document.getElementById('notFoundCard').style.display = 'block'; 
           }
         })
