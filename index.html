@@ -86,7 +86,7 @@
 
   <script>
     // แทนที่ด้วย URL Web App ของคุณ
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyZK_t6Z5uC2nO3R23RNfZhqIVhG2cO3FJiUXcgXRu1V6IWgywErHwEduI1Ch4U55H-XQ/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHOgBN6OKLWaLTsxU_5rouZ4H-GlKTFeh8-EVNDakCeEv9Ih30nslAV1gqjk-mYYhjeQ/exec"; 
 
     function clearSearch() {
       document.getElementById('idCard').value = '';
@@ -131,6 +131,25 @@
             document.getElementById('displayName').innerText = "คุณ " + res.name;
             document.getElementById('displayId').innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + res.donorId;
             document.getElementById('displayDob').innerText = "🎂 วันเกิด: " + res.dob;
+            
+            // --- แก้ไขการแสดงผล Card ด้านบนตามเงื่อนไข needsContact ---
+            const heroCard = document.querySelector('.hero-card');
+            
+            if (res.needsContact) {
+              // กรณีต้องติดต่อเจ้าหน้าที่ (Infectious / หรือเหตุผลอื่นๆ)
+              heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)"; // เปลี่ยนเป็นสีส้ม/เหลือง
+              document.getElementById('displayCount').innerText = "!";
+              document.getElementById('daysLabel').innerText = "โปรดติดต่อเจ้าหน้าที่";
+              document.getElementById('displayStatus').innerHTML = "<b>" + res.usageStatus + "</b>";
+              document.getElementById('displayNextDate').innerText = "กรุณาปรึกษาเจ้าหน้าที่";
+            } else {
+              // กรณีปกติ
+              heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)"; // กลับเป็นสีแดงปกติ
+              document.getElementById('displayCount').innerText = res.daysLeft <= 0 ? "0" : res.daysLeft;
+              document.getElementById('daysLabel').innerText = res.daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
+              document.getElementById('displayStatus').innerText = res.daysLeft <= 0 ? "❤️ วันนี้คุณพร้อมช่วยชีวิตเพื่อนมนุษย์แล้ว" : "❤️ อย่าลืมมาพบกันนะครับ";
+              document.getElementById('displayNextDate').innerText = res.nextDate;
+            }
             
             const bStyle = getBloodStyle(res.blood);
             const bBadge = document.getElementById('displayBlood');
