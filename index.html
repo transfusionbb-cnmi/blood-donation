@@ -132,19 +132,19 @@
             document.getElementById('displayId').innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + res.donorId;
             document.getElementById('displayDob').innerText = "🎂 วันเกิด: " + res.dob;
             
-            // --- แก้ไขการแสดงผล Card ด้านบนตามเงื่อนไข needsContact ---
+// --- ส่วนที่ต้องจัดการเรื่อง สี และ ข้อความแจ้งเตือน ---
             const heroCard = document.querySelector('.hero-card');
             
             if (res.needsContact) {
-              // กรณีต้องติดต่อเจ้าหน้าที่ (Infectious / หรือเหตุผลอื่นๆ)
-              heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)"; // เปลี่ยนเป็นสีส้ม/เหลือง
-              document.getElementById('displayCount').innerText = "!";
+              // ⚠️ กรณีตรวจพบคำว่า "กรุณาติดต่อ" (Infectious / หรือเหตุผลอื่นๆ)
+              heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)"; 
+              document.getElementById('displayCount').innerText = "!"; // เปลี่ยนจาก 0 เป็น !
               document.getElementById('daysLabel').innerText = "โปรดติดต่อเจ้าหน้าที่";
-              document.getElementById('displayStatus').innerHTML = "<b>" + res.usageStatus + "</b>";
+              document.getElementById('displayStatus').innerHTML = "<b>" + res.usageStatus + "</b>"; // โชว์ข้อความที่พิมพ์ใน Sheet
               document.getElementById('displayNextDate').innerText = "กรุณาปรึกษาเจ้าหน้าที่";
             } else {
-              // กรณีปกติ
-              heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)"; // กลับเป็นสีแดงปกติ
+              // ✅ กรณีปกติ (บริจาคได้ หรือ ยังไม่ถึงกำหนด)
+              heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)";
               document.getElementById('displayCount').innerText = res.daysLeft <= 0 ? "0" : res.daysLeft;
               document.getElementById('daysLabel').innerText = res.daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
               document.getElementById('displayStatus').innerText = res.daysLeft <= 0 ? "❤️ วันนี้คุณพร้อมช่วยชีวิตเพื่อนมนุษย์แล้ว" : "❤️ อย่าลืมมาพบกันนะครับ";
