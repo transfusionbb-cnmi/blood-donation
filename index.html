@@ -122,11 +122,11 @@
 
       fetch(WEB_APP_URL + `?keyword=${encodeURIComponent(id)}&dob=${encodeURIComponent(dob)}`)
         .then(response => response.json())
-        .then(res => {
+.then(res => {
           btn.disabled = false;
           btn.innerHTML = '🔍 ค้นหาข้อมูล';
           
-if(res.found) {
+          if(res.found) {
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('displayName').innerText = "คุณ " + res.name;
             document.getElementById('displayId').innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + res.donorId;
@@ -157,7 +157,7 @@ if(res.found) {
             bBadge.style.backgroundColor = bStyle.bg; 
             bBadge.style.color = bStyle.text;
 
-            // ส่วนตารางประวัติ (ต่อท้ายได้เลย ไม่ทับกัน)
+            // ส่วนตารางประวัติ
             const rows = res.history.map(h => `
               <tr>
                 <td class="ps-3 fw-bold text-muted small">${h.count}</td>
@@ -166,11 +166,11 @@ if(res.found) {
               </tr>
             `).join('');
             document.getElementById('historyTableBody').innerHTML = rows;
-          }
-          else { 
+          } else { 
             document.getElementById('notFoundCard').style.display = 'block'; 
           }
         })
+        
         .catch(err => {
           btn.disabled = false;
           btn.innerHTML = '🔍 ค้นหาข้อมูล';
