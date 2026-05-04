@@ -321,9 +321,19 @@
       transition: 0.2s;
     }
 
-    .slot-btn.active {
-      background: #27ae60;
-      color: white;
+    $1
+
+    .slot-btn.full {
+      border-color: #ddd;
+      color: #aaa;
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+
+    .slot-small {
+      font-size: 0.78rem;
+      font-weight: 600;
+      opacity: 0.9;
     }
 
     .contact-line {
@@ -551,7 +561,7 @@
       </div>
 
       <div class="safe-note mb-3">
-        ผ่านการคัดกรองเบื้องต้นแล้ว กรุณากรอกข้อมูลสำหรับจองคิว ระบบเฟสนี้ยังเป็นหน้าจองคิวเตรียมเชื่อม Google Sheet ในขั้นถัดไป
+        ผ่านการคัดกรองเบื้องต้นแล้ว กรุณากรอกข้อมูลสำหรับจองคิว ระบบเฟสนี้ยังเป็นหน้าจองคิวเท่านั้น ไม่ได้นำข้อมู, บันทึกว่าทันได้มาบริจาคแล้ว
       </div>
 
       <div class="card main-card p-4 mb-4">
@@ -576,16 +586,11 @@
         </div>
 
         <label class="form-label small fw-bold text-muted">เลือกช่วงเวลา</label>
-        <div class="slot-grid mb-4">
-          <button class="slot-btn" onclick="selectSlot(this, '09:00')">09:00<br><small>ว่าง 10</small></button>
-          <button class="slot-btn" onclick="selectSlot(this, '10:00')">10:00<br><small>ว่าง 10</small></button>
-          <button class="slot-btn" onclick="selectSlot(this, '11:00')">11:00<br><small>ว่าง 10</small></button>
-          <button class="slot-btn" onclick="selectSlot(this, '13:00')">13:00<br><small>ว่าง 10</small></button>
-          <button class="slot-btn" onclick="selectSlot(this, '14:00')">14:00<br><small>ว่าง 10</small></button>
-          <button class="slot-btn" onclick="selectSlot(this, '15:00')">15:00<br><small>ว่าง 10</small></button>
+        <div id="bookingSlotGrid" class="slot-grid mb-4">
+          <div class="text-muted small" style="grid-column: 1 / -1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div>
         </div>
 
-        <button class="btn btn-search w-100 p-3" onclick="confirmBookingDemo()">ยืนยันการจอง</button>
+        <button id="btnConfirmBooking" class="btn btn-search w-100 p-3" onclick="submitBooking()">ยืนยันการจอง</button>
       </div>
     </div>
 
@@ -983,20 +988,117 @@
     }
 
     function selectSlot(btn, slot) {
+      if (btn.classList.contains("full")) return;
+
       selectedSlot = slot;
       document.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
     }
 
-    function confirmBookingDemo() {
-      const name = document.getElementById("bookingName").value.trim();
-      const phone = onlyDigits(document.getElementById("bookingPhone").value);
-      const date = document.getElementById("bookingDate").value;
+    function renderBookingSlots(slots) {
+      const grid = document.getElementById("bookingSlotGrid");
+      selectedSlot = "";
 
-      if (!name || phone.length < 9 || !date || !selectedSlot) {
+      if (!Array.isArray(slots) || slots.length === 0) {
+        grid.innerHTML = `<div class="text-muted small" style="grid-column: 1 / -1;">ไม่พบช่วงเวลาที่เปิดให้จองในวันที่เลือก</div>`;
+        return;
+      }
+
+      const html = slots.map(function (slot) {
+        const isFull = Number(slot.remaining || 0) <= 0 || slot.status === "ปิด";
+        const fullClass = isFull ? "full" : "";
+        const disabledText = isFull ? "เต็มแล้ว" : `ว่าง ${slot.remaining}`;
+
+        return `
+          <button type="button" class="slot-btn ${fullClass}" onclick="selectSlot(this, '${slot.time}')">
+            ${slot.time}<br>
+            <span class="slot-small">👥 ${disabledText}</span>
+          </button>
+        `;
+      }).join("");
+
+      grid.innerHTML = html;
+    }
+
+    async function loadBookingSlots() {
+      const bookingDate = document.getElementById("bookingDate").value;
+      const grid = document.getElementById("bookingSlotGrid");
+      selectedSlot = "";
+
+      if (!bookingDate) {
+        grid.innerHTML = `<div class="text-muted small" style="grid-column: 1 / -1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div>`;
+        return;
+      }
+
+      grid.innerHTML = `<div class="text-muted small" style="grid-column: 1 / -1;">กำลังโหลดช่วงเวลาที่ว่าง...</div>`;
+
+      try {
+        const res = await callApi({
+          action: "getBookingSlots",
+          bookingDate: bookingDate
+        });
+
+        if (!res.ok) {
+          grid.innerHTML = `<div class="text-danger small" style="grid-column: 1 / -1;">${res.message || "ไม่สามารถโหลดช่วงเวลาได้"}</div>`;
+          return;
+        }
+
+        renderBookingSlots(res.slots || []);
+      } catch (err) {
+        grid.innerHTML = `<div class="text-danger small" style="grid-column: 1 / -1;">ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่</div>`;
+      }
+    }
+
+    async function submitBooking() {
+      const name = document.getElementById("bookingName").value.trim();
+      const donorId = document.getElementById("bookingDonorId").value.trim();
+      const phone = onlyDigits(document.getElementById("bookingPhone").value);
+      const bookingDate = document.getElementById("bookingDate").value;
+      const btn = document.getElementById("btnConfirmBooking");
+
+      if (!name || phone.length < 9 || !bookingDate || !selectedSlot) {
         alert("กรุณากรอกชื่อ เบอร์โทร วันที่ และเลือกช่วงเวลาให้ครบครับ");
         return;
       }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> กำลังบันทึกการจอง...`;
+
+      try {
+        const res = await callApi({
+          action: "createBooking",
+          name: name,
+          donorId: donorId,
+          phone: phone,
+          bookingDate: bookingDate,
+          timeSlot: selectedSlot,
+          donationType: "Whole Blood"
+        });
+
+        btn.disabled = false;
+        btn.innerHTML = "ยืนยันการจอง";
+
+        if (!res.ok) {
+          alert(res.message || "ไม่สามารถจองคิวได้ กรุณาลองใหม่ครับ");
+          await loadBookingSlots();
+          return;
+        }
+
+        alert(`จองคิวสำเร็จครับ
+เลขที่จอง: ${res.bookingId}
+วันที่: ${res.bookingDateText}
+เวลา: ${res.timeSlot}`);
+
+        document.getElementById("bookingName").value = "";
+        document.getElementById("bookingDonorId").value = "";
+        document.getElementById("bookingPhone").value = "";
+        await loadBookingSlots();
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = "ยืนยันการจอง";
+        alert("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ");
+      }
+    }
 
       alert("เฟสนี้เป็นหน้าจองคิวตัวอย่าง ขั้นถัดไปโนอาจะเชื่อมให้บันทึกลง Google Sheet Bookings ครับ");
     }
@@ -1035,6 +1137,7 @@
         bookingDate.addEventListener("click", function () {
           if (typeof bookingDate.showPicker === "function") bookingDate.showPicker();
         });
+        bookingDate.addEventListener("change", loadBookingSlots);
       }
     });
   </script>
