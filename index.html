@@ -158,6 +158,27 @@
       color: #d63031;
       letter-spacing: 0.5px;
     }
+
+    .blood-badge {
+      border-radius: 12px;
+      padding: 8px 24px;
+      font-weight: 700;
+      border: 1px solid rgba(0,0,0,0.1);
+      display: inline-block;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    }
+
+    .table-history {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      font-size: 0.9rem;
+    }
+
+    .usage-text {
+      color: #27ae60;
+      font-weight: 700;
+    }
   </style>
 </head>
 
@@ -319,24 +340,30 @@
       </div>
 
       <div class="card result-card p-4 mb-4">
-        <h5 class="fw-bold text-center mb-3">ข้อมูลการบริจาคของท่าน</h5>
+        <h5 id="displayName" class="fw-bold mb-2 text-center"></h5>
 
-        <div class="info-box mb-3">
-          <div class="mini-label">เลขผู้บริจาค Donor ID</div>
-          <div id="resultDonorId" class="mini-value"></div>
+        <p id="displayId" class="fw-bold text-center mb-1" style="font-size: 1rem; color: #444;"></p>
+
+        <p id="displayDob" class="text-muted small text-center mb-3" style="font-size: 0.85rem;"></p>
+
+        <div class="text-center mb-3">
+          <span id="displayBlood" class="blood-badge"></span>
         </div>
 
-        <div class="info-box mb-3">
-          <div class="mini-label">จำนวนครั้งบริจาคสะสม</div>
-          <div id="resultDonationCount" class="mini-value"></div>
-        </div>
-
-        <div class="info-box">
-          <div class="mini-label">วันที่สามารถบริจาคครั้งถัดไป</div>
-          <div id="resultNextDate" class="mini-value"></div>
+        <div class="d-flex justify-content-between small text-muted border-top pt-3 mt-3">
+          <span>นัดหมายครั้งถัดไป:</span>
+          <span id="displayNextDate" class="fw-bold text-dark"></span>
         </div>
       </div>
 
+      <h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6>
+
+      <div class="table-history shadow-sm border mb-4">
+        <table class="table mb-0">
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+      
     </div>
 
     <!-- ผลลัพธ์โหมดลืม Donor ID -->
@@ -448,6 +475,17 @@
       return await response.json();
     }
 
+    function getBloodStyle(group) {
+      const g = (group || "").toUpperCase();
+
+      if (g.includes("AB")) return { bg: "#ffffff", text: "#000" };
+      if (g.includes("A")) return { bg: "#f1c40f", text: "#000" };
+      if (g.includes("B")) return { bg: "#e84393", text: "#fff" };
+      if (g.includes("O")) return { bg: "#0984e3", text: "#fff" };
+
+      return { bg: "#eee", text: "#000" };
+    }
+    
     async function runCheckSearch() {
       const donorId = document.getElementById("donorIdInput").value.trim();
       const dob = convertDateInputToDbDob(document.getElementById("donorDobCheck").value);
@@ -478,29 +516,70 @@
 
         const heroCard = document.querySelector(".hero-card");
 
-        if (res.needsContact) {
-          heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)";
-          document.getElementById("resultDaysLeft").innerText = "!";
-          document.getElementById("resultDaysLabel").innerText = "โปรดติดต่อเจ้าหน้าที่";
-          document.getElementById("resultStatus").innerText = res.message || "กรุณาติดต่อเจ้าหน้าที่";
-          document.getElementById("resultNextDate").innerText = "กรุณาปรึกษาเจ้าหน้าที่";
-        } else {
-          heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)";
+if (res.needsContact) {
+  heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)";
+  document.getElementById("resultDaysLeft").innerText = "!";
+  document.getElementById("resultDaysLabel").innerText = "โปรดติดต่อเจ้าหน้าที่";
+  document.getElementById("resultStatus").innerText = res.message || "กรุณาติดต่อเจ้าหน้าที่";
+  document.getElementById("displayNextDate").innerText = "กรุณาปรึกษาเจ้าหน้าที่";
+} else {
+  heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)";
 
-          const daysLeft = Number(res.daysLeft || 0);
-          document.getElementById("resultDaysLeft").innerText = daysLeft <= 0 ? "0" : daysLeft;
-          document.getElementById("resultDaysLabel").innerText = daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
-          document.getElementById("resultStatus").innerText = daysLeft <= 0
-            ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้"
-            : "❤️ ยังไม่ถึงกำหนดบริจาคครั้งถัดไป";
+  const daysLeft = Number(res.daysLeft || 0);
 
-          document.getElementById("resultNextDate").innerText = res.nextDate || "-";
-        }
+  document.getElementById("resultDaysLeft").innerText = daysLeft <= 0 ? "0" : daysLeft;
+  document.getElementById("resultDaysLabel").innerText = daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
+  document.getElementById("resultStatus").innerText = daysLeft <= 0
+    ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้"
+    : "❤️ ยังไม่ถึงกำหนดบริจาคครั้งถัดไป";
 
-        document.getElementById("resultDonorId").innerText = res.donorId || donorId;
-        document.getElementById("resultDonationCount").innerText = `${res.donationCount || "-"} ครั้ง`;
+  document.getElementById("displayNextDate").innerText = res.nextDate || "-";
+}
 
-        document.getElementById("checkResult").style.display = "block";
+document.getElementById("displayName").innerText = res.name ? "คุณ " + res.name : "ผู้บริจาค";
+document.getElementById("displayId").innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + (res.donorId || donorId);
+document.getElementById("displayDob").innerText = "🎂 วันเกิด: " + (res.dob || "-");
+
+const bStyle = getBloodStyle(res.blood);
+const bBadge = document.getElementById("displayBlood");
+bBadge.innerText = "หมู่เลือด: " + (res.blood || "-");
+bBadge.style.backgroundColor = bStyle.bg;
+bBadge.style.color = bStyle.text;
+
+const history = Array.isArray(res.history) ? res.history : [];
+
+if (history.length === 0) {
+  document.getElementById("historyTableBody").innerHTML = `
+    <tr>
+      <td class="text-center text-muted small p-3">
+        ไม่พบประวัติการบริจาค กรุณาติดต่อเจ้าหน้าที่
+      </td>
+    </tr>
+  `;
+} else {
+  const rows = history.map(function (h) {
+    const usage = h.usage || "";
+    const icon = usage.includes("ติดต่อ") ? "⚠️" : "✅";
+    const textColor = usage.includes("ติดต่อ") ? "text-warning fw-bold" : "usage-text";
+
+    return `
+      <tr>
+        <td class="ps-3 fw-bold text-muted small" style="width: 50px;">${h.count || "-"}</td>
+        <td class="small">
+          ${h.date || "-"}<br>
+          <span class="text-primary" style="font-size:0.78rem">(${h.type || "Whole Blood"})</span>
+        </td>
+        <td>
+          <span class="${textColor}" style="font-size:0.85rem">${icon} ${usage || "กำลังดำเนินการ"}</span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  document.getElementById("historyTableBody").innerHTML = rows;
+}
+
+document.getElementById("checkResult").style.display = "block";
 
       } catch (err) {
         setLoading(false, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ...");
