@@ -8,311 +8,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      background: #f4f7f6;
-      font-family: 'Kanit', sans-serif;
-      color: #2d3436;
-    }
-
-    .app-page { display: none; }
-    .app-page.active { display: block; }
-
-    .main-card {
-      background: #fff;
-      border: 0;
-      border-radius: 22px;
-      box-shadow: 0 4px 15px rgba(0,0,0,.05);
-    }
-
-    .hero-card {
-      background: linear-gradient(135deg,#d63031 0%,#ff7675 100%);
-      color: #fff;
-      border: 0;
-      border-radius: 25px;
-      box-shadow: 0 10px 20px rgba(214,48,49,.2);
-    }
-
-    .btn-search {
-      background: #d63031;
-      color: #fff;
-      border-radius: 15px;
-      font-weight: 700;
-      padding: 12px;
-      border: 0;
-    }
-
-    .btn-search:hover {
-      background: #b32526;
-      color: #fff;
-    }
-
-    .btn-back-home {
-      border: 1px solid #ddd;
-      background: #fff;
-      color: #555;
-      border-radius: 14px;
-      padding: 10px 14px;
-      font-weight: 700;
-    }
-
-    .btn-clear-cnmi {
-      border: 2px solid #d63031;
-      color: #d63031;
-      background: transparent;
-      border-radius: 15px;
-      width: 60px;
-      font-size: 1.2rem;
-    }
-
-    .home-menu-card {
-      width: 100%;
-      text-align: left;
-      border: 0;
-      border-radius: 20px;
-      background: #fff;
-      padding: 18px;
-      box-shadow: 0 4px 15px rgba(0,0,0,.05);
-    }
-
-    .home-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.45rem;
-      background: #fff1f1;
-      color: #d63031;
-      flex-shrink: 0;
-    }
-
-    .page-title {
-      font-weight: 700;
-      color: #d63031;
-      text-align: center;
-      margin: 0;
-    }
-
-    .safe-note {
-      background: #fff8e1;
-      border: 1px solid #ffe0a3;
-      color: #7a5600;
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-size: .8rem;
-      line-height: 1.5;
-    }
-
-    .mode-tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      background: #f8f9fa;
-      padding: 6px;
-      border-radius: 18px;
-      border: 1px solid #eee;
-    }
-
-    .mode-tab {
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 8px;
-      font-weight: 700;
-      background: transparent;
-      color: #777;
-      font-size: .9rem;
-    }
-
-    .mode-tab.active {
-      background: #d63031;
-      color: #fff;
-    }
-
-    .form-section { display: none; }
-    .form-section.active { display: block; }
-
-    .form-control {
-      font-size: 1.05rem;
-      border-radius: 15px !important;
-      border: 2px solid #eee !important;
-    }
-
-    .count-number {
-      font-size: 4rem;
-      font-weight: 700;
-      line-height: 1;
-      margin: 10px 0;
-    }
-
-    .result-card {
-      border-radius: 22px;
-      border: 0;
-      box-shadow: 0 4px 15px rgba(0,0,0,.06);
-    }
-
-    .info-box {
-      background: #f8f9fa;
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .blood-badge {
-      border-radius: 12px;
-      padding: 8px 24px;
-      font-weight: 700;
-      border: 1px solid rgba(0,0,0,.1);
-      display: inline-block;
-      box-shadow: 0 3px 8px rgba(0,0,0,.08);
-    }
-
-    .table-history {
-      background: #fff;
-      border-radius: 15px;
-      overflow: hidden;
-      font-size: .9rem;
-    }
-
-    .usage-text {
-      color: #27ae60;
-      font-weight: 700;
-    }
-
-    .donor-id-big {
-      font-size: 1.7rem;
-      font-weight: 700;
-      color: #d63031;
-    }
-
-    .question-card {
-      background: #fff;
-      border-radius: 22px;
-      padding: 22px;
-      box-shadow: 0 4px 15px rgba(0,0,0,.05);
-    }
-
-    .choice-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .choice-btn {
-      border: 2px solid #ddd;
-      background: #fff;
-      border-radius: 16px;
-      padding: 14px;
-      font-weight: 700;
-      font-size: 1.05rem;
-    }
-
-    .choice-btn.active {
-      background: #00a085;
-      border-color: #00a085;
-      color: #fff;
-    }
-
-    .choice-btn.danger-choice.active {
-      background: #d63031;
-      border-color: #d63031;
-      color: #fff;
-    }
-
-    .screening-progress {
-      height: 8px;
-      border-radius: 999px;
-      background: #eee;
-      overflow: hidden;
-    }
-
-    .screening-progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(135deg,#d63031 0%,#ff7675 100%);
-    }
-
-    .slot-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .slot-btn {
-      border: 1.5px solid #27ae60;
-      color: #159947;
-      background: #fff;
-      border-radius: 14px;
-      padding: 12px 8px;
-      font-weight: 700;
-    }
-
-    .slot-btn.active {
-      background: #27ae60;
-      color: #fff;
-    }
-
-    .slot-btn.full {
-      border-color: #ddd;
-      color: #aaa;
-      background: #f5f5f5;
-      cursor: not-allowed;
-    }
-
-    .contact-line {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      padding: 12px 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .modal-screen {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.45);
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal-screen.show {
-      display: flex;
-    }
-
-    .modal-box {
-      max-width: 420px;
-      width: 100%;
-      background: #fff;
-      border-radius: 22px;
-      padding: 24px;
-      text-align: center;
-      box-shadow: 0 20px 45px rgba(0,0,0,.2);
-    }
-
-    .modal-icon {
-      width: 84px;
-      height: 84px;
-      border-radius: 50%;
-      background: #ffc107;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-      font-size: 3rem;
-      font-weight: 700;
-    }
-
-    .modal-icon.success {
-      background: #27ae60;
-    }
-
-    .modal-message {
-      line-height: 1.7;
-      white-space: pre-line;
-    }
+    body { background:#f4f7f6; font-family:'Kanit',sans-serif; color:#2d3436; }
+    .app-page { display:none; }
+    .app-page.active { display:block; }
+    .main-card { background:#fff; border:0; border-radius:22px; box-shadow:0 4px 15px rgba(0,0,0,.05); }
+    .hero-card { background:linear-gradient(135deg,#d63031 0%,#ff7675 100%); color:#fff; border:0; border-radius:25px; box-shadow:0 10px 20px rgba(214,48,49,.2); }
+    .btn-search { background:#d63031; color:#fff; border-radius:15px; font-weight:700; padding:12px; border:0; }
+    .btn-search:hover { background:#b32526; color:#fff; }
+    .btn-back-home { border:1px solid #ddd; background:#fff; color:#555; border-radius:14px; padding:10px 14px; font-weight:700; }
+    .btn-clear-cnmi { border:2px solid #d63031; color:#d63031; background:transparent; border-radius:15px; width:60px; font-size:1.2rem; }
+    .home-menu-card { width:100%; text-align:left; border:0; border-radius:20px; background:#fff; padding:18px; box-shadow:0 4px 15px rgba(0,0,0,.05); }
+    .home-icon { width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:1.45rem; background:#fff1f1; color:#d63031; flex-shrink:0; }
+    .page-title { font-weight:700; color:#d63031; text-align:center; margin:0; }
+    .safe-note { background:#fff8e1; border:1px solid #ffe0a3; color:#7a5600; border-radius:14px; padding:10px 12px; font-size:.8rem; line-height:1.5; }
+    .mode-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#f8f9fa; padding:6px; border-radius:18px; border:1px solid #eee; }
+    .mode-tab { border:0; border-radius:14px; padding:12px 8px; font-weight:700; background:transparent; color:#777; font-size:.9rem; }
+    .mode-tab.active { background:#d63031; color:#fff; }
+    .form-section { display:none; }
+    .form-section.active { display:block; }
+    .form-control { font-size:1.05rem; border-radius:15px !important; border:2px solid #eee !important; }
+    .count-number { font-size:4rem; font-weight:700; line-height:1; margin:10px 0; }
+    .result-card { border-radius:22px; border:0; box-shadow:0 4px 15px rgba(0,0,0,.06); }
+    .info-box { background:#f8f9fa; border-radius:16px; padding:14px; }
+    .blood-badge { border-radius:12px; padding:8px 24px; font-weight:700; border:1px solid rgba(0,0,0,.1); display:inline-block; box-shadow:0 3px 8px rgba(0,0,0,.08); }
+    .table-history { background:#fff; border-radius:15px; overflow:hidden; font-size:.9rem; }
+    .usage-text { color:#27ae60; font-weight:700; }
+    .donor-id-big { font-size:1.7rem; font-weight:700; color:#d63031; }
+    .question-card { background:#fff; border-radius:22px; padding:22px; box-shadow:0 4px 15px rgba(0,0,0,.05); }
+    .choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .choice-btn { border:2px solid #ddd; background:#fff; border-radius:16px; padding:14px; font-weight:700; font-size:1.05rem; }
+    .choice-btn.active { background:#00a085; border-color:#00a085; color:#fff; }
+    .choice-btn.danger-choice.active { background:#d63031; border-color:#d63031; color:#fff; }
+    .screening-progress { height:8px; border-radius:999px; background:#eee; overflow:hidden; }
+    .screening-progress-bar { height:100%; width:0%; background:linear-gradient(135deg,#d63031 0%,#ff7675 100%); }
+    .slot-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .slot-btn { border:1.5px solid #27ae60; color:#159947; background:#fff; border-radius:14px; padding:12px 8px; font-weight:700; }
+    .slot-btn.active { background:#27ae60; color:#fff; }
+    .slot-btn.full { border-color:#ddd; color:#aaa; background:#f5f5f5; cursor:not-allowed; }
+    .contact-line { display:flex; gap:10px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #f0f0f0; }
+    .modal-screen { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px; }
+    .modal-screen.show { display:flex; }
+    .modal-box { max-width:420px; width:100%; background:#fff; border-radius:22px; padding:24px; text-align:center; box-shadow:0 20px 45px rgba(0,0,0,.2); }
+    .modal-icon { width:84px; height:84px; border-radius:50%; background:#ffc107; color:#fff; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:3rem; font-weight:700; }
+    .modal-icon.success { background:#27ae60; }
+    .modal-message { line-height:1.7; white-space:pre-line; }
   </style>
 </head>
 
@@ -330,288 +69,64 @@
         <p class="mb-0 small">ตรวจสอบข้อมูล คัดกรองเบื้องต้น และจองคิวในลิงก์เดียว</p>
       </div>
 
-      <button type="button" class="home-menu-card mb-3" onclick="showPage('check')">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">🩸</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">ตรวจสอบข้อมูลผู้บริจาค</div>
-            <div class="text-muted small">ดูจำนวนครั้ง สถานะ และประวัติบริจาค</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
-
-      <button type="button" class="home-menu-card mb-3" onclick="startScreening()">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">✅</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">คัดกรองตนเอง / จองคิว</div>
-            <div class="text-muted small">ประเมินความพร้อมเบื้องต้นก่อนจองคิว</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
-
-      <button type="button" class="home-menu-card mb-3" onclick="showPage('manage')">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">📋</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">ตรวจสอบ / ยกเลิกนัดหมาย</div>
-            <div class="text-muted small">ดูรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
-
-      <button type="button" class="home-menu-card mb-3" onclick="showPage('info')">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">📍</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">วันทำการ / สถานที่ / ติดต่อ</div>
-            <div class="text-muted small">เวลาเปิดทำการ เบอร์โทร และแผนที่</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
+      <button type="button" class="home-menu-card mb-3" onclick="showPage('check')"><div class="d-flex gap-3 align-items-center"><div class="home-icon">🩸</div><div class="flex-grow-1"><div class="fw-bold">ตรวจสอบข้อมูลผู้บริจาค</div><div class="text-muted small">ดูจำนวนครั้ง สถานะ และประวัติบริจาค</div></div><div class="text-danger fw-bold">›</div></div></button>
+      <button type="button" class="home-menu-card mb-3" onclick="startScreening()"><div class="d-flex gap-3 align-items-center"><div class="home-icon">✅</div><div class="flex-grow-1"><div class="fw-bold">คัดกรองตนเอง / จองคิว</div><div class="text-muted small">ประเมินความพร้อมเบื้องต้นก่อนจองคิว</div></div><div class="text-danger fw-bold">›</div></div></button>
+      <button type="button" class="home-menu-card mb-3" onclick="showPage('manage')"><div class="d-flex gap-3 align-items-center"><div class="home-icon">📋</div><div class="flex-grow-1"><div class="fw-bold">ตรวจสอบ / ยกเลิกนัดหมาย</div><div class="text-muted small">ดูรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้</div></div><div class="text-danger fw-bold">›</div></div></button>
+      <button type="button" class="home-menu-card mb-3" onclick="showPage('info')"><div class="d-flex gap-3 align-items-center"><div class="home-icon">📍</div><div class="flex-grow-1"><div class="fw-bold">วันทำการ / สถานที่ / ติดต่อ</div><div class="text-muted small">เวลาเปิดทำการ เบอร์โทร และแผนที่</div></div><div class="text-danger fw-bold">›</div></div></button>
     </div>
 
     <div id="pageCheck" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
-        <h5 class="page-title flex-grow-1">ตรวจสอบข้อมูลผู้บริจาค</h5>
-      </div>
-
+      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">ตรวจสอบข้อมูลผู้บริจาค</h5></div>
       <div class="card main-card p-3 mb-4">
-        <div class="mode-tabs mb-3">
-          <button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')">เช็กข้อมูลปกติ</button>
-          <button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')">ลืม Donor ID</button>
-        </div>
-
+        <div class="mode-tabs mb-3"><button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')">เช็กข้อมูลปกติ</button><button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')">ลืม Donor ID</button></div>
         <div id="checkForm" class="form-section active">
           <div class="safe-note mb-3">ใช้สำหรับตรวจสอบจำนวนครั้งบริจาค และวันที่สามารถบริจาคครั้งถัดไป</div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เลขผู้บริจาค Donor ID</label>
-            <input type="text" id="donorIdInput" class="form-control text-center p-3" placeholder="กรอก Donor ID" inputmode="numeric">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-            <input type="date" id="donorDobCheck" class="form-control text-center p-3" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;">
-            <div id="dobPreviewCheck" class="form-text" style="font-size:.7rem;">*กรุณาเลือกวันเกิดจากปฏิทิน</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
-            <input type="tel" id="phoneLast4Check" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 6050" inputmode="numeric">
-          </div>
-          <div class="d-flex gap-2">
-            <button type="button" id="btnCheckSearch" class="btn btn-search flex-grow-1 p-3" onclick="runCheckSearch()">🔍 ตรวจสอบข้อมูล</button>
-            <button type="button" class="btn btn-clear-cnmi" onclick="clearSearch()">🔄</button>
-          </div>
+          <div class="mb-3"><label class="form-label small fw-bold text-muted">เลขผู้บริจาค Donor ID</label><input type="text" id="donorIdInput" class="form-control text-center p-3" placeholder="กรอก Donor ID" inputmode="numeric"></div>
+          <div class="mb-3"><label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label><input type="date" id="donorDobCheck" class="form-control text-center p-3" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;"><div id="dobPreviewCheck" class="form-text" style="font-size:.7rem;">*กรุณาเลือกวันเกิดจากปฏิทิน</div></div>
+          <div class="mb-3"><label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label><input type="tel" id="phoneLast4Check" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 6050" inputmode="numeric"></div>
+          <div class="d-flex gap-2"><button type="button" id="btnCheckSearch" class="btn btn-search flex-grow-1 p-3" onclick="runCheckSearch()">🔍 ตรวจสอบข้อมูล</button><button type="button" class="btn btn-clear-cnmi" onclick="clearSearch()">🔄</button></div>
         </div>
-
         <div id="forgotForm" class="form-section">
           <div class="safe-note mb-3">ใช้สำหรับค้นหาเลขผู้บริจาคเท่านั้น ระบบจะแสดงเฉพาะ Donor ID</div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เลขบัตรประชาชน 13 หลัก</label>
-            <input type="tel" id="idCardForgot" class="form-control text-center p-3" maxlength="13" placeholder="เลขบัตรประชาชน 13 หลัก" inputmode="numeric">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-            <input type="date" id="donorDobForgot" class="form-control text-center p-3" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;">
-            <div id="dobPreviewForgot" class="form-text" style="font-size:.7rem;">*กรุณาเลือกวันเกิดจากปฏิทิน</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
-            <input type="tel" id="phoneLast4Forgot" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 6050" inputmode="numeric">
-          </div>
-          <div class="d-flex gap-2">
-            <button type="button" id="btnForgotSearch" class="btn btn-search flex-grow-1 p-3" onclick="runForgotSearch()">🔎 ค้นหา Donor ID</button>
-            <button type="button" class="btn btn-clear-cnmi" onclick="clearSearch()">🔄</button>
-          </div>
+          <div class="mb-3"><label class="form-label small fw-bold text-muted">เลขบัตรประชาชน 13 หลัก</label><input type="tel" id="idCardForgot" class="form-control text-center p-3" maxlength="13" placeholder="เลขบัตรประชาชน 13 หลัก" inputmode="numeric"></div>
+          <div class="mb-3"><label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label><input type="date" id="donorDobForgot" class="form-control text-center p-3" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;"><div id="dobPreviewForgot" class="form-text" style="font-size:.7rem;">*กรุณาเลือกวันเกิดจากปฏิทิน</div></div>
+          <div class="mb-3"><label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label><input type="tel" id="phoneLast4Forgot" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 6050" inputmode="numeric"></div>
+          <div class="d-flex gap-2"><button type="button" id="btnForgotSearch" class="btn btn-search flex-grow-1 p-3" onclick="runForgotSearch()">🔎 ค้นหา Donor ID</button><button type="button" class="btn btn-clear-cnmi" onclick="clearSearch()">🔄</button></div>
         </div>
         <div id="loader" class="text-center mt-3" style="display:none"><div class="spinner-border text-danger spinner-border-sm"></div></div>
       </div>
-
-      <div id="notFoundCard" class="card main-card p-4 mt-2 text-center" style="display:none;border-top:5px solid #bdc3c7;">
-        <div class="mb-2"><span style="font-size:3rem;">🔍</span></div>
-        <h5 class="fw-bold mb-3">ไม่พบข้อมูล หรือข้อมูลยืนยันตัวตนไม่ถูกต้อง</h5>
-        <p class="text-muted small mb-3">กรุณาตรวจสอบข้อมูลอีกครั้ง หรือติดต่อเจ้าหน้าที่</p>
-        <a href="tel:028396050" class="btn btn-outline-secondary w-100 mb-2">📞 โทรสอบถาม: 02-839-6050</a>
-      </div>
-
-      <div id="checkResult" style="display:none">
-        <div class="card hero-card p-4 mb-4 text-center">
-          <p class="mb-0 opacity-75">อีกกี่วัน มาบริจาคได้?</p>
-          <div id="resultDaysLeft" class="count-number"></div>
-          <p id="resultDaysLabel" class="mb-3 fw-bold">วัน</p>
-          <div style="background:rgba(255,255,255,.2);border-radius:10px;padding:10px;font-size:.9rem;border:1px dashed #fff;"><span id="resultStatus"></span></div>
-        </div>
-        <div class="card result-card p-4 mb-4">
-          <h5 id="displayName" class="fw-bold mb-2 text-center"></h5>
-          <p id="displayId" class="fw-bold text-center mb-1" style="font-size:1rem;color:#444;"></p>
-          <p id="displayDob" class="text-muted small text-center mb-3" style="font-size:.85rem;"></p>
-          <div class="text-center mb-3"><span id="displayBlood" class="blood-badge"></span></div>
-          <div class="d-flex justify-content-between small text-muted border-top pt-3 mt-3">
-            <span>นัดหมายครั้งถัดไป:</span>
-            <span id="displayNextDate" class="fw-bold text-dark"></span>
-          </div>
-        </div>
-        <h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6>
-        <div class="table-history shadow-sm border mb-4"><table class="table mb-0"><tbody id="historyTableBody"></tbody></table></div>
-      </div>
-
-      <div id="forgotResult" style="display:none">
-        <div class="card result-card p-4 mb-4 text-center" style="border-top:5px solid #d63031;">
-          <div class="mb-2"><span style="font-size:3rem;">🩸</span></div>
-          <p class="text-muted small mb-1">พบข้อมูลของท่าน</p>
-          <h5 class="fw-bold mb-3">เลขผู้บริจาค Donor ID</h5>
-          <div class="info-box mb-3"><div id="forgotDonorIdText" class="donor-id-big"></div></div>
-          <p class="text-muted small mb-0">กรุณาจดเลขนี้ไว้สำหรับตรวจสอบจำนวนครั้งบริจาคในครั้งต่อไป</p>
-        </div>
-      </div>
+      <div id="notFoundCard" class="card main-card p-4 mt-2 text-center" style="display:none;border-top:5px solid #bdc3c7;"><div class="mb-2"><span style="font-size:3rem;">🔍</span></div><h5 class="fw-bold mb-3">ไม่พบข้อมูล หรือข้อมูลยืนยันตัวตนไม่ถูกต้อง</h5><p class="text-muted small mb-3">กรุณาตรวจสอบข้อมูลอีกครั้ง หรือติดต่อเจ้าหน้าที่</p><a href="tel:028396050" class="btn btn-outline-secondary w-100 mb-2">📞 โทรสอบถาม: 02-839-6050</a></div>
+      <div id="checkResult" style="display:none"><div class="card hero-card p-4 mb-4 text-center"><p class="mb-0 opacity-75">อีกกี่วัน มาบริจาคได้?</p><div id="resultDaysLeft" class="count-number"></div><p id="resultDaysLabel" class="mb-3 fw-bold">วัน</p><div style="background:rgba(255,255,255,.2);border-radius:10px;padding:10px;font-size:.9rem;border:1px dashed #fff;"><span id="resultStatus"></span></div></div><div class="card result-card p-4 mb-4"><h5 id="displayName" class="fw-bold mb-2 text-center"></h5><p id="displayId" class="fw-bold text-center mb-1" style="font-size:1rem;color:#444;"></p><p id="displayDob" class="text-muted small text-center mb-3" style="font-size:.85rem;"></p><div class="text-center mb-3"><span id="displayBlood" class="blood-badge"></span></div><div class="d-flex justify-content-between small text-muted border-top pt-3 mt-3"><span>นัดหมายครั้งถัดไป:</span><span id="displayNextDate" class="fw-bold text-dark"></span></div></div><h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6><div class="table-history shadow-sm border mb-4"><table class="table mb-0"><tbody id="historyTableBody"></tbody></table></div></div>
+      <div id="forgotResult" style="display:none"><div class="card result-card p-4 mb-4 text-center" style="border-top:5px solid #d63031;"><div class="mb-2"><span style="font-size:3rem;">🩸</span></div><p class="text-muted small mb-1">พบข้อมูลของท่าน</p><h5 class="fw-bold mb-3">เลขผู้บริจาค Donor ID</h5><div class="info-box mb-3"><div id="forgotDonorIdText" class="donor-id-big"></div></div><p class="text-muted small mb-0">กรุณาจดเลขนี้ไว้สำหรับตรวจสอบจำนวนครั้งบริจาคในครั้งต่อไป</p></div></div>
     </div>
 
     <div id="pageScreening" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
-        <h5 class="page-title flex-grow-1">คัดกรองตนเองเบื้องต้น</h5>
-      </div>
+      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">คัดกรองตนเองเบื้องต้น</h5></div>
       <div class="safe-note mb-3">แบบประเมินนี้เป็นการคัดกรองเบื้องต้นเท่านั้น การพิจารณาสุดท้ายเป็นไปตามการซักประวัติและตรวจคัดกรองโดยเจ้าหน้าที่ ณ ห้องบริจาคโลหิต</div>
-      <div id="genderCard" class="question-card mb-3">
-        <h5 class="fw-bold mb-3">เพศของท่าน</h5>
-        <div class="choice-grid mb-4">
-          <button type="button" id="genderMale" class="choice-btn" onclick="selectGender('ชาย')">👨 ชาย</button>
-          <button type="button" id="genderFemale" class="choice-btn danger-choice" onclick="selectGender('หญิง')">👩 หญิง</button>
-        </div>
-        <button type="button" class="btn btn-search w-100 p-3" onclick="beginQuestions()">เริ่มทำแบบประเมิน ›</button>
-      </div>
-      <div id="questionCard" class="question-card mb-3" style="display:none;">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="text-muted small" id="questionCounter"></span>
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetScreening()">เริ่มใหม่</button>
-        </div>
-        <div class="screening-progress mb-4"><div id="screeningProgressBar" class="screening-progress-bar"></div></div>
-        <h5 id="questionText" class="fw-bold mb-4" style="line-height:1.5;"></h5>
-        <div class="choice-grid mb-4">
-          <button type="button" id="answerYesBtn" class="choice-btn" onclick="answerQuestion('yes')">ใช่</button>
-          <button type="button" id="answerNoBtn" class="choice-btn" onclick="answerQuestion('no')">ไม่ใช่</button>
-        </div>
-        <button type="button" class="btn btn-outline-secondary w-100 p-3" onclick="previousQuestion()">‹ ย้อนกลับ</button>
-      </div>
+      <div id="genderCard" class="question-card mb-3"><h5 class="fw-bold mb-3">เพศของท่าน</h5><div class="choice-grid mb-4"><button type="button" id="genderMale" class="choice-btn" onclick="selectGender('ชาย')">👨 ชาย</button><button type="button" id="genderFemale" class="choice-btn danger-choice" onclick="selectGender('หญิง')">👩 หญิง</button></div><button type="button" class="btn btn-search w-100 p-3" onclick="beginQuestions()">เริ่มทำแบบประเมิน ›</button></div>
+      <div id="questionCard" class="question-card mb-3" style="display:none;"><div class="d-flex justify-content-between align-items-center mb-2"><span class="text-muted small" id="questionCounter"></span><button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetScreening()">เริ่มใหม่</button></div><div class="screening-progress mb-4"><div id="screeningProgressBar" class="screening-progress-bar"></div></div><h5 id="questionText" class="fw-bold mb-4" style="line-height:1.5;"></h5><div class="choice-grid mb-4"><button type="button" id="answerYesBtn" class="choice-btn" onclick="answerQuestion('yes')">ใช่</button><button type="button" id="answerNoBtn" class="choice-btn" onclick="answerQuestion('no')">ไม่ใช่</button></div><button type="button" class="btn btn-outline-secondary w-100 p-3" onclick="previousQuestion()">‹ ย้อนกลับ</button></div>
     </div>
 
     <div id="pageBooking" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
-        <h5 class="page-title flex-grow-1">จองคิวบริจาคโลหิต</h5>
-      </div>
+      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">จองคิวบริจาคโลหิต</h5></div>
       <div class="safe-note mb-3">ผ่านการคัดกรองเบื้องต้นแล้ว กรุณากรอกข้อมูลสำหรับจองคิว ระบบนี้เป็นการจองคิวเข้ารับบริการเท่านั้น ไม่ใช่การบันทึกว่าท่านได้มาบริจาคโลหิตแล้ว</div>
-      <div class="card main-card p-4 mb-4">
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">ชื่อ-นามสกุล</label>
-          <input type="text" id="bookingName" class="form-control p-3" placeholder="กรอกชื่อ-นามสกุล">
-        </div>
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">Donor ID ถ้ามี</label>
-          <input type="text" id="bookingDonorId" class="form-control p-3" placeholder="ถ้าไม่ทราบ เว้นว่างได้">
-        </div>
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์</label>
-          <input type="tel" id="bookingPhone" class="form-control p-3" placeholder="เบอร์โทรศัพท์ที่ติดต่อได้" inputmode="numeric">
-        </div>
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">วันที่ต้องการบริจาค</label>
-          <input type="date" id="bookingDate" class="form-control p-3" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;">
-        </div>
-        <label class="form-label small fw-bold text-muted">เลือกช่วงเวลา</label>
-        <div id="bookingSlotGrid" class="slot-grid mb-4"><div class="text-muted small" style="grid-column:1/-1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div></div>
-        <button type="button" id="btnConfirmBooking" class="btn btn-search w-100 p-3" onclick="submitBooking()">ยืนยันการจอง</button>
-      </div>
+      <div class="card main-card p-4 mb-4"><div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อ-นามสกุล</label><input type="text" id="bookingName" class="form-control p-3" placeholder="กรอกชื่อ-นามสกุล"></div><div class="mb-3"><label class="form-label small fw-bold text-muted">Donor ID ถ้ามี</label><input type="text" id="bookingDonorId" class="form-control p-3" placeholder="ถ้าไม่ทราบ เว้นว่างได้"></div><div class="mb-3"><label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์</label><input type="tel" id="bookingPhone" class="form-control p-3" placeholder="เบอร์โทรศัพท์ที่ติดต่อได้" inputmode="numeric"></div><div class="mb-3"><label class="form-label small fw-bold text-muted">วันที่ต้องการบริจาค</label><input type="date" id="bookingDate" class="form-control p-3" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;"></div><label class="form-label small fw-bold text-muted">เลือกช่วงเวลา</label><div id="bookingSlotGrid" class="slot-grid mb-4"><div class="text-muted small" style="grid-column:1/-1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div></div><button type="button" id="btnConfirmBooking" class="btn btn-search w-100 p-3" onclick="submitBooking()">ยืนยันการจอง</button></div>
     </div>
 
     <div id="pageManage" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
-        <h5 class="page-title flex-grow-1">ตรวจสอบ / ยกเลิกนัดหมาย</h5>
-      </div>
-
-      <div class="card main-card p-4 mb-4">
-        <div class="safe-note mb-3">
-          ใช้สำหรับตรวจสอบรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้ โดยใช้เลขที่จองและเบอร์โทรศัพท์ 4 ตัวท้าย
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">เลขที่จอง Booking ID</label>
-          <input type="text" id="manageBookingId" class="form-control text-center p-3" placeholder="เช่น BK20260504212659">
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
-          <input type="tel" id="managePhoneLast4" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 7556" inputmode="numeric">
-        </div>
-
-        <div class="d-flex gap-2">
-          <button type="button" id="btnFindBooking" class="btn btn-search flex-grow-1 p-3" onclick="findBookingUI()">🔍 ตรวจสอบนัดหมาย</button>
-          <button type="button" class="btn btn-clear-cnmi" onclick="clearManageBooking()">🔄</button>
-        </div>
-      </div>
-
-      <div id="manageNotFoundCard" class="card main-card p-4 text-center" style="display:none; border-top:5px solid #bdc3c7;">
-        <div class="mb-2"><span style="font-size:3rem;">🔍</span></div>
-        <h5 class="fw-bold mb-2">ไม่พบรายการจอง</h5>
-        <p class="text-muted small mb-0">กรุณาตรวจสอบ Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายอีกครั้ง</p>
-      </div>
-
-      <div id="manageResult" class="card result-card p-4 mb-4" style="display:none; border-top:5px solid #d63031;">
-        <h5 class="fw-bold text-center mb-3">รายละเอียดนัดหมาย</h5>
-
-        <div class="info-box mb-3">
-          <div class="text-muted small">เลขที่จอง</div>
-          <div id="manageDisplayBookingId" class="fw-bold"></div>
-        </div>
-
-        <div class="info-box mb-3">
-          <div class="text-muted small">ชื่อผู้จอง</div>
-          <div id="manageDisplayName" class="fw-bold"></div>
-        </div>
-
-        <div class="info-box mb-3">
-          <div class="text-muted small">วันที่ / เวลา</div>
-          <div id="manageDisplayDateTime" class="fw-bold"></div>
-        </div>
-
-        <div class="info-box mb-3">
-          <div class="text-muted small">สถานะ</div>
-          <div id="manageDisplayStatus" class="fw-bold"></div>
-        </div>
-
-        <button type="button" id="btnCancelBooking" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="confirmCancelBooking()">
-          ยกเลิกนัดหมายนี้
-        </button>
-      </div>
+      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">ตรวจสอบ / ยกเลิกนัดหมาย</h5></div>
+      <div class="card main-card p-4 mb-4"><div class="safe-note mb-3">ใช้สำหรับตรวจสอบรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้ โดยใช้เลขที่จองและเบอร์โทรศัพท์ 4 ตัวท้าย</div><div class="mb-3"><label class="form-label small fw-bold text-muted">เลขที่จอง Booking ID</label><input type="text" id="manageBookingId" class="form-control text-center p-3" placeholder="เช่น BK20260504212659"></div><div class="mb-3"><label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label><input type="tel" id="managePhoneLast4" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 7556" inputmode="numeric"></div><div class="d-flex gap-2"><button type="button" id="btnFindBooking" class="btn btn-search flex-grow-1 p-3" onclick="findBookingUI()">🔍 ตรวจสอบนัดหมาย</button><button type="button" class="btn btn-clear-cnmi" onclick="clearManageBooking()">🔄</button></div></div>
+      <div id="manageNotFoundCard" class="card main-card p-4 text-center" style="display:none;border-top:5px solid #bdc3c7;"><div class="mb-2"><span style="font-size:3rem;">🔍</span></div><h5 class="fw-bold mb-2">ไม่พบรายการจอง</h5><p class="text-muted small mb-0">กรุณาตรวจสอบ Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายอีกครั้ง</p></div>
+      <div id="manageResult" class="card result-card p-4 mb-4" style="display:none;border-top:5px solid #d63031;"><h5 class="fw-bold text-center mb-3">รายละเอียดนัดหมาย</h5><div class="info-box mb-3"><div class="text-muted small">เลขที่จอง</div><div id="manageDisplayBookingId" class="fw-bold"></div></div><div class="info-box mb-3"><div class="text-muted small">ชื่อผู้จอง</div><div id="manageDisplayName" class="fw-bold"></div></div><div class="info-box mb-3"><div class="text-muted small">วันที่ / เวลา</div><div id="manageDisplayDateTime" class="fw-bold"></div></div><div class="info-box mb-3"><div class="text-muted small">สถานะ</div><div id="manageDisplayStatus" class="fw-bold"></div></div><button type="button" id="btnCancelBooking" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="confirmCancelBooking()">ยกเลิกนัดหมายนี้</button></div>
     </div>
 
     <div id="pageInfo" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
-        <h5 class="page-title flex-grow-1">วันทำการ / ติดต่อ</h5>
-      </div>
-      <div class="card main-card p-4 mb-4">
-        <div class="contact-line"><div>🕘</div><div><div class="fw-bold text-danger">วันและเวลาทำการ</div><div>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</div><div class="text-muted small">กรุณาตรวจสอบวันหยุดพิเศษกับเจ้าหน้าที่อีกครั้ง</div></div></div>
-        <div class="contact-line"><div>📍</div><div><div class="fw-bold text-danger">สถานที่</div><div>ห้องบริจาคโลหิต โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์</div><div class="text-muted small">Bang Pla, Bang Phli District, Samut Prakan 10540</div></div></div>
-        <div class="contact-line"><div>☎️</div><div><div class="fw-bold text-danger">ติดต่อสอบถาม</div><a href="tel:028396050">02-839-6050</a></div></div>
-        <div class="pt-3"><a class="btn btn-search w-100 p-3" target="_blank" href="https://www.google.com/maps/search/?api=1&query=ห้องบริจาคโลหิต%20โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์">เปิดแผนที่ Google Maps</a></div>
-      </div>
+      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">วันทำการ / ติดต่อ</h5></div>
+      <div class="card main-card p-4 mb-4"><div class="contact-line"><div>🕘</div><div><div class="fw-bold text-danger">วันและเวลาทำการ</div><div>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</div><div class="text-muted small">กรุณาตรวจสอบวันหยุดพิเศษกับเจ้าหน้าที่อีกครั้ง</div></div></div><div class="contact-line"><div>📍</div><div><div class="fw-bold text-danger">สถานที่</div><div>ห้องบริจาคโลหิต โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์</div><div class="text-muted small">Bang Pla, Bang Phli District, Samut Prakan 10540</div></div></div><div class="contact-line"><div>☎️</div><div><div class="fw-bold text-danger">ติดต่อสอบถาม</div><a href="tel:028396050">02-839-6050</a></div></div><div class="pt-3"><a class="btn btn-search w-100 p-3" target="_blank" href="https://www.google.com/maps/search/?api=1&query=ห้องบริจาคโลหิต%20โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์">เปิดแผนที่ Google Maps</a></div></div>
     </div>
   </div>
 
-  <div id="appModal" class="modal-screen">
-    <div class="modal-box">
-      <div id="modalIcon" class="modal-icon">!</div>
-      <h5 id="modalTitle" class="fw-bold mb-3">แจ้งเตือน</h5>
-      <p id="modalMessage" class="modal-message mb-4"></p>
-      <div id="modalButtonArea" class="d-flex gap-2"></div>
-    </div>
-  </div>
+  <div id="appModal" class="modal-screen"><div class="modal-box"><div id="modalIcon" class="modal-icon">!</div><h5 id="modalTitle" class="fw-bold mb-3">แจ้งเตือน</h5><p id="modalMessage" class="modal-message mb-4"></p><div id="modalButtonArea" class="d-flex gap-2"></div></div></div>
 
   <script>
     var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHOgBN6OKLWaLTsxU_5rouZ4H-GlKTFeh8-EVNDakCeEv9Ih30nslAV1gqjk-mYYhjeQ/exec";
@@ -621,7 +136,6 @@
     var currentManageBooking = null;
     var modalPrimaryCallback = null;
     var modalSecondaryCallback = null;
-
     var screeningQuestions = [
       { text:"ท่านนอนหลับพักผ่อนเพียงพอหรือไม่ อย่างน้อยประมาณ 5 ชั่วโมง", passAnswer:"yes", failMessage:"ท่านควรพักผ่อนให้เพียงพอก่อนบริจาคโลหิต" },
       { text:"ภายใน 4 ชั่วโมงที่ผ่านมา ท่านได้รับประทานอาหารมาแล้วหรือไม่", passAnswer:"yes", failMessage:"แนะนำให้รับประทานอาหารก่อนมาบริจาคโลหิต และหลีกเลี่ยงอาหารไขมันสูง" },
@@ -632,544 +146,57 @@
     ];
 
     function showModal(options) {
-      var title = options.title || "แจ้งเตือน";
-      var message = options.message || "";
-      var iconText = options.iconText || "!";
-      var type = options.type || "warning";
-      var primaryText = options.primaryText || "ตกลง";
-      var secondaryText = options.secondaryText || "";
-
+      options = options || {};
       modalPrimaryCallback = typeof options.onPrimary === "function" ? options.onPrimary : null;
       modalSecondaryCallback = typeof options.onSecondary === "function" ? options.onSecondary : null;
-
-      document.getElementById("modalTitle").innerText = title;
-      document.getElementById("modalMessage").innerText = message;
-
+      document.getElementById("modalTitle").innerText = options.title || "แจ้งเตือน";
+      document.getElementById("modalMessage").innerText = options.message || "";
       var icon = document.getElementById("modalIcon");
-      icon.innerText = iconText;
+      icon.innerText = options.iconText || "!";
       icon.classList.remove("success");
-      if (type === "success") icon.classList.add("success");
-
+      if (options.type === "success") icon.classList.add("success");
       var html = "";
-      if (secondaryText) {
-        html += '<button type="button" class="btn btn-outline-secondary flex-grow-1 p-3" onclick="modalSecondaryClick()">' + secondaryText + '</button>';
-      }
-      html += '<button type="button" class="btn btn-search flex-grow-1 p-3" onclick="modalPrimaryClick()">' + primaryText + '</button>';
+      if (options.secondaryText) html += '<button type="button" class="btn btn-outline-secondary flex-grow-1 p-3" onclick="modalSecondaryClick()">' + options.secondaryText + '</button>';
+      html += '<button type="button" class="btn btn-search flex-grow-1 p-3" onclick="modalPrimaryClick()">' + (options.primaryText || "ตกลง") + '</button>';
       document.getElementById("modalButtonArea").innerHTML = html;
       document.getElementById("appModal").classList.add("show");
     }
-
-    function closeModal() {
-      document.getElementById("appModal").classList.remove("show");
-    }
-
-    function modalPrimaryClick() {
-      closeModal();
-      if (modalPrimaryCallback) {
-        var cb = modalPrimaryCallback;
-        modalPrimaryCallback = null;
-        cb();
-      }
-    }
-
-    function modalSecondaryClick() {
-      closeModal();
-      if (modalSecondaryCallback) {
-        var cb = modalSecondaryCallback;
-        modalSecondaryCallback = null;
-        cb();
-      }
-    }
-
-    function showPage(page) {
-      var pages = { home:"pageHome", check:"pageCheck", screening:"pageScreening", booking:"pageBooking", manage:"pageManage", info:"pageInfo" };
-      Object.keys(pages).forEach(function(key){
-        var el = document.getElementById(pages[key]);
-        if (el) el.classList.remove("active");
-      });
-      var target = document.getElementById(pages[page] || "pageHome");
-      if (target) target.classList.add("active");
-      window.scrollTo(0,0);
-    }
-
+    function closeModal() { document.getElementById("appModal").classList.remove("show"); }
+    function modalPrimaryClick() { closeModal(); if (modalPrimaryCallback) { var cb = modalPrimaryCallback; modalPrimaryCallback = null; cb(); } }
+    function modalSecondaryClick() { closeModal(); if (modalSecondaryCallback) { var cb = modalSecondaryCallback; modalSecondaryCallback = null; cb(); } }
+    function showPage(page) { var pages = { home:"pageHome", check:"pageCheck", screening:"pageScreening", booking:"pageBooking", manage:"pageManage", info:"pageInfo" }; Object.keys(pages).forEach(function(key){ var el = document.getElementById(pages[key]); if (el) el.classList.remove("active"); }); var target = document.getElementById(pages[page] || "pageHome"); if (target) target.classList.add("active"); window.scrollTo(0,0); }
     function onlyDigits(value) { return String(value || "").replace(/[^0-9]/g, ""); }
+    function convertDateInputToDbDob(dateValue) { if (!dateValue) return ""; var p = dateValue.split("-"); if (p.length !== 3) return ""; return p[2] + "/" + p[1] + "/" + p[0]; }
+    function callApi(params) { var query = new URLSearchParams(params).toString(); return fetch(WEB_APP_URL + "?" + query).then(function(r){ return r.json(); }); }
+    function hideAllResults() { document.getElementById("checkResult").style.display = "none"; document.getElementById("forgotResult").style.display = "none"; document.getElementById("notFoundCard").style.display = "none"; }
+    function switchMode(mode) { document.getElementById("tabCheck").classList.toggle("active", mode === "check"); document.getElementById("tabForgot").classList.toggle("active", mode !== "check"); document.getElementById("checkForm").classList.toggle("active", mode === "check"); document.getElementById("forgotForm").classList.toggle("active", mode !== "check"); hideAllResults(); }
+    function clearSearch() { document.getElementById("donorIdInput").value=""; document.getElementById("donorDobCheck").value=""; document.getElementById("phoneLast4Check").value=""; document.getElementById("idCardForgot").value=""; document.getElementById("donorDobForgot").value=""; document.getElementById("phoneLast4Forgot").value=""; document.getElementById("dobPreviewCheck").innerText="*กรุณาเลือกวันเกิดจากปฏิทิน"; document.getElementById("dobPreviewForgot").innerText="*กรุณาเลือกวันเกิดจากปฏิทิน"; hideAllResults(); }
+    function setLoading(isLoading, buttonId, normalText, loadingText) { var btn = document.getElementById(buttonId); var loader = document.getElementById("loader"); if (isLoading) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + loadingText; loader.style.display = "block"; } else { btn.disabled = false; btn.innerHTML = normalText; loader.style.display = "none"; } }
+    function getBloodStyle(group) { var g = (group || "").toUpperCase(); if (g.indexOf("AB") >= 0) return { bg:"#fff", text:"#000" }; if (g.indexOf("A") >= 0) return { bg:"#f1c40f", text:"#000" }; if (g.indexOf("B") >= 0) return { bg:"#e84393", text:"#fff" }; if (g.indexOf("O") >= 0) return { bg:"#0984e3", text:"#fff" }; return { bg:"#eee", text:"#000" }; }
 
-    function convertDateInputToDbDob(dateValue) {
-      if (!dateValue) return "";
-      var p = dateValue.split("-");
-      if (p.length !== 3) return "";
-      return p[2] + "/" + p[1] + "/" + p[0];
-    }
+    function runCheckSearch() { var donorId = document.getElementById("donorIdInput").value.trim(); var dob = convertDateInputToDbDob(document.getElementById("donorDobCheck").value); var phoneLast4 = onlyDigits(document.getElementById("phoneLast4Check").value); if (!donorId || !dob || phoneLast4.length !== 4) { showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Donor ID เลือกวันเกิด และกรอกเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" }); return; } hideAllResults(); setLoading(true, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ..."); callApi({ action:"checkDonor", donorId:donorId, dob:dob, phoneLast4:phoneLast4 }).then(function(res){ setLoading(false, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ..."); if (!res.found) { document.getElementById("notFoundCard").style.display = "block"; return; } var heroCard = document.querySelector("#checkResult .hero-card"); if (res.needsContact) { heroCard.style.background = "linear-gradient(135deg,#f39c12 0%,#e67e22 100%)"; document.getElementById("resultDaysLeft").innerText = "!"; document.getElementById("resultDaysLabel").innerText = "โปรดติดต่อเจ้าหน้าที่"; document.getElementById("resultStatus").innerText = res.message || "กรุณาติดต่อเจ้าหน้าที่"; document.getElementById("displayNextDate").innerText = "กรุณาปรึกษาเจ้าหน้าที่"; } else { heroCard.style.background = "linear-gradient(135deg,#d63031 0%,#ff7675 100%)"; var daysLeft = Number(res.daysLeft || 0); document.getElementById("resultDaysLeft").innerText = daysLeft <= 0 ? "0" : daysLeft; document.getElementById("resultDaysLabel").innerText = daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน"; document.getElementById("resultStatus").innerText = daysLeft <= 0 ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้" : "❤️ ยังไม่ถึงกำหนดบริจาคครั้งถัดไป"; document.getElementById("displayNextDate").innerText = res.nextDate || "-"; } document.getElementById("displayName").innerText = res.name ? "คุณ " + res.name : "ผู้บริจาค"; document.getElementById("displayId").innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + (res.donorId || donorId); document.getElementById("displayDob").innerText = "🎂 วันเกิด: " + (res.dob || "-"); var style = getBloodStyle(res.blood); var badge = document.getElementById("displayBlood"); badge.innerText = "หมู่เลือด: " + (res.blood || "-"); badge.style.backgroundColor = style.bg; badge.style.color = style.text; var history = Array.isArray(res.history) ? res.history : []; var html = ""; if (history.length === 0) { html = '<tr><td class="text-center text-muted small p-3">ไม่พบประวัติการบริจาค กรุณาติดต่อเจ้าหน้าที่</td></tr>'; } else { history.forEach(function(h){ var usage = h.usage || ""; var icon = usage.indexOf("ติดต่อ") >= 0 ? "⚠️" : "✅"; var cls = usage.indexOf("ติดต่อ") >= 0 ? "text-warning fw-bold" : "usage-text"; html += '<tr><td class="ps-3 fw-bold text-muted small" style="width:50px;">' + (h.count || "-") + '</td><td class="small">' + (h.date || "-") + '<br><span class="text-primary" style="font-size:.78rem">(' + (h.type || "Whole Blood") + ')</span></td><td><span class="' + cls + '" style="font-size:.85rem">' + icon + ' ' + (usage || "กำลังดำเนินการ") + '</span></td></tr>'; }); } document.getElementById("historyTableBody").innerHTML = html; document.getElementById("checkResult").style.display = "block"; }).catch(function(){ setLoading(false, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ..."); showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" }); }); }
 
-    function callApi(params) {
-      var query = new URLSearchParams(params).toString();
-      return fetch(WEB_APP_URL + "?" + query).then(function(r){ return r.json(); });
-    }
+    function runForgotSearch() { var idCard = onlyDigits(document.getElementById("idCardForgot").value); var dob = convertDateInputToDbDob(document.getElementById("donorDobForgot").value); var phoneLast4 = onlyDigits(document.getElementById("phoneLast4Forgot").value); if (idCard.length !== 13 || !dob || phoneLast4.length !== 4) { showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกเลขบัตรประชาชน 13 หลัก เลือกวันเกิด และกรอกเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" }); return; } hideAllResults(); setLoading(true, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา..."); callApi({ action:"forgotDonorId", idCard:idCard, dob:dob, phoneLast4:phoneLast4 }).then(function(res){ setLoading(false, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา..."); if (!res.found) { document.getElementById("notFoundCard").style.display = "block"; return; } document.getElementById("forgotDonorIdText").innerText = res.donorId || "-"; document.getElementById("forgotResult").style.display = "block"; }).catch(function(){ setLoading(false, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา..."); showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" }); }); }
 
-    function hideAllResults() {
-      document.getElementById("checkResult").style.display = "none";
-      document.getElementById("forgotResult").style.display = "none";
-      document.getElementById("notFoundCard").style.display = "none";
-    }
+    function startScreening() { showPage("screening"); resetScreening(); }
+    function resetScreening() { selectedGender = ""; currentQuestionIndex = 0; document.getElementById("genderCard").style.display = "block"; document.getElementById("questionCard").style.display = "none"; document.getElementById("genderMale").classList.remove("active"); document.getElementById("genderFemale").classList.remove("active"); }
+    function selectGender(gender) { selectedGender = gender; document.getElementById("genderMale").classList.toggle("active", gender === "ชาย"); document.getElementById("genderFemale").classList.toggle("active", gender === "หญิง"); }
+    function getActiveQuestions() { return screeningQuestions.filter(function(q){ return !q.gender || q.gender === selectedGender; }); }
+    function beginQuestions() { if (!selectedGender) { showModal({ title:"กรุณาเลือกเพศ", message:"กรุณาเลือกเพศก่อนเริ่มทำแบบประเมินครับ", iconText:"!" }); return; } currentQuestionIndex = 0; document.getElementById("genderCard").style.display = "none"; document.getElementById("questionCard").style.display = "block"; renderQuestion(); }
+    function renderQuestion() { var qs = getActiveQuestions(); var q = qs[currentQuestionIndex]; if (!q) { showPassAndGoBooking(); return; } document.getElementById("questionText").innerText = q.text; document.getElementById("questionCounter").innerText = "ข้อที่ " + (currentQuestionIndex + 1) + " / " + qs.length; document.getElementById("screeningProgressBar").style.width = (((currentQuestionIndex + 1) / qs.length) * 100) + "%"; document.getElementById("answerYesBtn").classList.remove("active"); document.getElementById("answerNoBtn").classList.remove("active"); }
+    function answerQuestion(answer) { var qs = getActiveQuestions(); var q = qs[currentQuestionIndex]; if (!q) return; document.getElementById("answerYesBtn").classList.toggle("active", answer === "yes"); document.getElementById("answerNoBtn").classList.toggle("active", answer === "no"); setTimeout(function(){ if (answer !== q.passAnswer) { showModal({ title:"ยังไม่แนะนำให้จองคิวในขณะนี้", message:q.failMessage, iconText:"!", secondaryText:"กลับไปแก้ไข", primaryText:"รับทราบ", onSecondary:function(){ renderQuestion(); }, onPrimary:function(){ showPage("home"); } }); return; } currentQuestionIndex++; renderQuestion(); }, 180); }
+    function previousQuestion() { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuestion(); } else { document.getElementById("genderCard").style.display = "block"; document.getElementById("questionCard").style.display = "none"; } }
+    function showPassAndGoBooking() { showModal({ title:"ผ่านการคัดกรองเบื้องต้น", message:"สามารถดำเนินการจองคิวได้ครับ", iconText:"✓", type:"success", primaryText:"ไปหน้าจองคิว", onPrimary:function(){ showPage("booking"); } }); }
+    function selectSlot(btn, slot) { if (btn.classList.contains("full")) return; selectedSlot = slot; document.querySelectorAll(".slot-btn").forEach(function(b){ b.classList.remove("active"); }); btn.classList.add("active"); }
+    function renderBookingSlots(slots) { var grid = document.getElementById("bookingSlotGrid"); selectedSlot = ""; if (!Array.isArray(slots) || slots.length === 0) { grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">ไม่พบช่วงเวลาที่เปิดให้จองในวันที่เลือก</div>'; return; } var html = ""; slots.forEach(function(slot){ var remaining = Number(slot.remaining || 0); var isFull = remaining <= 0 || slot.status === "ปิด"; var cls = isFull ? "slot-btn full" : "slot-btn"; var text = isFull ? "เต็มแล้ว" : "ว่าง " + remaining; html += '<button type="button" class="' + cls + '" onclick="selectSlot(this, \'' + slot.time + '\')">' + slot.time + '<br><span style="font-size:.78rem;">👥 ' + text + '</span></button>'; }); grid.innerHTML = html; }
+    function loadBookingSlots() { var bookingDate = document.getElementById("bookingDate").value; var grid = document.getElementById("bookingSlotGrid"); selectedSlot = ""; if (!bookingDate) { grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div>'; return; } grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">กำลังโหลดช่วงเวลาที่ว่าง...</div>'; callApi({ action:"getBookingSlots", bookingDate:bookingDate }).then(function(res){ if (!res.ok) { grid.innerHTML = '<div class="text-danger small" style="grid-column:1/-1;">' + (res.message || "ไม่สามารถโหลดช่วงเวลาได้") + '</div>'; return; } renderBookingSlots(res.slots || []); }).catch(function(){ grid.innerHTML = '<div class="text-danger small" style="grid-column:1/-1;">ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่</div>'; }); }
+    function submitBooking() { var name = document.getElementById("bookingName").value.trim(); var donorId = document.getElementById("bookingDonorId").value.trim(); var phone = onlyDigits(document.getElementById("bookingPhone").value); var bookingDate = document.getElementById("bookingDate").value; var btn = document.getElementById("btnConfirmBooking"); if (!name || phone.length < 9 || !bookingDate || !selectedSlot) { showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกชื่อ เบอร์โทร วันที่ และเลือกช่วงเวลาให้ครบครับ", iconText:"!" }); return; } btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึกการจอง...'; callApi({ action:"createBooking", name:name, donorId:donorId, phone:phone, bookingDate:bookingDate, timeSlot:selectedSlot, donationType:"Whole Blood" }).then(function(res){ btn.disabled = false; btn.innerHTML = "ยืนยันการจอง"; if (!res.ok) { showModal({ title:"ไม่สามารถจองคิวได้", message:res.message || "กรุณาลองใหม่ครับ", iconText:"!" }); loadBookingSlots(); return; } showModal({ title:"จองคิวสำเร็จครับ", message:"เลขที่จอง: " + res.bookingId + "\nวันที่: " + res.bookingDateText + "\nเวลา: " + res.timeSlot + "\n\nกรุณาบันทึกเลขที่จองไว้สำหรับตรวจสอบหรือยกเลิกนัดหมาย", iconText:"✓", type:"success" }); document.getElementById("bookingName").value = ""; document.getElementById("bookingDonorId").value = ""; document.getElementById("bookingPhone").value = ""; loadBookingSlots(); }).catch(function(){ btn.disabled = false; btn.innerHTML = "ยืนยันการจอง"; showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" }); }); }
+    function clearManageBooking() { document.getElementById("manageBookingId").value = ""; document.getElementById("managePhoneLast4").value = ""; document.getElementById("manageResult").style.display = "none"; document.getElementById("manageNotFoundCard").style.display = "none"; currentManageBooking = null; }
+    function findBookingUI() { var bookingId = document.getElementById("manageBookingId").value.trim(); var phoneLast4 = onlyDigits(document.getElementById("managePhoneLast4").value); var btn = document.getElementById("btnFindBooking"); if (!bookingId || phoneLast4.length !== 4) { showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" }); return; } document.getElementById("manageResult").style.display = "none"; document.getElementById("manageNotFoundCard").style.display = "none"; currentManageBooking = null; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังตรวจสอบ...'; callApi({ action:"findBooking", bookingId:bookingId, phoneLast4:phoneLast4 }).then(function(res){ btn.disabled = false; btn.innerHTML = "🔍 ตรวจสอบนัดหมาย"; if (!res.ok || !res.found) { document.getElementById("manageNotFoundCard").style.display = "block"; return; } currentManageBooking = { bookingId:bookingId, phoneLast4:phoneLast4, status:res.status || "" }; document.getElementById("manageDisplayBookingId").innerText = res.bookingId || "-"; document.getElementById("manageDisplayName").innerText = res.name || "-"; document.getElementById("manageDisplayDateTime").innerText = (res.bookingDateText || "-") + " เวลา " + (res.timeSlot || "-"); document.getElementById("manageDisplayStatus").innerText = res.status || "-"; document.getElementById("btnCancelBooking").style.display = (res.status || "") === "ยกเลิก" ? "none" : "block"; document.getElementById("manageResult").style.display = "block"; }).catch(function(){ btn.disabled = false; btn.innerHTML = "🔍 ตรวจสอบนัดหมาย"; showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" }); }); }
+    function confirmCancelBooking() { if (!currentManageBooking) { showModal({ title:"ไม่พบรายการจอง", message:"กรุณาตรวจสอบนัดหมายก่อนยกเลิกครับ", iconText:"!" }); return; } showModal({ title:"ยืนยันการยกเลิกนัดหมาย", message:"ต้องการยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " ใช่หรือไม่", iconText:"!", secondaryText:"กลับไปตรวจสอบ", primaryText:"ยืนยันยกเลิก", onPrimary:function(){ cancelBookingUI(); } }); }
+    function cancelBookingUI() { var btn = document.getElementById("btnCancelBooking"); btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังยกเลิก...'; callApi({ action:"cancelBooking", bookingId:currentManageBooking.bookingId, phoneLast4:currentManageBooking.phoneLast4 }).then(function(res){ btn.disabled = false; btn.innerHTML = "ยกเลิกนัดหมายนี้"; if (!res.ok) { showModal({ title:"ยกเลิกไม่สำเร็จ", message:res.message || "กรุณาลองใหม่ครับ", iconText:"!" }); return; } showModal({ title:"ยกเลิกนัดหมายสำเร็จ", message:"ระบบได้ยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " แล้ว", iconText:"✓", type:"success", onPrimary:function(){ findBookingUI(); loadBookingSlots(); } }); }).catch(function(){ btn.disabled = false; btn.innerHTML = "ยกเลิกนัดหมายนี้"; showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" }); }); }
 
-    function switchMode(mode) {
-      document.getElementById("tabCheck").classList.toggle("active", mode === "check");
-      document.getElementById("tabForgot").classList.toggle("active", mode !== "check");
-      document.getElementById("checkForm").classList.toggle("active", mode === "check");
-      document.getElementById("forgotForm").classList.toggle("active", mode !== "check");
-      hideAllResults();
-    }
-
-    function clearSearch() {
-      document.getElementById("donorIdInput").value = "";
-      document.getElementById("donorDobCheck").value = "";
-      document.getElementById("phoneLast4Check").value = "";
-      document.getElementById("idCardForgot").value = "";
-      document.getElementById("donorDobForgot").value = "";
-      document.getElementById("phoneLast4Forgot").value = "";
-      document.getElementById("dobPreviewCheck").innerText = "*กรุณาเลือกวันเกิดจากปฏิทิน";
-      document.getElementById("dobPreviewForgot").innerText = "*กรุณาเลือกวันเกิดจากปฏิทิน";
-      hideAllResults();
-    }
-
-    function setLoading(isLoading, buttonId, normalText, loadingText) {
-      var btn = document.getElementById(buttonId);
-      var loader = document.getElementById("loader");
-      if (isLoading) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + loadingText;
-        loader.style.display = "block";
-      } else {
-        btn.disabled = false;
-        btn.innerHTML = normalText;
-        loader.style.display = "none";
-      }
-    }
-
-    function getBloodStyle(group) {
-      var g = (group || "").toUpperCase();
-      if (g.indexOf("AB") >= 0) return { bg:"#fff", text:"#000" };
-      if (g.indexOf("A") >= 0) return { bg:"#f1c40f", text:"#000" };
-      if (g.indexOf("B") >= 0) return { bg:"#e84393", text:"#fff" };
-      if (g.indexOf("O") >= 0) return { bg:"#0984e3", text:"#fff" };
-      return { bg:"#eee", text:"#000" };
-    }
-
-    function runCheckSearch() {
-      var donorId = document.getElementById("donorIdInput").value.trim();
-      var dob = convertDateInputToDbDob(document.getElementById("donorDobCheck").value);
-      var phoneLast4 = onlyDigits(document.getElementById("phoneLast4Check").value);
-      if (!donorId || !dob || phoneLast4.length !== 4) {
-        showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Donor ID เลือกวันเกิด และกรอกเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
-        return;
-      }
-
-      hideAllResults();
-      setLoading(true, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ...");
-      callApi({ action:"checkDonor", donorId:donorId, dob:dob, phoneLast4:phoneLast4 }).then(function(res){
-        setLoading(false, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ...");
-        if (!res.found) {
-          document.getElementById("notFoundCard").style.display = "block";
-          return;
-        }
-
-        var heroCard = document.querySelector("#checkResult .hero-card");
-        if (res.needsContact) {
-          heroCard.style.background = "linear-gradient(135deg,#f39c12 0%,#e67e22 100%)";
-          document.getElementById("resultDaysLeft").innerText = "!";
-          document.getElementById("resultDaysLabel").innerText = "โปรดติดต่อเจ้าหน้าที่";
-          document.getElementById("resultStatus").innerText = res.message || "กรุณาติดต่อเจ้าหน้าที่";
-          document.getElementById("displayNextDate").innerText = "กรุณาปรึกษาเจ้าหน้าที่";
-        } else {
-          heroCard.style.background = "linear-gradient(135deg,#d63031 0%,#ff7675 100%)";
-          var daysLeft = Number(res.daysLeft || 0);
-          document.getElementById("resultDaysLeft").innerText = daysLeft <= 0 ? "0" : daysLeft;
-          document.getElementById("resultDaysLabel").innerText = daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
-          document.getElementById("resultStatus").innerText = daysLeft <= 0 ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้" : "❤️ ยังไม่ถึงกำหนดบริจาคครั้งถัดไป";
-          document.getElementById("displayNextDate").innerText = res.nextDate || "-";
-        }
-
-        document.getElementById("displayName").innerText = res.name ? "คุณ " + res.name : "ผู้บริจาค";
-        document.getElementById("displayId").innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + (res.donorId || donorId);
-        document.getElementById("displayDob").innerText = "🎂 วันเกิด: " + (res.dob || "-");
-        var style = getBloodStyle(res.blood);
-        var badge = document.getElementById("displayBlood");
-        badge.innerText = "หมู่เลือด: " + (res.blood || "-");
-        badge.style.backgroundColor = style.bg;
-        badge.style.color = style.text;
-
-        var history = Array.isArray(res.history) ? res.history : [];
-        var html = "";
-        if (history.length === 0) {
-          html = '<tr><td class="text-center text-muted small p-3">ไม่พบประวัติการบริจาค กรุณาติดต่อเจ้าหน้าที่</td></tr>';
-        } else {
-          history.forEach(function(h){
-            var usage = h.usage || "";
-            var icon = usage.indexOf("ติดต่อ") >= 0 ? "⚠️" : "✅";
-            var cls = usage.indexOf("ติดต่อ") >= 0 ? "text-warning fw-bold" : "usage-text";
-            html += '<tr><td class="ps-3 fw-bold text-muted small" style="width:50px;">' + (h.count || "-") + '</td><td class="small">' + (h.date || "-") + '<br><span class="text-primary" style="font-size:.78rem">(' + (h.type || "Whole Blood") + ')</span></td><td><span class="' + cls + '" style="font-size:.85rem">' + icon + ' ' + (usage || "กำลังดำเนินการ") + '</span></td></tr>';
-          });
-        }
-        document.getElementById("historyTableBody").innerHTML = html;
-        document.getElementById("checkResult").style.display = "block";
-      }).catch(function(){
-        setLoading(false, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ...");
-        showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
-      });
-    }
-
-    function runForgotSearch() {
-      var idCard = onlyDigits(document.getElementById("idCardForgot").value);
-      var dob = convertDateInputToDbDob(document.getElementById("donorDobForgot").value);
-      var phoneLast4 = onlyDigits(document.getElementById("phoneLast4Forgot").value);
-      if (idCard.length !== 13 || !dob || phoneLast4.length !== 4) {
-        showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกเลขบัตรประชาชน 13 หลัก เลือกวันเกิด และกรอกเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
-        return;
-      }
-
-      hideAllResults();
-      setLoading(true, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา...");
-      callApi({ action:"forgotDonorId", idCard:idCard, dob:dob, phoneLast4:phoneLast4 }).then(function(res){
-        setLoading(false, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา...");
-        if (!res.found) {
-          document.getElementById("notFoundCard").style.display = "block";
-          return;
-        }
-        document.getElementById("forgotDonorIdText").innerText = res.donorId || "-";
-        document.getElementById("forgotResult").style.display = "block";
-      }).catch(function(){
-        setLoading(false, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา...");
-        showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
-      });
-    }
-
-    function startScreening() {
-      showPage("screening");
-      resetScreening();
-    }
-
-    function resetScreening() {
-      selectedGender = "";
-      currentQuestionIndex = 0;
-      document.getElementById("genderCard").style.display = "block";
-      document.getElementById("questionCard").style.display = "none";
-      document.getElementById("genderMale").classList.remove("active");
-      document.getElementById("genderFemale").classList.remove("active");
-    }
-
-    function selectGender(gender) {
-      selectedGender = gender;
-      document.getElementById("genderMale").classList.toggle("active", gender === "ชาย");
-      document.getElementById("genderFemale").classList.toggle("active", gender === "หญิง");
-    }
-
-    function getActiveQuestions() {
-      return screeningQuestions.filter(function(q){ return !q.gender || q.gender === selectedGender; });
-    }
-
-    function beginQuestions() {
-      if (!selectedGender) {
-        showModal({ title:"กรุณาเลือกเพศ", message:"กรุณาเลือกเพศก่อนเริ่มทำแบบประเมินครับ", iconText:"!" });
-        return;
-      }
-      currentQuestionIndex = 0;
-      document.getElementById("genderCard").style.display = "none";
-      document.getElementById("questionCard").style.display = "block";
-      renderQuestion();
-    }
-
-    function renderQuestion() {
-      var qs = getActiveQuestions();
-      var q = qs[currentQuestionIndex];
-      if (!q) {
-        showPassAndGoBooking();
-        return;
-      }
-      document.getElementById("questionText").innerText = q.text;
-      document.getElementById("questionCounter").innerText = "ข้อที่ " + (currentQuestionIndex + 1) + " / " + qs.length;
-      document.getElementById("screeningProgressBar").style.width = (((currentQuestionIndex + 1) / qs.length) * 100) + "%";
-      document.getElementById("answerYesBtn").classList.remove("active");
-      document.getElementById("answerNoBtn").classList.remove("active");
-    }
-
-    function answerQuestion(answer) {
-      var qs = getActiveQuestions();
-      var q = qs[currentQuestionIndex];
-      if (!q) return;
-      document.getElementById("answerYesBtn").classList.toggle("active", answer === "yes");
-      document.getElementById("answerNoBtn").classList.toggle("active", answer === "no");
-      setTimeout(function(){
-        if (answer !== q.passAnswer) {
-          showModal({
-            title:"ยังไม่แนะนำให้จองคิวในขณะนี้",
-            message:q.failMessage,
-            iconText:"!",
-            secondaryText:"กลับไปแก้ไข",
-            primaryText:"รับทราบ",
-            onSecondary:function(){ renderQuestion(); },
-            onPrimary:function(){ showPage("home"); }
-          });
-          return;
-        }
-        currentQuestionIndex++;
-        renderQuestion();
-      }, 180);
-    }
-
-    function previousQuestion() {
-      if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        renderQuestion();
-      } else {
-        document.getElementById("genderCard").style.display = "block";
-        document.getElementById("questionCard").style.display = "none";
-      }
-    }
-
-    function showPassAndGoBooking() {
-      showModal({
-        title:"ผ่านการคัดกรองเบื้องต้น",
-        message:"สามารถดำเนินการจองคิวได้ครับ",
-        iconText:"✓",
-        type:"success",
-        primaryText:"ไปหน้าจองคิว",
-        onPrimary:function(){ showPage("booking"); }
-      });
-    }
-
-    function selectSlot(btn, slot) {
-      if (btn.classList.contains("full")) return;
-      selectedSlot = slot;
-      document.querySelectorAll(".slot-btn").forEach(function(b){ b.classList.remove("active"); });
-      btn.classList.add("active");
-    }
-
-    function renderBookingSlots(slots) {
-      var grid = document.getElementById("bookingSlotGrid");
-      selectedSlot = "";
-      if (!Array.isArray(slots) || slots.length === 0) {
-        grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">ไม่พบช่วงเวลาที่เปิดให้จองในวันที่เลือก</div>';
-        return;
-      }
-      var html = "";
-      slots.forEach(function(slot){
-        var remaining = Number(slot.remaining || 0);
-        var isFull = remaining <= 0 || slot.status === "ปิด";
-        var cls = isFull ? "slot-btn full" : "slot-btn";
-        var text = isFull ? "เต็มแล้ว" : "ว่าง " + remaining;
-        html += '<button type="button" class="' + cls + '" onclick="selectSlot(this, \'' + slot.time + '\')">' + slot.time + '<br><span style="font-size:.78rem;">👥 ' + text + '</span></button>';
-      });
-      grid.innerHTML = html;
-    }
-
-    function loadBookingSlots() {
-      var bookingDate = document.getElementById("bookingDate").value;
-      var grid = document.getElementById("bookingSlotGrid");
-      selectedSlot = "";
-      if (!bookingDate) {
-        grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div>';
-        return;
-      }
-      grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">กำลังโหลดช่วงเวลาที่ว่าง...</div>';
-      callApi({ action:"getBookingSlots", bookingDate:bookingDate }).then(function(res){
-        if (!res.ok) {
-          grid.innerHTML = '<div class="text-danger small" style="grid-column:1/-1;">' + (res.message || "ไม่สามารถโหลดช่วงเวลาได้") + '</div>';
-          return;
-        }
-        renderBookingSlots(res.slots || []);
-      }).catch(function(){
-        grid.innerHTML = '<div class="text-danger small" style="grid-column:1/-1;">ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่</div>';
-      });
-    }
-
-    function submitBooking() {
-      var name = document.getElementById("bookingName").value.trim();
-      var donorId = document.getElementById("bookingDonorId").value.trim();
-      var phone = onlyDigits(document.getElementById("bookingPhone").value);
-      var bookingDate = document.getElementById("bookingDate").value;
-      var btn = document.getElementById("btnConfirmBooking");
-      if (!name || phone.length < 9 || !bookingDate || !selectedSlot) {
-        showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกชื่อ เบอร์โทร วันที่ และเลือกช่วงเวลาให้ครบครับ", iconText:"!" });
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึกการจอง...';
-      callApi({ action:"createBooking", name:name, donorId:donorId, phone:phone, bookingDate:bookingDate, timeSlot:selectedSlot, donationType:"Whole Blood" }).then(function(res){
-        btn.disabled = false;
-        btn.innerHTML = "ยืนยันการจอง";
-        if (!res.ok) {
-          showModal({ title:"ไม่สามารถจองคิวได้", message:res.message || "กรุณาลองใหม่ครับ", iconText:"!" });
-          loadBookingSlots();
-          return;
-        }
-        showModal({
-          title:"จองคิวสำเร็จครับ",
-          message:"เลขที่จอง: " + res.bookingId + "
-วันที่: " + res.bookingDateText + "
-เวลา: " + res.timeSlot + "
-
-กรุณาบันทึกเลขที่จองไว้สำหรับตรวจสอบหรือยกเลิกนัดหมาย",
-          iconText:"✓",
-          type:"success"
-        });
-        document.getElementById("bookingName").value = "";
-        document.getElementById("bookingDonorId").value = "";
-        document.getElementById("bookingPhone").value = "";
-        loadBookingSlots();
-      }).catch(function(){
-        btn.disabled = false;
-        btn.innerHTML = "ยืนยันการจอง";
-        showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
-      });
-    }
-
-    function clearManageBooking() {
-      document.getElementById("manageBookingId").value = "";
-      document.getElementById("managePhoneLast4").value = "";
-      document.getElementById("manageResult").style.display = "none";
-      document.getElementById("manageNotFoundCard").style.display = "none";
-      currentManageBooking = null;
-    }
-
-    function findBookingUI() {
-      var bookingId = document.getElementById("manageBookingId").value.trim();
-      var phoneLast4 = onlyDigits(document.getElementById("managePhoneLast4").value);
-      var btn = document.getElementById("btnFindBooking");
-
-      if (!bookingId || phoneLast4.length !== 4) {
-        showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
-        return;
-      }
-
-      document.getElementById("manageResult").style.display = "none";
-      document.getElementById("manageNotFoundCard").style.display = "none";
-      currentManageBooking = null;
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังตรวจสอบ...';
-
-      callApi({ action:"findBooking", bookingId:bookingId, phoneLast4:phoneLast4 }).then(function(res){
-        btn.disabled = false;
-        btn.innerHTML = "🔍 ตรวจสอบนัดหมาย";
-
-        if (!res.ok || !res.found) {
-          document.getElementById("manageNotFoundCard").style.display = "block";
-          return;
-        }
-
-        currentManageBooking = {
-          bookingId: bookingId,
-          phoneLast4: phoneLast4,
-          status: res.status || ""
-        };
-
-        document.getElementById("manageDisplayBookingId").innerText = res.bookingId || "-";
-        document.getElementById("manageDisplayName").innerText = res.name || "-";
-        document.getElementById("manageDisplayDateTime").innerText = (res.bookingDateText || "-") + " เวลา " + (res.timeSlot || "-");
-        document.getElementById("manageDisplayStatus").innerText = res.status || "-";
-
-        var cancelBtn = document.getElementById("btnCancelBooking");
-        if ((res.status || "") === "ยกเลิก") {
-          cancelBtn.style.display = "none";
-        } else {
-          cancelBtn.style.display = "block";
-        }
-
-        document.getElementById("manageResult").style.display = "block";
-      }).catch(function(){
-        btn.disabled = false;
-        btn.innerHTML = "🔍 ตรวจสอบนัดหมาย";
-        showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
-      });
-    }
-
-    function confirmCancelBooking() {
-      if (!currentManageBooking) {
-        showModal({ title:"ไม่พบรายการจอง", message:"กรุณาตรวจสอบนัดหมายก่อนยกเลิกครับ", iconText:"!" });
-        return;
-      }
-
-      showModal({
-        title:"ยืนยันการยกเลิกนัดหมาย",
-        message:"ต้องการยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " ใช่หรือไม่",
-        iconText:"!",
-        secondaryText:"กลับไปตรวจสอบ",
-        primaryText:"ยืนยันยกเลิก",
-        onPrimary:function(){ cancelBookingUI(); }
-      });
-    }
-
-    function cancelBookingUI() {
-      var btn = document.getElementById("btnCancelBooking");
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังยกเลิก...';
-
-      callApi({
-        action:"cancelBooking",
-        bookingId: currentManageBooking.bookingId,
-        phoneLast4: currentManageBooking.phoneLast4
-      }).then(function(res){
-        btn.disabled = false;
-        btn.innerHTML = "ยกเลิกนัดหมายนี้";
-
-        if (!res.ok) {
-          showModal({ title:"ยกเลิกไม่สำเร็จ", message:res.message || "กรุณาลองใหม่ครับ", iconText:"!" });
-          return;
-        }
-
-        showModal({
-          title:"ยกเลิกนัดหมายสำเร็จ",
-          message:"ระบบได้ยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " แล้ว",
-          iconText:"✓",
-          type:"success",
-          onPrimary:function(){
-            findBookingUI();
-            loadBookingSlots();
-          }
-        });
-      }).catch(function(){
-        btn.disabled = false;
-        btn.innerHTML = "ยกเลิกนัดหมายนี้";
-        showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", function(){
-      var today = new Date().toISOString().split("T")[0];
-      ["donorDobCheck", "donorDobForgot"].forEach(function(id){
-        var input = document.getElementById(id);
-        if (!input) return;
-        input.max = today;
-        input.addEventListener("change", function(){
-          var dbDob = convertDateInputToDbDob(input.value);
-          if (id === "donorDobCheck") document.getElementById("dobPreviewCheck").innerText = dbDob ? "วันที่ที่เลือก: " + dbDob : "*กรุณาเลือกวันเกิดจากปฏิทิน";
-          if (id === "donorDobForgot") document.getElementById("dobPreviewForgot").innerText = dbDob ? "วันที่ที่เลือก: " + dbDob : "*กรุณาเลือกวันเกิดจากปฏิทิน";
-        });
-      });
-
-      ["phoneLast4Check", "phoneLast4Forgot"].forEach(function(id){
-        var input = document.getElementById(id);
-        if (!input) return;
-        input.addEventListener("input", function(){ input.value = onlyDigits(input.value).slice(0,4); });
-      });
-
-      var idCardForgot = document.getElementById("idCardForgot");
-      if (idCardForgot) {
-        idCardForgot.addEventListener("input", function(){ idCardForgot.value = onlyDigits(idCardForgot.value).slice(0,13); });
-      }
-
-      var managePhoneLast4 = document.getElementById("managePhoneLast4");
-      if (managePhoneLast4) {
-        managePhoneLast4.addEventListener("input", function(){ managePhoneLast4.value = onlyDigits(managePhoneLast4.value).slice(0,4); });
-      }
-
-      var bookingDate = document.getElementById("bookingDate");
-      if (bookingDate) {
-        bookingDate.min = today;
-        bookingDate.addEventListener("change", loadBookingSlots);
-      }
-    });
+    document.addEventListener("DOMContentLoaded", function(){ var today = new Date().toISOString().split("T")[0]; ["donorDobCheck", "donorDobForgot"].forEach(function(id){ var input = document.getElementById(id); if (!input) return; input.max = today; input.addEventListener("change", function(){ var dbDob = convertDateInputToDbDob(input.value); if (id === "donorDobCheck") document.getElementById("dobPreviewCheck").innerText = dbDob ? "วันที่ที่เลือก: " + dbDob : "*กรุณาเลือกวันเกิดจากปฏิทิน"; if (id === "donorDobForgot") document.getElementById("dobPreviewForgot").innerText = dbDob ? "วันที่ที่เลือก: " + dbDob : "*กรุณาเลือกวันเกิดจากปฏิทิน"; }); }); ["phoneLast4Check", "phoneLast4Forgot"].forEach(function(id){ var input = document.getElementById(id); if (!input) return; input.addEventListener("input", function(){ input.value = onlyDigits(input.value).slice(0,4); }); }); var idCardForgot = document.getElementById("idCardForgot"); if (idCardForgot) idCardForgot.addEventListener("input", function(){ idCardForgot.value = onlyDigits(idCardForgot.value).slice(0,13); }); var managePhoneLast4 = document.getElementById("managePhoneLast4"); if (managePhoneLast4) managePhoneLast4.addEventListener("input", function(){ managePhoneLast4.value = onlyDigits(managePhoneLast4.value).slice(0,4); }); var bookingDate = document.getElementById("bookingDate"); if (bookingDate) { bookingDate.min = today; bookingDate.addEventListener("change", loadBookingSlots); } });
   </script>
 </body>
 </html>
