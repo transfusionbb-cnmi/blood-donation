@@ -49,6 +49,13 @@
     .modal-screen.show { display:flex; }
     .modal-box { max-width:420px; width:100%; background:#fff; border-radius:22px; padding:24px; text-align:center; box-shadow:0 20px 45px rgba(0,0,0,.2); }
     .warn-circle { width:84px; height:84px; border-radius:50%; background:#ffc107; color:#fff; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:3rem; font-weight:700; }
+    .app-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;}
+    .app-modal-backdrop.show { display: flex;}
+    .app-modal-box { max-width: 420px; width: 100%; background: white; border-radius: 24px; padding: 26px; text-align: center; box-shadow: 0 20px 45px rgba(0,0,0,0.22); }
+    .app-modal-icon { width: 84px; height: 84px; border-radius: 50%; background: #ffc107; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 3rem; font-weight: 700;}
+    .app-modal-icon.success { background: #27ae60;}
+    .app-modal-message { line-height: 1.7; white-space: pre-line; }
+    
   </style>
 </head>
 
@@ -140,11 +147,24 @@
 
   <div id="screeningModal" class="modal-screen"><div class="modal-box"><div class="warn-circle">!</div><h5 class="fw-bold mb-3">ยังไม่แนะนำให้จองคิวในขณะนี้</h5><p id="modalMessage" class="mb-4" style="line-height:1.6;"></p><div class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary flex-grow-1 p-3" onclick="closeScreeningModal()">กลับไปแก้ไข</button><button type="button" class="btn btn-search flex-grow-1 p-3" onclick="acknowledgeScreeningModal()">รับทราบ</button></div></div></div>
 
+  <div id="appModal" class="custom-modal-backdrop">
+    <div class="custom-modal">
+      <div id="appModalIcon" class="warning-circle">!</div>
+      <h5 id="appModalTitle" class="fw-bold mb-3">แจ้งเตือน</h5>
+      <p id="appModalMessage" class="mb-4" style="line-height:1.6;"></p>
+      <button class="btn btn-search w-100 p-3" onclick="closeAppModal()">
+        ตกลง
+      </button>
+    </div>
+  </div>
+  
   <script>
     var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHOgBN6OKLWaLTsxU_5rouZ4H-GlKTFeh8-EVNDakCeEv9Ih30nslAV1gqjk-mYYhjeQ/exec";
     var selectedGender = "";
     var currentQuestionIndex = 0;
     var selectedSlot = "";
+    var appModalCallback = null; 
+    function showAppModal(title, message, iconText, type, callback) { var modal = document.getElementById("appModal"); var icon = document.getElementById("appModalIcon"); document.getElementById("appModalTitle").innerText = title || "แจ้งเตือน"; document.getElementById("appModalMessage").innerText = message || ""; icon.innerText = iconText || "!"; icon.classList.remove("success"); if (type === "success") { icon.classList.add("success"); } appModalCallback = typeof callback === "function" ? callback : null; modal.classList.add("show");} function closeAppModal() { document.getElementById("appModal").classList.remove("show"); if (appModalCallback) {     var cb = appModalCallback; appModalCallback = null; cb(); } }
     var screeningQuestions = [
       { text:"ท่านนอนหลับพักผ่อนเพียงพอหรือไม่ อย่างน้อยประมาณ 5 ชั่วโมง", passAnswer:"yes", failMessage:"ท่านควรพักผ่อนให้เพียงพอก่อนบริจาคโลหิต" },
       { text:"ภายใน 4 ชั่วโมงที่ผ่านมา ท่านได้รับประทานอาหารมาแล้วหรือไม่", passAnswer:"yes", failMessage:"แนะนำให้รับประทานอาหารก่อนมาบริจาคโลหิต และหลีกเลี่ยงอาหารไขมันสูง" },
@@ -266,12 +286,12 @@
     function showScreeningModal(message) { document.getElementById("modalMessage").innerText = message; document.getElementById("screeningModal").classList.add("show"); }
     function closeScreeningModal() { document.getElementById("screeningModal").classList.remove("show"); renderQuestion(); }
     function acknowledgeScreeningModal() { document.getElementById("screeningModal").classList.remove("show"); showPage("home"); }
-    function showPassAndGoBooking() { alert("ผ่านการคัดกรองเบื้องต้น สามารถดำเนินการจองคิวได้ครับ"); showPage("booking"); }
+    function showPassAndGoBooking() { showAppModal("ผ่านการคัดกรองเบื้องต้น","สามารถดำเนินการจองคิวได้ครับ","✓", function () { showPage("booking"); });}
 
     function selectSlot(btn, slot) { if (btn.classList.contains("full")) return; selectedSlot = slot; document.querySelectorAll(".slot-btn").forEach(function(b){ b.classList.remove("active"); }); btn.classList.add("active"); }
     function renderBookingSlots(slots) { var grid = document.getElementById("bookingSlotGrid"); selectedSlot = ""; if (!Array.isArray(slots) || slots.length === 0) { grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">ไม่พบช่วงเวลาที่เปิดให้จองในวันที่เลือก</div>'; return; } var html = ""; slots.forEach(function(slot){ var remaining = Number(slot.remaining || 0); var isFull = remaining <= 0 || slot.status === "ปิด"; var cls = isFull ? "slot-btn full" : "slot-btn"; var text = isFull ? "เต็มแล้ว" : "ว่าง " + remaining; html += '<button type="button" class="' + cls + '" onclick="selectSlot(this, \'' + slot.time + '\')">' + slot.time + '<br><span style="font-size:.78rem;">👥 ' + text + '</span></button>'; }); grid.innerHTML = html; }
     function loadBookingSlots() { var bookingDate = document.getElementById("bookingDate").value; var grid = document.getElementById("bookingSlotGrid"); selectedSlot = ""; if (!bookingDate) { grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div>'; return; } grid.innerHTML = '<div class="text-muted small" style="grid-column:1/-1;">กำลังโหลดช่วงเวลาที่ว่าง...</div>'; callApi({ action:"getBookingSlots", bookingDate:bookingDate }).then(function(res){ if (!res.ok) { grid.innerHTML = '<div class="text-danger small" style="grid-column:1/-1;">' + (res.message || "ไม่สามารถโหลดช่วงเวลาได้") + '</div>'; return; } renderBookingSlots(res.slots || []); }).catch(function(){ grid.innerHTML = '<div class="text-danger small" style="grid-column:1/-1;">ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่</div>'; }); }
-    function submitBooking() { var name = document.getElementById("bookingName").value.trim(); var donorId = document.getElementById("bookingDonorId").value.trim(); var phone = onlyDigits(document.getElementById("bookingPhone").value); var bookingDate = document.getElementById("bookingDate").value; var btn = document.getElementById("btnConfirmBooking"); if (!name || phone.length < 9 || !bookingDate || !selectedSlot) { alert("กรุณากรอกชื่อ เบอร์โทร วันที่ และเลือกช่วงเวลาให้ครบครับ"); return; } btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึกการจอง...'; callApi({ action:"createBooking", name:name, donorId:donorId, phone:phone, bookingDate:bookingDate, timeSlot:selectedSlot, donationType:"Whole Blood" }).then(function(res){ btn.disabled = false; btn.innerHTML = "ยืนยันการจอง"; if (!res.ok) { alert(res.message || "ไม่สามารถจองคิวได้ กรุณาลองใหม่ครับ"); loadBookingSlots(); return; } alert("จองคิวสำเร็จครับ\nเลขที่จอง: " + res.bookingId + "\nวันที่: " + res.bookingDateText + "\nเวลา: " + res.timeSlot); document.getElementById("bookingName").value = ""; document.getElementById("bookingDonorId").value = ""; document.getElementById("bookingPhone").value = ""; loadBookingSlots(); }).catch(function(){ btn.disabled = false; btn.innerHTML = "ยืนยันการจอง"; alert("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ"); }); }
+    function submitBooking() { var name = document.getElementById("bookingName").value.trim(); var donorId = document.getElementById("bookingDonorId").value.trim(); var phone = onlyDigits(document.getElementById("bookingPhone").value); var bookingDate = document.getElementById("bookingDate").value; var btn = document.getElementById("btnConfirmBooking"); if (!name || phone.length < 9 || !bookingDate || !selectedSlot) { alert("กรุณากรอกชื่อ เบอร์โทร วันที่ และเลือกช่วงเวลาให้ครบครับ"); return; } btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึกการจอง...'; callApi({ action:"createBooking", name:name, donorId:donorId, phone:phone, bookingDate:bookingDate, timeSlot:selectedSlot, donationType:"Whole Blood" }).then(function(res){ btn.disabled = false; btn.innerHTML = "ยืนยันการจอง"; if (!res.ok) { alert(res.message || "ไม่สามารถจองคิวได้ กรุณาลองใหม่ครับ"); loadBookingSlots(); return; } showAppModal("จองคิวสำเร็จครับ","เลขที่จอง: " + res.bookingId + "\nวันที่: " + res.bookingDateText + "\nเวลา: " + res.timeSlot,"✓"); document.getElementById("bookingName").value = ""; document.getElementById("bookingDonorId").value = ""; document.getElementById("bookingPhone").value = ""; loadBookingSlots(); }).catch(function(){ btn.disabled = false; btn.innerHTML = "ยืนยันการจอง"; alert("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ"); }); }
 
     document.addEventListener("DOMContentLoaded", function(){ var today = new Date().toISOString().split("T")[0]; ["donorDobCheck","donorDobForgot"].forEach(function(id){ var input = document.getElementById(id); if (!input) return; input.max = today; input.addEventListener("change", function(){ var dbDob = convertDateInputToDbDob(input.value); if (id === "donorDobCheck") document.getElementById("dobPreviewCheck").innerText = dbDob ? "วันที่ที่เลือก: " + dbDob : "*กรุณาเลือกวันเกิดจากปฏิทิน"; if (id === "donorDobForgot") document.getElementById("dobPreviewForgot").innerText = dbDob ? "วันที่ที่เลือก: " + dbDob : "*กรุณาเลือกวันเกิดจากปฏิทิน"; }); }); ["phoneLast4Check","phoneLast4Forgot"].forEach(function(id){ var input = document.getElementById(id); if (!input) return; input.addEventListener("input", function(){ input.value = onlyDigits(input.value).slice(0,4); }); }); var idCardForgot = document.getElementById("idCardForgot"); if (idCardForgot) idCardForgot.addEventListener("input", function(){ idCardForgot.value = onlyDigits(idCardForgot.value).slice(0,13); }); var bookingDate = document.getElementById("bookingDate"); if (bookingDate) { bookingDate.min = today; bookingDate.addEventListener("change", loadBookingSlots); } });
   </script>
