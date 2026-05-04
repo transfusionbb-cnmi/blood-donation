@@ -15,6 +15,9 @@
       color: #2d3436;
     }
 
+    .app-page { display: none; }
+    .app-page.active { display: block; }
+
     .main-card {
       background: white;
       border: none;
@@ -70,9 +73,7 @@
       color: #b32526;
     }
 
-    .fade-in-up {
-      animation: fadeInUp 0.6s ease-out;
-    }
+    .fade-in-up { animation: fadeInUp 0.6s ease-out; }
 
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(20px); }
@@ -106,13 +107,8 @@
       box-shadow: 0 4px 12px rgba(214, 48, 49, 0.18);
     }
 
-    .form-section {
-      display: none;
-    }
-
-    .form-section.active {
-      display: block;
-    }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
 
     .safe-note {
       background: #fff8e1;
@@ -124,9 +120,7 @@
       line-height: 1.5;
     }
 
-    .form-control {
-      font-size: 1.05rem;
-    }
+    .form-control { font-size: 1.05rem; }
 
     .result-card {
       border-radius: 22px;
@@ -179,6 +173,166 @@
       color: #27ae60;
       font-weight: 700;
     }
+
+    .home-menu-card {
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-radius: 20px;
+      background: white;
+      padding: 18px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transition: 0.2s;
+    }
+
+    .home-menu-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(214, 48, 49, 0.10);
+    }
+
+    .home-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.45rem;
+      background: #fff1f1;
+      color: #d63031;
+      flex-shrink: 0;
+    }
+
+    .page-title {
+      font-weight: 700;
+      color: #d63031;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .btn-back-home {
+      border: 1px solid #ddd;
+      background: white;
+      color: #555;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 600;
+    }
+
+    .question-card {
+      background: white;
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .choice-btn {
+      border: 2px solid #ddd;
+      background: white;
+      border-radius: 16px;
+      padding: 14px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      transition: 0.2s;
+    }
+
+    .choice-btn.active {
+      background: #00a085;
+      border-color: #00a085;
+      color: white;
+    }
+
+    .choice-btn.danger-choice.active {
+      background: #d63031;
+      border-color: #d63031;
+      color: white;
+    }
+
+    .screening-progress {
+      height: 8px;
+      border-radius: 999px;
+      background: #eee;
+      overflow: hidden;
+    }
+
+    .screening-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, #d63031 0%, #ff7675 100%);
+      transition: 0.3s;
+    }
+
+    .custom-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .custom-modal-backdrop.show { display: flex; }
+
+    .custom-modal {
+      max-width: 420px;
+      width: 100%;
+      background: white;
+      border-radius: 22px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+    }
+
+    .warning-circle {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: #ffc107;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 3rem;
+      font-weight: 700;
+    }
+
+    .slot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .slot-btn {
+      border: 1.5px solid #27ae60;
+      color: #159947;
+      background: white;
+      border-radius: 14px;
+      padding: 12px 8px;
+      font-weight: 700;
+      transition: 0.2s;
+    }
+
+    .slot-btn.active {
+      background: #27ae60;
+      color: white;
+    }
+
+    .contact-line {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
   </style>
 </head>
 
@@ -190,216 +344,364 @@
       <p class="text-muted small">ห้องรับบริจาคโลหิต รามาธิบดีจักรีนฤบดินทร</p>
     </div>
 
-    <div class="card main-card p-3 mb-4 shadow-sm">
-
-      <div class="mode-tabs mb-3">
-        <button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')">
-          เช็กข้อมูลปกติ
-        </button>
-        <button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')">
-          ลืม Donor ID
-        </button>
-      </div>
-
-      <!-- โหมดที่ 1: เช็กข้อมูลปกติ -->
-      <div id="checkForm" class="form-section active">
-        <div class="safe-note mb-3">
-          ใช้สำหรับตรวจสอบจำนวนครั้งบริจาค และวันที่สามารถบริจาคครั้งถัดไป
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">เลขผู้บริจาค Donor ID</label>
-          <input
-            type="text"
-            id="donorIdInput"
-            class="form-control text-center p-3"
-            style="border-radius:15px; border: 2px solid #eee;"
-            placeholder="กรอก Donor ID"
-            inputmode="numeric"
-          >
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-          <input
-            type="date"
-            id="donorDobCheck"
-            class="form-control text-center p-3"
-            style="border-radius:15px; border: 2px solid #eee; cursor:pointer;"
-            inputmode="none"
-            onkeydown="return false;"
-            onpaste="return false;"
-            ondrop="return false;"
-          >
-          <div id="dobPreviewCheck" class="form-text" style="font-size: 0.7rem;">
-            *กรุณาเลือกวันเกิดจากปฏิทิน
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
-          <input
-            type="tel"
-            id="phoneLast4Check"
-            class="form-control text-center p-3"
-            maxlength="4"
-            style="border-radius:15px; border: 2px solid #eee;"
-            placeholder="เช่น 6050"
-            inputmode="numeric"
-          >
-        </div>
-
-        <div class="d-flex gap-2 mb-2">
-          <button onclick="runCheckSearch()" id="btnCheckSearch" class="btn btn-search flex-grow-1 p-3 shadow-sm">
-            🔍 ตรวจสอบข้อมูล
-          </button>
-          <button onclick="clearSearch()" class="btn btn-clear-cnmi shadow-sm" title="ล้างข้อมูล">🔄</button>
-        </div>
-      </div>
-
-      <!-- โหมดที่ 2: ลืม Donor ID -->
-      <div id="forgotForm" class="form-section">
-        <div class="safe-note mb-3">
-          ใช้สำหรับค้นหาเลขผู้บริจาคเท่านั้น ระบบจะแสดงเฉพาะ Donor ID
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">เลขบัตรประชาชน 13 หลัก</label>
-          <input
-            type="tel"
-            id="idCardForgot"
-            class="form-control text-center p-3"
-            maxlength="13"
-            style="border-radius:15px; border: 2px solid #eee;"
-            placeholder="เลขบัตรประชาชน 13 หลัก"
-            inputmode="numeric"
-          >
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-          <input
-            type="date"
-            id="donorDobForgot"
-            class="form-control text-center p-3"
-            style="border-radius:15px; border: 2px solid #eee; cursor:pointer;"
-            inputmode="none"
-            onkeydown="return false;"
-            onpaste="return false;"
-            ondrop="return false;"
-          >
-          <div id="dobPreviewForgot" class="form-text" style="font-size: 0.7rem;">
-            *กรุณาเลือกวันเกิดจากปฏิทิน
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
-          <input
-            type="tel"
-            id="phoneLast4Forgot"
-            class="form-control text-center p-3"
-            maxlength="4"
-            style="border-radius:15px; border: 2px solid #eee;"
-            placeholder="เช่น 6050"
-            inputmode="numeric"
-          >
-        </div>
-
-        <div class="d-flex gap-2 mb-2">
-          <button onclick="runForgotSearch()" id="btnForgotSearch" class="btn btn-search flex-grow-1 p-3 shadow-sm">
-            🔎 ค้นหา Donor ID
-          </button>
-          <button onclick="clearSearch()" class="btn btn-clear-cnmi shadow-sm" title="ล้างข้อมูล">🔄</button>
-        </div>
-      </div>
-
-      <div id="loader" class="text-center mt-3" style="display:none">
-        <div class="spinner-border text-danger spinner-border-sm"></div>
-      </div>
-    </div>
-
-    <div id="notFoundCard" class="card main-card p-4 mt-2 text-center" style="display:none; border-top: 5px solid #bdc3c7;">
-      <div class="mb-2"><span style="font-size: 3rem;">🔍</span></div>
-      <h5 class="fw-bold mb-3">ไม่พบข้อมูล หรือข้อมูลยืนยันตัวตนไม่ถูกต้อง</h5>
-      <p class="text-muted small mb-3">กรุณาตรวจสอบข้อมูลอีกครั้ง หรือติดต่อเจ้าหน้าที่</p>
-      <a href="tel:028396050" class="btn btn-outline-secondary w-100 mb-2">📞 โทรสอบถาม: 02-839-6050</a>
-    </div>
-
-    <!-- ผลลัพธ์โหมดเช็กข้อมูลปกติ -->
-    <div id="checkResult" style="display:none" class="fade-in-up">
-
+    <!-- หน้าแรก -->
+    <div id="pageHome" class="app-page active fade-in-up">
       <div class="card hero-card p-4 mb-4 text-center">
-        <p class="mb-0 opacity-75">อีกกี่วัน มาบริจาคได้?</p>
-        <div id="resultDaysLeft" class="count-number"></div>
-        <p id="resultDaysLabel" class="mb-3 fw-bold">วัน</p>
-
-        <div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; font-size: 0.9rem; border: 1px dashed white;">
-          <span id="resultStatus"></span>
-        </div>
+        <p class="mb-1 opacity-75">ยินดีต้อนรับ</p>
+        <h4 class="fw-bold mb-2">ห้องบริจาคโลหิต CNMI</h4>
+        <p class="mb-0 small">ตรวจสอบข้อมูล คัดกรองเบื้องต้น และจองคิวในลิงก์เดียว</p>
       </div>
 
-      <div class="card result-card p-4 mb-4">
-        <h5 id="displayName" class="fw-bold mb-2 text-center"></h5>
-
-        <p id="displayId" class="fw-bold text-center mb-1" style="font-size: 1rem; color: #444;"></p>
-
-        <p id="displayDob" class="text-muted small text-center mb-3" style="font-size: 0.85rem;"></p>
-
-        <div class="text-center mb-3">
-          <span id="displayBlood" class="blood-badge"></span>
+      <button class="home-menu-card mb-3" onclick="showPage('check')">
+        <div class="d-flex gap-3 align-items-center">
+          <div class="home-icon">🩸</div>
+          <div class="flex-grow-1">
+            <div class="fw-bold">ตรวจสอบข้อมูลผู้บริจาค</div>
+            <div class="text-muted small">ดูจำนวนครั้ง สถานะ และประวัติบริจาค</div>
+          </div>
+          <div class="text-danger fw-bold">›</div>
         </div>
+      </button>
 
-        <div class="d-flex justify-content-between small text-muted border-top pt-3 mt-3">
-          <span>นัดหมายครั้งถัดไป:</span>
-          <span id="displayNextDate" class="fw-bold text-dark"></span>
+      <button class="home-menu-card mb-3" onclick="startScreening()">
+        <div class="d-flex gap-3 align-items-center">
+          <div class="home-icon">✅</div>
+          <div class="flex-grow-1">
+            <div class="fw-bold">คัดกรองตนเอง / จองคิว</div>
+            <div class="text-muted small">ประเมินความพร้อมเบื้องต้นก่อนจองคิว</div>
+          </div>
+          <div class="text-danger fw-bold">›</div>
         </div>
-      </div>
+      </button>
 
-      <h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6>
-
-      <div class="table-history shadow-sm border mb-4">
-        <table class="table mb-0">
-          <tbody id="historyTableBody"></tbody>
-        </table>
-      </div>
-      
+      <button class="home-menu-card mb-3" onclick="showPage('info')">
+        <div class="d-flex gap-3 align-items-center">
+          <div class="home-icon">📍</div>
+          <div class="flex-grow-1">
+            <div class="fw-bold">วันทำการ / สถานที่ / ติดต่อ</div>
+            <div class="text-muted small">เวลาเปิดทำการ เบอร์โทร และแผนที่</div>
+          </div>
+          <div class="text-danger fw-bold">›</div>
+        </div>
+      </button>
     </div>
 
-    <!-- ผลลัพธ์โหมดลืม Donor ID -->
-    <div id="forgotResult" style="display:none" class="fade-in-up">
-      <div class="card result-card p-4 mb-4 text-center" style="border-top: 5px solid #d63031;">
-        <div class="mb-2"><span style="font-size: 3rem;">🩸</span></div>
-        <p class="text-muted small mb-1">พบข้อมูลของท่าน</p>
-        <h5 class="fw-bold mb-3">เลขผู้บริจาค Donor ID</h5>
+    <!-- เมนูตรวจสอบข้อมูลผู้บริจาค -->
+    <div id="pageCheck" class="app-page fade-in-up">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <button class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
+        <h5 class="page-title flex-grow-1 mb-0">ตรวจสอบข้อมูลผู้บริจาค</h5>
+      </div>
 
-        <div class="info-box mb-3">
-          <div id="forgotDonorIdText" class="donor-id-big"></div>
+      <div class="card main-card p-3 mb-4 shadow-sm">
+
+        <div class="mode-tabs mb-3">
+          <button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')">
+            เช็กข้อมูลปกติ
+          </button>
+          <button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')">
+            ลืม Donor ID
+          </button>
         </div>
 
-        <p class="text-muted small mb-0">
-          กรุณาจดเลขนี้ไว้สำหรับตรวจสอบจำนวนครั้งบริจาคในครั้งต่อไป
-        </p>
+        <div id="checkForm" class="form-section active">
+          <div class="safe-note mb-3">
+            ใช้สำหรับตรวจสอบจำนวนครั้งบริจาค และวันที่สามารถบริจาคครั้งถัดไป
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">เลขผู้บริจาค Donor ID</label>
+            <input type="text" id="donorIdInput" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="กรอก Donor ID" inputmode="numeric">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
+            <input type="date" id="donorDobCheck" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee; cursor:pointer;" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;">
+            <div id="dobPreviewCheck" class="form-text" style="font-size: 0.7rem;">*กรุณาเลือกวันเกิดจากปฏิทิน</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
+            <input type="tel" id="phoneLast4Check" class="form-control text-center p-3" maxlength="4" style="border-radius:15px; border: 2px solid #eee;" placeholder="เช่น 6050" inputmode="numeric">
+          </div>
+
+          <div class="d-flex gap-2 mb-2">
+            <button onclick="runCheckSearch()" id="btnCheckSearch" class="btn btn-search flex-grow-1 p-3 shadow-sm">🔍 ตรวจสอบข้อมูล</button>
+            <button onclick="clearSearch()" class="btn btn-clear-cnmi shadow-sm" title="ล้างข้อมูล">🔄</button>
+          </div>
+        </div>
+
+        <div id="forgotForm" class="form-section">
+          <div class="safe-note mb-3">
+            ใช้สำหรับค้นหาเลขผู้บริจาคเท่านั้น ระบบจะแสดงเฉพาะ Donor ID
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">เลขบัตรประชาชน 13 หลัก</label>
+            <input type="tel" id="idCardForgot" class="form-control text-center p-3" maxlength="13" style="border-radius:15px; border: 2px solid #eee;" placeholder="เลขบัตรประชาชน 13 หลัก" inputmode="numeric">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
+            <input type="date" id="donorDobForgot" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee; cursor:pointer;" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;">
+            <div id="dobPreviewForgot" class="form-text" style="font-size: 0.7rem;">*กรุณาเลือกวันเกิดจากปฏิทิน</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
+            <input type="tel" id="phoneLast4Forgot" class="form-control text-center p-3" maxlength="4" style="border-radius:15px; border: 2px solid #eee;" placeholder="เช่น 6050" inputmode="numeric">
+          </div>
+
+          <div class="d-flex gap-2 mb-2">
+            <button onclick="runForgotSearch()" id="btnForgotSearch" class="btn btn-search flex-grow-1 p-3 shadow-sm">🔎 ค้นหา Donor ID</button>
+            <button onclick="clearSearch()" class="btn btn-clear-cnmi shadow-sm" title="ล้างข้อมูล">🔄</button>
+          </div>
+        </div>
+
+        <div id="loader" class="text-center mt-3" style="display:none">
+          <div class="spinner-border text-danger spinner-border-sm"></div>
+        </div>
+      </div>
+
+      <div id="notFoundCard" class="card main-card p-4 mt-2 text-center" style="display:none; border-top: 5px solid #bdc3c7;">
+        <div class="mb-2"><span style="font-size: 3rem;">🔍</span></div>
+        <h5 class="fw-bold mb-3">ไม่พบข้อมูล หรือข้อมูลยืนยันตัวตนไม่ถูกต้อง</h5>
+        <p class="text-muted small mb-3">กรุณาตรวจสอบข้อมูลอีกครั้ง หรือติดต่อเจ้าหน้าที่</p>
+        <a href="tel:028396050" class="btn btn-outline-secondary w-100 mb-2">📞 โทรสอบถาม: 02-839-6050</a>
+      </div>
+
+      <div id="checkResult" style="display:none" class="fade-in-up">
+        <div class="card hero-card p-4 mb-4 text-center">
+          <p class="mb-0 opacity-75">อีกกี่วัน มาบริจาคได้?</p>
+          <div id="resultDaysLeft" class="count-number"></div>
+          <p id="resultDaysLabel" class="mb-3 fw-bold">วัน</p>
+          <div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; font-size: 0.9rem; border: 1px dashed white;">
+            <span id="resultStatus"></span>
+          </div>
+        </div>
+
+        <div class="card result-card p-4 mb-4">
+          <h5 id="displayName" class="fw-bold mb-2 text-center"></h5>
+          <p id="displayId" class="fw-bold text-center mb-1" style="font-size: 1rem; color: #444;"></p>
+          <p id="displayDob" class="text-muted small text-center mb-3" style="font-size: 0.85rem;"></p>
+          <div class="text-center mb-3"><span id="displayBlood" class="blood-badge"></span></div>
+          <div class="d-flex justify-content-between small text-muted border-top pt-3 mt-3">
+            <span>นัดหมายครั้งถัดไป:</span>
+            <span id="displayNextDate" class="fw-bold text-dark"></span>
+          </div>
+        </div>
+
+        <h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6>
+        <div class="table-history shadow-sm border mb-4">
+          <table class="table mb-0"><tbody id="historyTableBody"></tbody></table>
+        </div>
+      </div>
+
+      <div id="forgotResult" style="display:none" class="fade-in-up">
+        <div class="card result-card p-4 mb-4 text-center" style="border-top: 5px solid #d63031;">
+          <div class="mb-2"><span style="font-size: 3rem;">🩸</span></div>
+          <p class="text-muted small mb-1">พบข้อมูลของท่าน</p>
+          <h5 class="fw-bold mb-3">เลขผู้บริจาค Donor ID</h5>
+          <div class="info-box mb-3"><div id="forgotDonorIdText" class="donor-id-big"></div></div>
+          <p class="text-muted small mb-0">กรุณาจดเลขนี้ไว้สำหรับตรวจสอบจำนวนครั้งบริจาคในครั้งต่อไป</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- เมนูคัดกรอง -->
+    <div id="pageScreening" class="app-page fade-in-up">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <button class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
+        <h5 class="page-title flex-grow-1 mb-0">คัดกรองตนเองเบื้องต้น</h5>
+      </div>
+
+      <div class="safe-note mb-3">
+        แบบประเมินนี้เป็นการคัดกรองเบื้องต้นเท่านั้น การพิจารณาสุดท้ายเป็นไปตามการซักประวัติและตรวจคัดกรองโดยเจ้าหน้าที่ ณ ห้องบริจาคโลหิต
+      </div>
+
+      <div id="genderCard" class="question-card mb-3">
+        <h5 class="fw-bold mb-3">เพศของท่าน</h5>
+        <div class="choice-grid mb-4">
+          <button id="genderMale" class="choice-btn" onclick="selectGender('ชาย')">👨 ชาย</button>
+          <button id="genderFemale" class="choice-btn danger-choice" onclick="selectGender('หญิง')">👩 หญิง</button>
+        </div>
+        <button class="btn btn-search w-100 p-3" onclick="beginQuestions()">เริ่มทำแบบประเมิน ›</button>
+      </div>
+
+      <div id="questionCard" class="question-card mb-3" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted small" id="questionCounter"></span>
+          <button class="btn btn-sm btn-outline-secondary" onclick="resetScreening()">เริ่มใหม่</button>
+        </div>
+        <div class="screening-progress mb-4"><div id="screeningProgressBar" class="screening-progress-bar"></div></div>
+        <h5 id="questionText" class="fw-bold mb-4" style="line-height:1.5;"></h5>
+        <div class="choice-grid mb-4">
+          <button id="answerYesBtn" class="choice-btn" onclick="answerQuestion('yes')">ใช่</button>
+          <button id="answerNoBtn" class="choice-btn" onclick="answerQuestion('no')">ไม่ใช่</button>
+        </div>
+        <button class="btn btn-outline-secondary w-100 p-3" onclick="previousQuestion()">‹ ย้อนกลับ</button>
+      </div>
+    </div>
+
+    <!-- เมนูจองคิว หลังผ่านคัดกรอง -->
+    <div id="pageBooking" class="app-page fade-in-up">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <button class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
+        <h5 class="page-title flex-grow-1 mb-0">จองคิวบริจาคโลหิต</h5>
+      </div>
+
+      <div class="safe-note mb-3">
+        ผ่านการคัดกรองเบื้องต้นแล้ว กรุณากรอกข้อมูลสำหรับจองคิว ระบบเฟสนี้ยังเป็นหน้าจองคิวเตรียมเชื่อม Google Sheet ในขั้นถัดไป
+      </div>
+
+      <div class="card main-card p-4 mb-4">
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted">ชื่อ-นามสกุล</label>
+          <input type="text" id="bookingName" class="form-control p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="กรอกชื่อ-นามสกุล">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted">Donor ID ถ้ามี</label>
+          <input type="text" id="bookingDonorId" class="form-control p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="ถ้าไม่ทราบ เว้นว่างได้">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์</label>
+          <input type="tel" id="bookingPhone" class="form-control p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="เบอร์โทรศัพท์ที่ติดต่อได้" inputmode="numeric">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted">วันที่ต้องการบริจาค</label>
+          <input type="date" id="bookingDate" class="form-control p-3" style="border-radius:15px; border: 2px solid #eee; cursor:pointer;" inputmode="none" onkeydown="return false;" onpaste="return false;" ondrop="return false;">
+        </div>
+
+        <label class="form-label small fw-bold text-muted">เลือกช่วงเวลา</label>
+        <div class="slot-grid mb-4">
+          <button class="slot-btn" onclick="selectSlot(this, '09:00')">09:00<br><small>ว่าง 10</small></button>
+          <button class="slot-btn" onclick="selectSlot(this, '10:00')">10:00<br><small>ว่าง 10</small></button>
+          <button class="slot-btn" onclick="selectSlot(this, '11:00')">11:00<br><small>ว่าง 10</small></button>
+          <button class="slot-btn" onclick="selectSlot(this, '13:00')">13:00<br><small>ว่าง 10</small></button>
+          <button class="slot-btn" onclick="selectSlot(this, '14:00')">14:00<br><small>ว่าง 10</small></button>
+          <button class="slot-btn" onclick="selectSlot(this, '15:00')">15:00<br><small>ว่าง 10</small></button>
+        </div>
+
+        <button class="btn btn-search w-100 p-3" onclick="confirmBookingDemo()">ยืนยันการจอง</button>
+      </div>
+    </div>
+
+    <!-- ข้อมูลวันทำการ -->
+    <div id="pageInfo" class="app-page fade-in-up">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <button class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
+        <h5 class="page-title flex-grow-1 mb-0">วันทำการ / ติดต่อ</h5>
+      </div>
+
+      <div class="card main-card p-4 mb-4">
+        <div class="contact-line">
+          <div>🕘</div>
+          <div>
+            <div class="fw-bold text-danger">วันและเวลาทำการ</div>
+            <div>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</div>
+            <div class="text-muted small">กรุณาตรวจสอบวันหยุดพิเศษกับเจ้าหน้าที่อีกครั้ง</div>
+          </div>
+        </div>
+
+        <div class="contact-line">
+          <div>📍</div>
+          <div>
+            <div class="fw-bold text-danger">สถานที่</div>
+            <div>ห้องรับบริจาคโลหิต รามาธิบดีจักรีนฤบดินทร</div>
+            <div class="text-muted small">สถาบันการแพทย์จักรีนฤบดินทร์</div>
+          </div>
+        </div>
+
+        <div class="contact-line">
+          <div>☎️</div>
+          <div>
+            <div class="fw-bold text-danger">ติดต่อสอบถาม</div>
+            <a href="tel:028396050" class="text-decoration-none">02-839-6050</a>
+          </div>
+        </div>
+
+        <div class="pt-3">
+          <a class="btn btn-search w-100 p-3" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Chakri+Naruebodindra+Medical+Institute">
+            เปิดแผนที่ Google Maps
+          </a>
+        </div>
       </div>
     </div>
 
   </div>
 
+  <div id="screeningModal" class="custom-modal-backdrop">
+    <div class="custom-modal">
+      <div class="warning-circle">!</div>
+      <h5 id="modalTitle" class="fw-bold mb-3">ยังไม่แนะนำให้จองคิวในขณะนี้</h5>
+      <p id="modalMessage" class="mb-4" style="line-height:1.6;"></p>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary flex-grow-1 p-3" onclick="closeScreeningModal()">กลับไปแก้ไข</button>
+        <button class="btn btn-search flex-grow-1 p-3" onclick="acknowledgeScreeningModal()">รับทราบ</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // แทนที่ด้วย URL Web App ของคุณ
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHOgBN6OKLWaLTsxU_5rouZ4H-GlKTFeh8-EVNDakCeEv9Ih30nslAV1gqjk-mYYhjeQ/exec";
+
+    let selectedGender = "";
+    let currentQuestionIndex = 0;
+    let selectedSlot = "";
+
+    const screeningQuestions = [
+      {
+        text: "ท่านนอนหลับพักผ่อนเพียงพอหรือไม่ อย่างน้อยประมาณ 5 ชั่วโมง",
+        passAnswer: "yes",
+        failMessage: "ท่านควรพักผ่อนให้เพียงพอก่อนบริจาคโลหิต"
+      },
+      {
+        text: "ภายใน 4 ชั่วโมงที่ผ่านมา ท่านได้รับประทานอาหารมาแล้วหรือไม่",
+        passAnswer: "yes",
+        failMessage: "แนะนำให้รับประทานอาหารก่อนมาบริจาคโลหิต และหลีกเลี่ยงอาหารไขมันสูง"
+      },
+      {
+        text: "ขณะนี้ท่านรู้สึกสบายดี ไม่มีไข้ ไอ เจ็บคอ หรืออาการเจ็บป่วยชัดเจน ใช่หรือไม่",
+        passAnswer: "yes",
+        failMessage: "หากมีอาการไม่สบาย แนะนำให้พักผ่อนก่อน และติดต่อเจ้าหน้าที่หากต้องการสอบถามเพิ่มเติม"
+      },
+      {
+        text: "ช่วงนี้ท่านมีแผลอักเสบ ติดเชื้อ หรืออยู่ระหว่างรับประทานยาปฏิชีวนะหรือไม่",
+        passAnswer: "no",
+        failMessage: "กรุณาติดต่อเจ้าหน้าที่ก่อนจองคิว เพื่อประเมินความพร้อมในการบริจาคโลหิต"
+      },
+      {
+        text: "ในช่วง 7 วันที่ผ่านมา ท่านถอนฟัน ผ่าฟันคุด หรือทำหัตถการทางทันตกรรมหรือไม่",
+        passAnswer: "no",
+        failMessage: "กรุณาติดต่อเจ้าหน้าที่เพื่อประเมินระยะเวลาที่เหมาะสมก่อนบริจาคโลหิต"
+      },
+      {
+        text: "สำหรับผู้หญิง: ท่านกำลังตั้งครรภ์ หลังคลอด หรืออยู่ระหว่างให้นมบุตรหรือไม่",
+        passAnswer: "no",
+        gender: "หญิง",
+        failMessage: "กรุณาติดต่อเจ้าหน้าที่ก่อนจองคิว เพื่อประเมินความพร้อมในการบริจาคโลหิต"
+      }
+    ];
+
+    function showPage(page) {
+      ["pageHome", "pageCheck", "pageScreening", "pageBooking", "pageInfo"].forEach(function (id) {
+        document.getElementById(id).classList.remove("active");
+      });
+
+      const target = document.getElementById("page" + page.charAt(0).toUpperCase() + page.slice(1));
+      if (target) target.classList.add("active");
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
     function convertDateInputToDbDob(dateValue) {
       if (!dateValue) return "";
-
       const parts = dateValue.split("-");
       if (parts.length !== 3) return "";
-
-      const yyyy = parts[0];
-      const mm = parts[1];
-      const dd = parts[2];
-
-      return `${dd}/${mm}/${yyyy}`;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
 
     function onlyDigits(value) {
@@ -423,7 +725,6 @@
         forgotForm.classList.add("active");
         checkForm.classList.remove("active");
       }
-
       hideAllResults();
     }
 
@@ -437,16 +738,12 @@
       document.getElementById("donorIdInput").value = "";
       document.getElementById("donorDobCheck").value = "";
       document.getElementById("phoneLast4Check").value = "";
-
       document.getElementById("idCardForgot").value = "";
       document.getElementById("donorDobForgot").value = "";
       document.getElementById("phoneLast4Forgot").value = "";
-
       document.getElementById("dobPreviewCheck").innerText = "*กรุณาเลือกวันเกิดจากปฏิทิน";
       document.getElementById("dobPreviewForgot").innerText = "*กรุณาเลือกวันเกิดจากปฏิทิน";
-
       hideAllResults();
-
       if (document.getElementById("checkForm").classList.contains("active")) {
         document.getElementById("donorIdInput").focus();
       } else {
@@ -457,7 +754,6 @@
     function setLoading(isLoading, buttonId, normalText, loadingText) {
       const btn = document.getElementById(buttonId);
       const loader = document.getElementById("loader");
-
       if (isLoading) {
         btn.disabled = true;
         btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${loadingText}`;
@@ -477,15 +773,13 @@
 
     function getBloodStyle(group) {
       const g = (group || "").toUpperCase();
-
       if (g.includes("AB")) return { bg: "#ffffff", text: "#000" };
       if (g.includes("A")) return { bg: "#f1c40f", text: "#000" };
       if (g.includes("B")) return { bg: "#e84393", text: "#fff" };
       if (g.includes("O")) return { bg: "#0984e3", text: "#fff" };
-
       return { bg: "#eee", text: "#000" };
     }
-    
+
     async function runCheckSearch() {
       const donorId = document.getElementById("donorIdInput").value.trim();
       const dob = convertDateInputToDbDob(document.getElementById("donorDobCheck").value);
@@ -500,13 +794,7 @@
       setLoading(true, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ...");
 
       try {
-        const res = await callApi({
-          action: "checkDonor",
-          donorId: donorId,
-          dob: dob,
-          phoneLast4: phoneLast4
-        });
-
+        const res = await callApi({ action: "checkDonor", donorId: donorId, dob: dob, phoneLast4: phoneLast4 });
         setLoading(false, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ...");
 
         if (!res.found) {
@@ -516,71 +804,48 @@
 
         const heroCard = document.querySelector(".hero-card");
 
-if (res.needsContact) {
-  heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)";
-  document.getElementById("resultDaysLeft").innerText = "!";
-  document.getElementById("resultDaysLabel").innerText = "โปรดติดต่อเจ้าหน้าที่";
-  document.getElementById("resultStatus").innerText = res.message || "กรุณาติดต่อเจ้าหน้าที่";
-  document.getElementById("displayNextDate").innerText = "กรุณาปรึกษาเจ้าหน้าที่";
-} else {
-  heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)";
+        if (res.needsContact) {
+          heroCard.style.background = "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)";
+          document.getElementById("resultDaysLeft").innerText = "!";
+          document.getElementById("resultDaysLabel").innerText = "โปรดติดต่อเจ้าหน้าที่";
+          document.getElementById("resultStatus").innerText = res.message || "กรุณาติดต่อเจ้าหน้าที่";
+          document.getElementById("displayNextDate").innerText = "กรุณาปรึกษาเจ้าหน้าที่";
+        } else {
+          heroCard.style.background = "linear-gradient(135deg, #d63031 0%, #ff7675 100%)";
+          const daysLeft = Number(res.daysLeft || 0);
+          document.getElementById("resultDaysLeft").innerText = daysLeft <= 0 ? "0" : daysLeft;
+          document.getElementById("resultDaysLabel").innerText = daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
+          document.getElementById("resultStatus").innerText = daysLeft <= 0 ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้" : "❤️ ยังไม่ถึงกำหนดบริจาคครั้งถัดไป";
+          document.getElementById("displayNextDate").innerText = res.nextDate || "-";
+        }
 
-  const daysLeft = Number(res.daysLeft || 0);
+        document.getElementById("displayName").innerText = res.name ? "คุณ " + res.name : "ผู้บริจาค";
+        document.getElementById("displayId").innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + (res.donorId || donorId);
+        document.getElementById("displayDob").innerText = "🎂 วันเกิด: " + (res.dob || "-");
 
-  document.getElementById("resultDaysLeft").innerText = daysLeft <= 0 ? "0" : daysLeft;
-  document.getElementById("resultDaysLabel").innerText = daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
-  document.getElementById("resultStatus").innerText = daysLeft <= 0
-    ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้"
-    : "❤️ ยังไม่ถึงกำหนดบริจาคครั้งถัดไป";
+        const bStyle = getBloodStyle(res.blood);
+        const bBadge = document.getElementById("displayBlood");
+        bBadge.innerText = "หมู่เลือด: " + (res.blood || "-");
+        bBadge.style.backgroundColor = bStyle.bg;
+        bBadge.style.color = bStyle.text;
 
-  document.getElementById("displayNextDate").innerText = res.nextDate || "-";
-}
-
-document.getElementById("displayName").innerText = res.name ? "คุณ " + res.name : "ผู้บริจาค";
-document.getElementById("displayId").innerHTML = "💳 เลขผู้บริจาค (Donor ID): " + (res.donorId || donorId);
-document.getElementById("displayDob").innerText = "🎂 วันเกิด: " + (res.dob || "-");
-
-const bStyle = getBloodStyle(res.blood);
-const bBadge = document.getElementById("displayBlood");
-bBadge.innerText = "หมู่เลือด: " + (res.blood || "-");
-bBadge.style.backgroundColor = bStyle.bg;
-bBadge.style.color = bStyle.text;
-
-const history = Array.isArray(res.history) ? res.history : [];
-
-if (history.length === 0) {
-  document.getElementById("historyTableBody").innerHTML = `
-    <tr>
-      <td class="text-center text-muted small p-3">
-        ไม่พบประวัติการบริจาค กรุณาติดต่อเจ้าหน้าที่
-      </td>
-    </tr>
-  `;
-} else {
-  const rows = history.map(function (h) {
-    const usage = h.usage || "";
-    const icon = usage.includes("ติดต่อ") ? "⚠️" : "✅";
-    const textColor = usage.includes("ติดต่อ") ? "text-warning fw-bold" : "usage-text";
-
-    return `
-      <tr>
-        <td class="ps-3 fw-bold text-muted small" style="width: 50px;">${h.count || "-"}</td>
-        <td class="small">
-          ${h.date || "-"}<br>
-          <span class="text-primary" style="font-size:0.78rem">(${h.type || "Whole Blood"})</span>
-        </td>
-        <td>
-          <span class="${textColor}" style="font-size:0.85rem">${icon} ${usage || "กำลังดำเนินการ"}</span>
-        </td>
-      </tr>
-    `;
-  }).join("");
-
-  document.getElementById("historyTableBody").innerHTML = rows;
-}
-
-document.getElementById("checkResult").style.display = "block";
-
+        const history = Array.isArray(res.history) ? res.history : [];
+        if (history.length === 0) {
+          document.getElementById("historyTableBody").innerHTML = `<tr><td class="text-center text-muted small p-3">ไม่พบประวัติการบริจาค กรุณาติดต่อเจ้าหน้าที่</td></tr>`;
+        } else {
+          const rows = history.map(function (h) {
+            const usage = h.usage || "";
+            const icon = usage.includes("ติดต่อ") ? "⚠️" : "✅";
+            const textColor = usage.includes("ติดต่อ") ? "text-warning fw-bold" : "usage-text";
+            return `<tr>
+              <td class="ps-3 fw-bold text-muted small" style="width: 50px;">${h.count || "-"}</td>
+              <td class="small">${h.date || "-"}<br><span class="text-primary" style="font-size:0.78rem">(${h.type || "Whole Blood"})</span></td>
+              <td><span class="${textColor}" style="font-size:0.85rem">${icon} ${usage || "กำลังดำเนินการ"}</span></td>
+            </tr>`;
+          }).join("");
+          document.getElementById("historyTableBody").innerHTML = rows;
+        }
+        document.getElementById("checkResult").style.display = "block";
       } catch (err) {
         setLoading(false, "btnCheckSearch", "🔍 ตรวจสอบข้อมูล", "กำลังตรวจสอบ...");
         alert("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ");
@@ -601,13 +866,7 @@ document.getElementById("checkResult").style.display = "block";
       setLoading(true, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา...");
 
       try {
-        const res = await callApi({
-          action: "forgotDonorId",
-          idCard: idCard,
-          dob: dob,
-          phoneLast4: phoneLast4
-        });
-
+        const res = await callApi({ action: "forgotDonorId", idCard: idCard, dob: dob, phoneLast4: phoneLast4 });
         setLoading(false, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา...");
 
         if (!res.found) {
@@ -617,11 +876,129 @@ document.getElementById("checkResult").style.display = "block";
 
         document.getElementById("forgotDonorIdText").innerText = res.donorId || "-";
         document.getElementById("forgotResult").style.display = "block";
-
       } catch (err) {
         setLoading(false, "btnForgotSearch", "🔎 ค้นหา Donor ID", "กำลังค้นหา...");
         alert("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ");
       }
+    }
+
+    function startScreening() {
+      showPage('screening');
+      resetScreening();
+    }
+
+    function resetScreening() {
+      selectedGender = "";
+      currentQuestionIndex = 0;
+      document.getElementById("genderCard").style.display = "block";
+      document.getElementById("questionCard").style.display = "none";
+      document.getElementById("genderMale").classList.remove("active");
+      document.getElementById("genderFemale").classList.remove("active");
+    }
+
+    function selectGender(gender) {
+      selectedGender = gender;
+      document.getElementById("genderMale").classList.toggle("active", gender === "ชาย");
+      document.getElementById("genderFemale").classList.toggle("active", gender === "หญิง");
+    }
+
+    function getActiveQuestions() {
+      return screeningQuestions.filter(function (q) {
+        return !q.gender || q.gender === selectedGender;
+      });
+    }
+
+    function beginQuestions() {
+      if (!selectedGender) {
+        alert("กรุณาเลือกเพศก่อนเริ่มทำแบบประเมินครับ");
+        return;
+      }
+      currentQuestionIndex = 0;
+      document.getElementById("genderCard").style.display = "none";
+      document.getElementById("questionCard").style.display = "block";
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const questions = getActiveQuestions();
+      const q = questions[currentQuestionIndex];
+      if (!q) {
+        showPassAndGoBooking();
+        return;
+      }
+
+      document.getElementById("questionText").innerText = q.text;
+      document.getElementById("questionCounter").innerText = `ข้อที่ ${currentQuestionIndex + 1} / ${questions.length}`;
+      document.getElementById("screeningProgressBar").style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+      document.getElementById("answerYesBtn").classList.remove("active");
+      document.getElementById("answerNoBtn").classList.remove("active");
+    }
+
+    function answerQuestion(answer) {
+      const questions = getActiveQuestions();
+      const q = questions[currentQuestionIndex];
+      if (!q) return;
+
+      document.getElementById("answerYesBtn").classList.toggle("active", answer === "yes");
+      document.getElementById("answerNoBtn").classList.toggle("active", answer === "no");
+
+      setTimeout(function () {
+        if (answer !== q.passAnswer) {
+          showScreeningModal(q.failMessage);
+          return;
+        }
+        currentQuestionIndex++;
+        renderQuestion();
+      }, 180);
+    }
+
+    function previousQuestion() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion();
+      } else {
+        document.getElementById("genderCard").style.display = "block";
+        document.getElementById("questionCard").style.display = "none";
+      }
+    }
+
+    function showScreeningModal(message) {
+      document.getElementById("modalMessage").innerText = message;
+      document.getElementById("screeningModal").classList.add("show");
+    }
+
+    function closeScreeningModal() {
+      document.getElementById("screeningModal").classList.remove("show");
+      renderQuestion();
+    }
+
+    function acknowledgeScreeningModal() {
+      document.getElementById("screeningModal").classList.remove("show");
+      showPage('home');
+    }
+
+    function showPassAndGoBooking() {
+      alert("ผ่านการคัดกรองเบื้องต้น สามารถดำเนินการจองคิวได้ครับ");
+      showPage('booking');
+    }
+
+    function selectSlot(btn, slot) {
+      selectedSlot = slot;
+      document.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+    }
+
+    function confirmBookingDemo() {
+      const name = document.getElementById("bookingName").value.trim();
+      const phone = onlyDigits(document.getElementById("bookingPhone").value);
+      const date = document.getElementById("bookingDate").value;
+
+      if (!name || phone.length < 9 || !date || !selectedSlot) {
+        alert("กรุณากรอกชื่อ เบอร์โทร วันที่ และเลือกช่วงเวลาให้ครบครับ");
+        return;
+      }
+
+      alert("เฟสนี้เป็นหน้าจองคิวตัวอย่าง ขั้นถัดไปโนอาจะเชื่อมให้บันทึกลง Google Sheet Bookings ครับ");
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -630,45 +1007,33 @@ document.getElementById("checkResult").style.display = "block";
       ["donorDobCheck", "donorDobForgot"].forEach(function (id) {
         const input = document.getElementById(id);
         if (!input) return;
-
         input.max = today;
-
         input.addEventListener("click", function () {
-          if (typeof input.showPicker === "function") {
-            input.showPicker();
-          }
+          if (typeof input.showPicker === "function") input.showPicker();
         });
-
         input.addEventListener("change", function () {
           const dbDob = convertDateInputToDbDob(input.value);
-
-          if (id === "donorDobCheck") {
-            document.getElementById("dobPreviewCheck").innerText = dbDob
-              ? `วันที่ที่เลือก: ${dbDob}`
-              : "*กรุณาเลือกวันเกิดจากปฏิทิน";
-          }
-
-          if (id === "donorDobForgot") {
-            document.getElementById("dobPreviewForgot").innerText = dbDob
-              ? `วันที่ที่เลือก: ${dbDob}`
-              : "*กรุณาเลือกวันเกิดจากปฏิทิน";
-          }
+          if (id === "donorDobCheck") document.getElementById("dobPreviewCheck").innerText = dbDob ? `วันที่ที่เลือก: ${dbDob}` : "*กรุณาเลือกวันเกิดจากปฏิทิน";
+          if (id === "donorDobForgot") document.getElementById("dobPreviewForgot").innerText = dbDob ? `วันที่ที่เลือก: ${dbDob}` : "*กรุณาเลือกวันเกิดจากปฏิทิน";
         });
       });
 
       ["phoneLast4Check", "phoneLast4Forgot"].forEach(function (id) {
         const input = document.getElementById(id);
         if (!input) return;
-
-        input.addEventListener("input", function () {
-          input.value = onlyDigits(input.value).slice(0, 4);
-        });
+        input.addEventListener("input", function () { input.value = onlyDigits(input.value).slice(0, 4); });
       });
 
       const idCardForgot = document.getElementById("idCardForgot");
       if (idCardForgot) {
-        idCardForgot.addEventListener("input", function () {
-          idCardForgot.value = onlyDigits(idCardForgot.value).slice(0, 13);
+        idCardForgot.addEventListener("input", function () { idCardForgot.value = onlyDigits(idCardForgot.value).slice(0, 13); });
+      }
+
+      const bookingDate = document.getElementById("bookingDate");
+      if (bookingDate) {
+        bookingDate.min = today;
+        bookingDate.addEventListener("click", function () {
+          if (typeof bookingDate.showPicker === "function") bookingDate.showPicker();
         });
       }
     });
