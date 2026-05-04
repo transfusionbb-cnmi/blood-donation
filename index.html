@@ -692,14 +692,29 @@
     ];
 
     function showPage(page) {
-      ["pageHome", "pageCheck", "pageScreening", "pageBooking", "pageInfo"].forEach(function (id) {
-        document.getElementById(id).classList.remove("active");
+      const pages = {
+        home: "pageHome",
+        check: "pageCheck",
+        screening: "pageScreening",
+        booking: "pageBooking",
+        info: "pageInfo"
+      };
+
+      Object.values(pages).forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("active");
       });
 
-      const target = document.getElementById("page" + page.charAt(0).toUpperCase() + page.slice(1));
-      if (target) target.classList.add("active");
+      const targetId = pages[page];
+      const target = document.getElementById(targetId);
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (target) {
+        target.classList.add("active");
+      } else {
+        console.warn("ไม่พบหน้า:", page, targetId);
+      }
+
+      window.scrollTo(0, 0);
     }
 
     function convertDateInputToDbDob(dateValue) {
@@ -888,10 +903,14 @@
     }
 
     function startScreening() {
-      showPage('screening');
+      showPage("screening");
       resetScreening();
     }
 
+    function testMenu() {
+      alert("ปุ่มเมนูทำงานแล้วครับ");
+    }
+    
     function resetScreening() {
       selectedGender = "";
       currentQuestionIndex = 0;
