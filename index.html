@@ -34,9 +34,22 @@
         <input type="tel" id="idCard" class="form-control text-center p-3" maxlength="13" style="border-radius:15px; border: 2px solid #eee;" placeholder="เลขบัตรประชาชน 13 หลัก">
       </div>
       <div class="mb-3">
-        <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด (พ.ศ.)</label>
-        <input type="text" id="donorDob" class="form-control text-center p-3" style="border-radius:15px; border: 2px solid #eee;" placeholder="เช่น 31/12/2530">
-        <div class="form-text" style="font-size: 0.7rem;">*กรุณาระบุให้ตรงกับในฐานข้อมูล (วัน/เดือน/ปี พ.ศ.)</div>
+        <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
+
+        <input 
+          type="date" 
+          id="donorDob" 
+          class="form-control text-center p-3" 
+          style="border-radius:15px; border: 2px solid #eee; cursor:pointer;"
+          inputmode="none"
+          onkeydown="return false;"
+          onpaste="return false;"
+          ondrop="return false;"
+        >
+
+        <div id="dobPreview" class="form-text" style="font-size: 0.7rem;">
+          *กรุณาเลือกวันเกิดจากปฏิทิน
+        </div>
       </div>
       <div class="d-flex gap-2 mb-2">
         <button onclick="runSearch()" id="btnSearch" class="btn btn-search flex-grow-1 p-3 shadow-sm">🔍 ค้นหาข้อมูล</button>
@@ -88,9 +101,53 @@
     // แทนที่ด้วย URL Web App ของคุณ
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHOgBN6OKLWaLTsxU_5rouZ4H-GlKTFeh8-EVNDakCeEv9Ih30nslAV1gqjk-mYYhjeQ/exec"; 
 
+    function convertDateInputToDbDob(dateValue) {
+  if (!dateValue) return "";
+
+  // input type="date" จะได้ค่าเป็น yyyy-mm-dd เช่น 1987-12-31
+  const parts = dateValue.split("-");
+  if (parts.length !== 3) return "";
+
+  const yyyy = parts[0];
+  const mm = parts[1];
+  const dd = parts[2];
+
+  // ฐานข้อมูล DOB เป็น dd/mm/yyyy ค.ศ. เช่น 31/12/1987
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const donorDobInput = document.getElementById("donorDob");
+  const dobPreview = document.getElementById("dobPreview");
+
+  // จำกัดไม่ให้เลือกวันเกิดเกินวันนี้
+  donorDobInput.max = new Date().toISOString().split("T")[0];
+
+  // กดช่องแล้วให้เปิดปฏิทิน ถ้า Browser รองรับ
+  donorDobInput.addEventListener("click", function () {
+    if (typeof donorDobInput.showPicker === "function") {
+      donorDobInput.showPicker();
+    }
+  });
+
+  donorDobInput.addEventListener("change", function () {
+    const dbDob = convertDateInputToDbDob(donorDobInput.value);
+
+    if (dbDob) {
+      dobPreview.innerText = `วันที่ที่เลือก: ${dbDob}`;
+    } else {
+      dobPreview.innerText = "*กรุณาเลือกวันเกิดจากปฏิทิน ไม่ต้องพิมพ์เอง";
+    }
+  });
+});
+    
     function clearSearch() {
       document.getElementById('idCard').value = '';
       document.getElementById('donorDob').value = '';
+
+      document.getElementById('dobPreview').innerText = 
+        '*กรุณาเลือกวันเกิดจากปฏิทิน';
+
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('notFoundCard').style.display = 'none';
       document.getElementById('idCard').focus();
@@ -108,7 +165,7 @@
     function runSearch() {
       const btn = document.getElementById('btnSearch');
       const id = document.getElementById('idCard').value.trim();
-      const dob = document.getElementById('donorDob').value.trim();
+      const dob = convertDateInputToDbDob(document.getElementById('donorDob').value);
       
       if(!id || !dob) {
         alert("กรุณากรอกทั้งเลขบัตรประชาชน และ วันเกิดครับ");
