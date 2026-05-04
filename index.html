@@ -352,6 +352,17 @@
         </div>
       </button>
 
+      <button type="button" class="home-menu-card mb-3" onclick="showPage('manage')">
+        <div class="d-flex gap-3 align-items-center">
+          <div class="home-icon">📋</div>
+          <div class="flex-grow-1">
+            <div class="fw-bold">ตรวจสอบ / ยกเลิกนัดหมาย</div>
+            <div class="text-muted small">ดูรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้</div>
+          </div>
+          <div class="text-danger fw-bold">›</div>
+        </div>
+      </button>
+
       <button type="button" class="home-menu-card mb-3" onclick="showPage('info')">
         <div class="d-flex gap-3 align-items-center">
           <div class="home-icon">📍</div>
@@ -517,6 +528,68 @@
       </div>
     </div>
 
+    <div id="pageManage" class="app-page">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
+        <h5 class="page-title flex-grow-1">ตรวจสอบ / ยกเลิกนัดหมาย</h5>
+      </div>
+
+      <div class="card main-card p-4 mb-4">
+        <div class="safe-note mb-3">
+          ใช้สำหรับตรวจสอบรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้ โดยใช้เลขที่จองและเบอร์โทรศัพท์ 4 ตัวท้าย
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted">เลขที่จอง Booking ID</label>
+          <input type="text" id="manageBookingId" class="form-control text-center p-3" placeholder="เช่น BK20260504212659">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
+          <input type="tel" id="managePhoneLast4" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 7556" inputmode="numeric">
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" id="btnFindBooking" class="btn btn-search flex-grow-1 p-3" onclick="findBookingUI()">🔍 ตรวจสอบนัดหมาย</button>
+          <button type="button" class="btn btn-clear-cnmi" onclick="clearManageBooking()">🔄</button>
+        </div>
+      </div>
+
+      <div id="manageNotFoundCard" class="card main-card p-4 text-center" style="display:none; border-top:5px solid #bdc3c7;">
+        <div class="mb-2"><span style="font-size:3rem;">🔍</span></div>
+        <h5 class="fw-bold mb-2">ไม่พบรายการจอง</h5>
+        <p class="text-muted small mb-0">กรุณาตรวจสอบ Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายอีกครั้ง</p>
+      </div>
+
+      <div id="manageResult" class="card result-card p-4 mb-4" style="display:none; border-top:5px solid #d63031;">
+        <h5 class="fw-bold text-center mb-3">รายละเอียดนัดหมาย</h5>
+
+        <div class="info-box mb-3">
+          <div class="text-muted small">เลขที่จอง</div>
+          <div id="manageDisplayBookingId" class="fw-bold"></div>
+        </div>
+
+        <div class="info-box mb-3">
+          <div class="text-muted small">ชื่อผู้จอง</div>
+          <div id="manageDisplayName" class="fw-bold"></div>
+        </div>
+
+        <div class="info-box mb-3">
+          <div class="text-muted small">วันที่ / เวลา</div>
+          <div id="manageDisplayDateTime" class="fw-bold"></div>
+        </div>
+
+        <div class="info-box mb-3">
+          <div class="text-muted small">สถานะ</div>
+          <div id="manageDisplayStatus" class="fw-bold"></div>
+        </div>
+
+        <button type="button" id="btnCancelBooking" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="confirmCancelBooking()">
+          ยกเลิกนัดหมายนี้
+        </button>
+      </div>
+    </div>
+
     <div id="pageInfo" class="app-page">
       <div class="d-flex align-items-center gap-2 mb-3">
         <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
@@ -545,6 +618,7 @@
     var selectedGender = "";
     var currentQuestionIndex = 0;
     var selectedSlot = "";
+    var currentManageBooking = null;
     var modalPrimaryCallback = null;
     var modalSecondaryCallback = null;
 
@@ -608,7 +682,7 @@
     }
 
     function showPage(page) {
-      var pages = { home:"pageHome", check:"pageCheck", screening:"pageScreening", booking:"pageBooking", info:"pageInfo" };
+      var pages = { home:"pageHome", check:"pageCheck", screening:"pageScreening", booking:"pageBooking", manage:"pageManage", info:"pageInfo" };
       Object.keys(pages).forEach(function(key){
         var el = document.getElementById(pages[key]);
         if (el) el.classList.remove("active");
@@ -931,7 +1005,11 @@
         }
         showModal({
           title:"จองคิวสำเร็จครับ",
-          message:"เลขที่จอง: " + res.bookingId + "\nวันที่: " + res.bookingDateText + "\nเวลา: " + res.timeSlot,
+          message:"เลขที่จอง: " + res.bookingId + "
+วันที่: " + res.bookingDateText + "
+เวลา: " + res.timeSlot + "
+
+กรุณาบันทึกเลขที่จองไว้สำหรับตรวจสอบหรือยกเลิกนัดหมาย",
           iconText:"✓",
           type:"success"
         });
@@ -942,6 +1020,117 @@
       }).catch(function(){
         btn.disabled = false;
         btn.innerHTML = "ยืนยันการจอง";
+        showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
+      });
+    }
+
+    function clearManageBooking() {
+      document.getElementById("manageBookingId").value = "";
+      document.getElementById("managePhoneLast4").value = "";
+      document.getElementById("manageResult").style.display = "none";
+      document.getElementById("manageNotFoundCard").style.display = "none";
+      currentManageBooking = null;
+    }
+
+    function findBookingUI() {
+      var bookingId = document.getElementById("manageBookingId").value.trim();
+      var phoneLast4 = onlyDigits(document.getElementById("managePhoneLast4").value);
+      var btn = document.getElementById("btnFindBooking");
+
+      if (!bookingId || phoneLast4.length !== 4) {
+        showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+        return;
+      }
+
+      document.getElementById("manageResult").style.display = "none";
+      document.getElementById("manageNotFoundCard").style.display = "none";
+      currentManageBooking = null;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังตรวจสอบ...';
+
+      callApi({ action:"findBooking", bookingId:bookingId, phoneLast4:phoneLast4 }).then(function(res){
+        btn.disabled = false;
+        btn.innerHTML = "🔍 ตรวจสอบนัดหมาย";
+
+        if (!res.ok || !res.found) {
+          document.getElementById("manageNotFoundCard").style.display = "block";
+          return;
+        }
+
+        currentManageBooking = {
+          bookingId: bookingId,
+          phoneLast4: phoneLast4,
+          status: res.status || ""
+        };
+
+        document.getElementById("manageDisplayBookingId").innerText = res.bookingId || "-";
+        document.getElementById("manageDisplayName").innerText = res.name || "-";
+        document.getElementById("manageDisplayDateTime").innerText = (res.bookingDateText || "-") + " เวลา " + (res.timeSlot || "-");
+        document.getElementById("manageDisplayStatus").innerText = res.status || "-";
+
+        var cancelBtn = document.getElementById("btnCancelBooking");
+        if ((res.status || "") === "ยกเลิก") {
+          cancelBtn.style.display = "none";
+        } else {
+          cancelBtn.style.display = "block";
+        }
+
+        document.getElementById("manageResult").style.display = "block";
+      }).catch(function(){
+        btn.disabled = false;
+        btn.innerHTML = "🔍 ตรวจสอบนัดหมาย";
+        showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
+      });
+    }
+
+    function confirmCancelBooking() {
+      if (!currentManageBooking) {
+        showModal({ title:"ไม่พบรายการจอง", message:"กรุณาตรวจสอบนัดหมายก่อนยกเลิกครับ", iconText:"!" });
+        return;
+      }
+
+      showModal({
+        title:"ยืนยันการยกเลิกนัดหมาย",
+        message:"ต้องการยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " ใช่หรือไม่",
+        iconText:"!",
+        secondaryText:"กลับไปตรวจสอบ",
+        primaryText:"ยืนยันยกเลิก",
+        onPrimary:function(){ cancelBookingUI(); }
+      });
+    }
+
+    function cancelBookingUI() {
+      var btn = document.getElementById("btnCancelBooking");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังยกเลิก...';
+
+      callApi({
+        action:"cancelBooking",
+        bookingId: currentManageBooking.bookingId,
+        phoneLast4: currentManageBooking.phoneLast4
+      }).then(function(res){
+        btn.disabled = false;
+        btn.innerHTML = "ยกเลิกนัดหมายนี้";
+
+        if (!res.ok) {
+          showModal({ title:"ยกเลิกไม่สำเร็จ", message:res.message || "กรุณาลองใหม่ครับ", iconText:"!" });
+          return;
+        }
+
+        showModal({
+          title:"ยกเลิกนัดหมายสำเร็จ",
+          message:"ระบบได้ยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " แล้ว",
+          iconText:"✓",
+          type:"success",
+          onPrimary:function(){
+            findBookingUI();
+            loadBookingSlots();
+          }
+        });
+      }).catch(function(){
+        btn.disabled = false;
+        btn.innerHTML = "ยกเลิกนัดหมายนี้";
         showModal({ title:"เชื่อมต่อไม่ได้", message:"ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่ครับ", iconText:"!" });
       });
     }
@@ -968,6 +1157,11 @@
       var idCardForgot = document.getElementById("idCardForgot");
       if (idCardForgot) {
         idCardForgot.addEventListener("input", function(){ idCardForgot.value = onlyDigits(idCardForgot.value).slice(0,13); });
+      }
+
+      var managePhoneLast4 = document.getElementById("managePhoneLast4");
+      if (managePhoneLast4) {
+        managePhoneLast4.addEventListener("input", function(){ managePhoneLast4.value = onlyDigits(managePhoneLast4.value).slice(0,4); });
       }
 
       var bookingDate = document.getElementById("bookingDate");
