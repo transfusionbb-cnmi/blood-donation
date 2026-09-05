@@ -23,38 +23,27 @@
       </div>
 
       <div class="quick-tip-card mb-3">
-        <div class="fw-bold mb-1">ใช้งานครั้งแรก แนะนำกดเมนูแรก</div>
-        <div class="small text-muted">ถ้าจำ Donor ID ไม่ได้ ให้เลือก “ไม่มี / ลืม Donor ID” ในหน้าตรวจสอบข้อมูล</div>
+        <div class="fw-bold mb-1">เริ่มจากเช็กก่อน จะง่ายที่สุด</div>
+        <div class="small text-muted">ถ้าจำ Donor ID ไม่ได้ ระบบช่วยค้นหาได้จากเลขบัตร / Passport / เลขเอกสาร วันเกิด และเบอร์โทร</div>
       </div>
 
       <button type="button" class="home-menu-card primary-menu mb-3" onclick="showPage('check')">
         <div class="d-flex gap-3 align-items-center">
           <div class="home-icon">🩸</div>
           <div class="flex-grow-1">
-            <div class="fw-bold">ตรวจสอบข้อมูลผู้บริจาค</div>
-            <div class="text-muted small">เช็กว่ายังเหลือกี่วันถึงบริจาคครั้งถัดไป</div>
+            <div class="fw-bold">เช็กว่าบริจาคได้หรือยัง</div>
+            <div class="text-muted small">ดูจำนวนครั้ง วันที่บริจาคได้อีกครั้ง และประวัติล่าสุด</div>
           </div>
           <div class="text-danger fw-bold">›</div>
         </div>
       </button>
 
-      <button type="button" class="home-menu-card mb-3" onclick="startScreening()">
+      <button type="button" class="home-menu-card primary-menu mb-3" onclick="startScreening()">
         <div class="d-flex gap-3 align-items-center">
           <div class="home-icon">✅</div>
           <div class="flex-grow-1">
             <div class="fw-bold">จองคิวบริจาคโลหิต</div>
-            <div class="text-muted small">ตอบคำถามสั้น ๆ แล้วเลือกวัน-เวลา</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
-
-      <button type="button" class="home-menu-card mb-3" onclick="showPage('manage')">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">📋</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">ดู / ยกเลิกคิวที่จองไว้</div>
-            <div class="text-muted small">ใช้เลขที่จองและเบอร์โทรเพื่อดูหรือยกเลิก</div>
+            <div class="text-muted small">ตอบประเมินความพร้อมสั้น ๆ แล้วเลือกวัน-เวลา</div>
           </div>
           <div class="text-danger fw-bold">›</div>
         </div>
@@ -62,14 +51,19 @@
 
       <button type="button" class="home-menu-card mb-3" onclick="showPage('info')">
         <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">📍</div>
+          <div class="home-icon">☎️</div>
           <div class="flex-grow-1">
-            <div class="fw-bold">เวลาเปิดทำการ / แผนที่ / โทร</div>
-            <div class="text-muted small">ดูเวลาเปิดทำการและเบอร์ติดต่อ</div>
+            <div class="fw-bold">ติดต่อห้องบริจาคโลหิต</div>
+            <div class="text-muted small">เวลาเปิดทำการ เบอร์โทร และแผนที่</div>
           </div>
           <div class="text-danger fw-bold">›</div>
         </div>
       </button>
+
+      <div class="home-secondary-links mb-2">
+        <button type="button" onclick="showPage('manage')">ดู / ยกเลิกคิวที่จองไว้</button>
+        <button type="button" onclick="showPage('check'); switchMode('forgot');">จำ Donor ID ไม่ได้</button>
+      </div>
 
       <button type="button" class="staff-link" onclick="showStaffGate()">เข้าสู่ระบบเจ้าหน้าที่</button>
     </div>
@@ -153,9 +147,15 @@
             <span>บริจาคได้อีกครั้งตั้งแต่:</span>
             <span id="displayNextDate" class="fw-bold text-dark"></span>
           </div>
+          <div class="result-actions d-grid gap-2 mt-3">
+            <button type="button" id="btnBookFromResult" class="btn btn-search p-3" onclick="goBookingFromResult()">จองคิวบริจาคโลหิต</button>
+            <button type="button" class="btn btn-outline-secondary p-3 fw-bold" onclick="toggleHistoryPanel()">ดู / ซ่อนประวัติการบริจาค</button>
+          </div>
         </div>
-        <h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6>
-        <div class="table-history shadow-sm border mb-4"><table class="table mb-0"><tbody id="historyTableBody"></tbody></table></div>
+        <div id="historyPanel" style="display:none;">
+          <h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6>
+          <div class="table-history shadow-sm border mb-4"><table class="table mb-0"><tbody id="historyTableBody"></tbody></table></div>
+        </div>
       </div>
 
       <div id="forgotResult" style="display:none">
@@ -198,7 +198,8 @@
 
     <div id="pageBooking" class="app-page">
       <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">จองคิวบริจาคโลหิต</h5></div>
-      <div class="safe-note mb-3">กรอกชื่อ เบอร์โทร เลือกวันที่ แล้วเลือกช่วงเวลาที่ว่าง ระบบนี้เป็นการจองคิวเข้ารับบริการเท่านั้น ไม่ใช่การบันทึกว่าท่านได้บริจาคโลหิตแล้ว</div>
+      <div class="safe-note mb-3">ขั้นตอนจอง: ประเมินความพร้อม → กรอกข้อมูล → เลือกวันและเวลา → ยืนยันการจอง ระบบนี้เป็นการจองคิวเข้ารับบริการเท่านั้น ไม่ใช่การบันทึกว่าท่านได้บริจาคโลหิตแล้ว</div>
+      <div id="bookingPrefillNote" class="prefill-note mb-3" style="display:none;"></div>
       <div class="card main-card p-4 mb-4">
         <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อ-นามสกุล</label><input type="text" id="bookingName" class="form-control p-3" placeholder="กรอกชื่อ-นามสกุล"></div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">Donor ID ถ้ามี</label><input type="text" id="bookingDonorId" class="form-control p-3" placeholder="ถ้าไม่ทราบ เว้นว่างได้"></div>
@@ -294,7 +295,8 @@
 
       <div class="card main-card p-3 mb-3">
         <div class="staff-tabs">
-          <button type="button" class="staff-tab active" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')">นำเข้าผู้บริจาค</button>
+          <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')">ภาพรวมวันนี้</button>
+          <button type="button" class="staff-tab" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')">นำเข้าผู้บริจาค</button>
           <button type="button" class="staff-tab" data-staff-tab="infectiousImport" onclick="showStaffTab('infectiousImport')">Infectious positive</button>
           <button type="button" class="staff-tab" data-staff-tab="slots" onclick="showStaffTab('slots')">เปิดรอบจอง</button>
           <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')">ดูรายการจอง</button>
@@ -302,12 +304,36 @@
         </div>
       </div>
 
-      <div id="staffTab_donorImport" class="staff-tab-page active">
+      <div id="staffTab_overview" class="staff-tab-page active">
+        <div class="dashboard-grid mb-3">
+          <div class="dashboard-card"><div class="dashboard-label">จองวันนี้</div><div id="dashBookingsToday" class="dashboard-number">-</div><div class="dashboard-sub">รายการที่ยังไม่ยกเลิก</div></div>
+          <div class="dashboard-card"><div class="dashboard-label">รอบจองวันนี้</div><div id="dashSlotsToday" class="dashboard-number">-</div><div class="dashboard-sub">ช่วงเวลาที่เปิดไว้</div></div>
+          <div class="dashboard-card"><div class="dashboard-label">Infectious ติดตาม</div><div id="dashInfectious" class="dashboard-number">-</div><div class="dashboard-sub">แสดงหน้าเว็บเป็นติดต่อเจ้าหน้าที่</div></div>
+          <div class="dashboard-card"><div class="dashboard-label">รายการบริจาคทั้งหมด</div><div id="dashDonations" class="dashboard-number">-</div><div class="dashboard-sub">ในฐานข้อมูล Supabase</div></div>
+        </div>
+        <div class="card main-card p-4 mb-4">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <h5 class="fw-bold text-danger flex-grow-1 mb-0">📌 ภาพรวมระบบ</h5>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadStaffDashboard()">Refresh</button>
+          </div>
+          <div id="dashboardResult" class="staff-result">กำลังโหลดภาพรวม...</div>
+        </div>
+        <div class="card main-card p-4 mb-4">
+          <h6 class="fw-bold text-danger mb-3">ประวัติการนำเข้าล่าสุด</h6>
+          <div id="dashboardImportLogs" class="staff-result">กำลังโหลดประวัติ...</div>
+        </div>
+      </div>
+
+      <div id="staffTab_donorImport" class="staff-tab-page">
         <div class="card main-card p-4 mb-4">
           <h5 class="fw-bold text-danger">📥 นำเข้าข้อมูลผู้บริจาค</h5>
-          <p class="text-muted small">รองรับทั้งไฟล์ export จากโปรแกรมเดิม และไฟล์ Google Sheet ที่มีชีต DonorData / RawUpload</p>
+          <p class="text-muted small">ขั้นที่ 1 ตรวจไฟล์ก่อน ระบบจะแสดงจำนวนที่พร้อมนำเข้าและรายการที่ถูกข้าม จากนั้นค่อยกดยืนยันนำเข้า Supabase</p>
           <input type="file" id="donorImportFile" class="form-control mb-3" accept=".xlsx,.xls">
-          <button type="button" id="btnImportDonor" class="btn btn-search w-100 p-3" onclick="importDonorFile()">นำเข้า Supabase</button>
+          <div class="d-grid gap-2">
+            <button type="button" id="btnPreviewDonor" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="previewDonorFile()">ตรวจไฟล์ก่อนนำเข้า</button>
+            <button type="button" id="btnImportDonor" class="btn btn-search w-100 p-3" onclick="confirmImportDonorFile()" disabled>ยืนยันนำเข้า Supabase</button>
+          </div>
+          <div id="donorImportPreview" class="staff-result mt-3" style="display:none;"></div>
           <div id="donorImportResult" class="staff-result mt-3" style="display:none;"></div>
         </div>
       </div>

@@ -11,6 +11,8 @@ let modalPrimaryCallback = null;
 let modalSecondaryCallback = null;
 let currentStaffProfile = null;
 let pendingPasswordRecovery = false;
+let lastDonorContext = null;
+let pendingDonorImport = null;
 
 sb.auth.onAuthStateChange(async function(event, session) {
   if (event === "PASSWORD_RECOVERY") {
@@ -66,6 +68,10 @@ function showPage(page) {
   const target = $(pages[page] || "pageHome");
   if (target) target.classList.add("active");
   window.scrollTo(0,0);
+
+  if (page === "staff" && currentStaffProfile) {
+    setTimeout(loadStaffDashboard, 50);
+  }
 }
 
 function escapeHtml(value) {
@@ -227,6 +233,12 @@ async function runCheckSearch() {
 }
 
 function renderDonorResult(res, fallbackDonorId) {
+  lastDonorContext = {
+    donorId: res.donorId || fallbackDonorId || "",
+    name: res.name || "",
+    phone: onlyDigits($("phoneLast4Check") ? $("phoneLast4Check").value : "")
+  };
+
   const hero = $("checkHero");
   hero.classList.toggle("warning", !!res.needsContact);
 
@@ -268,7 +280,35 @@ function renderDonorResult(res, fallbackDonorId) {
     }).join("");
   }
 
+  if ($("btnBookFromResult")) {
+    $("btnBookFromResult").style.display = res.needsContact ? "none" : "block";
+  }
+  if ($("historyPanel")) $("historyPanel").style.display = "none";
   $("checkResult").style.display = "block";
+}
+
+function toggleHistoryPanel() {
+  const panel = $("historyPanel");
+  if (!panel) return;
+  panel.style.display = panel.style.display === "none" || panel.style.display === "" ? "block" : "none";
+}
+
+function goBookingFromResult() {
+  if (!lastDonorContext || !lastDonorContext.donorId) {
+    showModal({ title:"ยังไม่พบข้อมูลผู้บริจาค", message:"กรุณาตรวจสอบข้อมูลผู้บริจาคก่อนจองคิว", iconText:"!" });
+    return;
+  }
+
+  if ($("bookingName")) $("bookingName").value = lastDonorContext.name || "";
+  if ($("bookingDonorId")) $("bookingDonorId").value = lastDonorContext.donorId || "";
+  if ($("bookingPhone") && lastDonorContext.phone && lastDonorContext.phone.length >= 9) {
+    $("bookingPhone").value = lastDonorContext.phone;
+  }
+  if ($("bookingPrefillNote")) {
+    $("bookingPrefillNote").style.display = "block";
+    $("bookingPrefillNote").innerText = "ระบบใส่ชื่อและ Donor ID จากหน้าตรวจสอบให้แล้ว กรุณาเลือกวันที่และช่วงเวลาที่ต้องการบริจาค";
+  }
+  showPage("booking");
 }
 
 async function runForgotSearch() {
@@ -777,7 +817,91 @@ function showStaffTab(tab) {
   document.querySelectorAll(".staff-tab-page").forEach(page => page.classList.remove("active"));
   const target = $("staffTab_" + tab);
   if (target) target.classList.add("active");
+  if (tab === "overview") loadStaffDashboard();
   if (tab === "admin") adminLoadStaffAccessList();
+}
+
+async function getExactCount(builder) {
+  const { count, error } = await builder;
+  if (error) throw error;
+  return count || 0;
+}
+
+async function loadStaffDashboard() {
+  if (!currentStaffProfile) return;
+  const box = $("dashboardResult");
+  const logBox = $("dashboardImportLogs");
+  const today = todayISO();
+
+  if (box) box.innerText = "กำลังโหลดภาพรวม...";
+  if (logBox) logBox.innerText = "กำลังโหลดประวัติ...";
+
+  try {
+    const bookingsToday = await getExactCount(
+      sb.from("bookings").select("id", { count:"exact", head:true }).eq("booking_date", today).neq("status", "ยกเลิก")
+    );
+    const slotsToday = await getExactCount(
+      sb.from("booking_slots").select("id", { count:"exact", head:true }).eq("booking_date", today)
+    );
+    const infectiousCount = await getExactCount(
+      sb.from("donor_donations").select("id", { count:"exact", head:true }).eq("infectious_flag", true)
+    );
+    const donationCount = await getExactCount(
+      sb.from("donor_donations").select("id", { count:"exact", head:true })
+    );
+
+    if ($("dashBookingsToday")) $("dashBookingsToday").innerText = bookingsToday;
+    if ($("dashSlotsToday")) $("dashSlotsToday").innerText = slotsToday;
+    if ($("dashInfectious")) $("dashInfectious").innerText = infectiousCount;
+    if ($("dashDonations")) $("dashDonations").innerText = donationCount;
+
+    if (box) {
+      box.className = "staff-result ok";
+      box.innerText =
+        "ข้อมูลวันที่ " + isoToDDMMYYYY(today) + "\n\n" +
+        "จองวันนี้ที่ยังไม่ยกเลิก: " + bookingsToday + " รายการ\n" +
+        "รอบจองที่เปิด/บันทึกไว้วันนี้: " + slotsToday + " ช่วงเวลา\n" +
+        "รายการที่ต้องติดต่อเจ้าหน้าที่: " + infectiousCount + " รายการ\n" +
+        "รายการบริจาคทั้งหมดในฐานข้อมูล: " + donationCount + " รายการ";
+    }
+
+    const { data: logs, error: logError } = await sb.from("import_logs")
+      .select("import_type, imported_count, skipped_count, message, created_at")
+      .order("created_at", { ascending:false })
+      .limit(6);
+
+    if (logError) throw logError;
+    if (logBox) {
+      const rows = Array.isArray(logs) ? logs : [];
+      if (rows.length === 0) {
+        logBox.className = "staff-result";
+        logBox.innerText = "ยังไม่มีประวัติการนำเข้า";
+      } else {
+        logBox.className = "table-responsive";
+        logBox.innerHTML = '<table class="table table-sm preview-table"><thead><tr><th>วันที่</th><th>ประเภท</th><th>สำเร็จ</th><th>ข้าม</th><th>รายละเอียด</th></tr></thead><tbody>' +
+          rows.map(function(r) {
+            const dt = r.created_at ? new Date(r.created_at).toLocaleString("th-TH") : "-";
+            return '<tr>' +
+              '<td>' + escapeHtml(dt) + '</td>' +
+              '<td>' + escapeHtml(r.import_type || '') + '</td>' +
+              '<td>' + escapeHtml(r.imported_count ?? 0) + '</td>' +
+              '<td>' + escapeHtml(r.skipped_count ?? 0) + '</td>' +
+              '<td>' + escapeHtml(r.message || '') + '</td>' +
+              '</tr>';
+          }).join('') +
+          '</tbody></table>';
+      }
+    }
+  } catch (err) {
+    if (box) {
+      box.className = "staff-result fail";
+      box.innerText = "โหลดภาพรวมไม่สำเร็จ\n" + (err.message || err);
+    }
+    if (logBox) {
+      logBox.className = "staff-result fail";
+      logBox.innerText = "โหลดประวัติไม่สำเร็จ";
+    }
+  }
 }
 
 async function readWorkbookFromFile(file) {
@@ -1078,24 +1202,114 @@ function parseRawUploadSheet(rows) {
   return { records, skippedNoUnit, skippedCannotDonate, skippedMissing, mode:"RawUpload" };
 }
 
-async function importDonorFile() {
-  const file = $("donorImportFile").files[0];
+function resetDonorImportState() {
+  pendingDonorImport = null;
+  const previewBox = $("donorImportPreview");
+  const resultBox = $("donorImportResult");
   const btn = $("btnImportDonor");
-  const box = $("donorImportResult");
-  if (!file) { setStaffResult(box, "กรุณาเลือกไฟล์ Excel ก่อน", false); return; }
+  if (previewBox) { previewBox.style.display = "none"; previewBox.innerText = ""; }
+  if (resultBox) { resultBox.style.display = "none"; resultBox.innerText = ""; }
+  if (btn) btn.disabled = true;
+}
+
+function uniqueDonorRecords(records) {
+  const seen = new Set();
+  const unique = [];
+  let duplicateInFile = 0;
+
+  records.forEach(function(record) {
+    const key = [record.donor_id, record.donation_date, record.donation_type || "Whole Blood"].join("|");
+    if (seen.has(key)) {
+      duplicateInFile++;
+      return;
+    }
+    seen.add(key);
+    unique.push(record);
+  });
+
+  return { unique, duplicateInFile };
+}
+
+async function previewDonorFile() {
+  const file = $("donorImportFile").files[0];
+  const btn = $("btnPreviewDonor");
+  const importBtn = $("btnImportDonor");
+  const previewBox = $("donorImportPreview");
+  const resultBox = $("donorImportResult");
+
+  if (!file) { setStaffResult(previewBox, "กรุณาเลือกไฟล์ Excel ก่อน", false); return; }
   const isStaff = await ensureStaff(true); if (!isStaff) return;
 
-  showBusy(btn, true, "นำเข้า Supabase", "กำลังอ่านไฟล์...");
+  if (resultBox) resultBox.style.display = "none";
+  showBusy(btn, true, "ตรวจไฟล์ก่อนนำเข้า", "กำลังตรวจไฟล์...");
+
   try {
     const workbook = await readWorkbookFromFile(file);
     const parsed = parseDonorWorkbook(workbook);
-    const records = parsed.records;
-    if (records.length === 0) {
-      setStaffResult(box, "ไม่พบข้อมูลที่นำเข้าได้\nข้ามข้อมูลสำคัญไม่ครบ: " + parsed.skippedMissing, false);
+    const deduped = uniqueDonorRecords(parsed.records || []);
+    pendingDonorImport = {
+      records: deduped.unique,
+      parsed: parsed,
+      fileName: file.name,
+      duplicateInFile: deduped.duplicateInFile
+    };
+
+    const ready = deduped.unique.length;
+
+    if (ready === 0) {
+      if (importBtn) importBtn.disabled = true;
+      setStaffResult(previewBox,
+        "ตรวจไฟล์แล้ว แต่ยังไม่มีรายการที่พร้อมนำเข้า\n\n" +
+        "โหมดไฟล์: " + (parsed.mode || "-") + "\n" +
+        "ข้าม เพราะไม่มี Unit No: " + (parsed.skippedNoUnit || 0) + " รายการ\n" +
+        "ข้าม เพราะบริจาคไม่ได้: " + (parsed.skippedCannotDonate || 0) + " รายการ\n" +
+        "ข้าม เพราะข้อมูลสำคัญไม่ครบ: " + (parsed.skippedMissing || 0) + " รายการ\n" +
+        "ข้อมูลซ้ำในไฟล์เดียวกัน: " + deduped.duplicateInFile + " รายการ",
+        false
+      );
       return;
     }
 
-    let inserted = 0;
+    if (importBtn) importBtn.disabled = false;
+    setStaffResult(previewBox,
+      "ตรวจไฟล์เรียบร้อย รอยืนยันนำเข้า\n\n" +
+      "ชื่อไฟล์: " + file.name + "\n" +
+      "โหมดไฟล์: " + (parsed.mode || "-") + "\n" +
+      "พร้อมส่งเข้า Supabase: " + ready + " รายการ\n" +
+      "ข้าม เพราะไม่มี Unit No: " + (parsed.skippedNoUnit || 0) + " รายการ\n" +
+      "ข้าม เพราะบริจาคไม่ได้: " + (parsed.skippedCannotDonate || 0) + " รายการ\n" +
+      "ข้าม เพราะข้อมูลสำคัญไม่ครบ: " + (parsed.skippedMissing || 0) + " รายการ\n" +
+      "ข้อมูลซ้ำในไฟล์เดียวกัน: " + deduped.duplicateInFile + " รายการ\n\n" +
+      "ตรวจแล้วค่อยกด “ยืนยันนำเข้า Supabase” เพื่อบันทึกจริง",
+      true
+    );
+  } catch (err) {
+    pendingDonorImport = null;
+    if (importBtn) importBtn.disabled = true;
+    setStaffResult(previewBox, "ตรวจไฟล์ไม่สำเร็จ\n" + (err.message || err), false);
+  } finally {
+    showBusy(btn, false, "ตรวจไฟล์ก่อนนำเข้า", "กำลังตรวจไฟล์...");
+  }
+}
+
+async function confirmImportDonorFile() {
+  const btn = $("btnImportDonor");
+  const box = $("donorImportResult");
+  const previewBox = $("donorImportPreview");
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+
+  if (!pendingDonorImport || !Array.isArray(pendingDonorImport.records) || pendingDonorImport.records.length === 0) {
+    setStaffResult(box, "กรุณากดตรวจไฟล์ก่อนนำเข้า", false);
+    return;
+  }
+
+  const parsed = pendingDonorImport.parsed || {};
+  const records = pendingDonorImport.records;
+  const fileName = pendingDonorImport.fileName || "";
+
+  showBusy(btn, true, "ยืนยันนำเข้า Supabase", "กำลังนำเข้า...");
+  try {
+    let sent = 0;
     const chunkSize = 500;
     for (let i = 0; i < records.length; i += chunkSize) {
       const chunk = records.slice(i, i + chunkSize);
@@ -1104,31 +1318,43 @@ async function importDonorFile() {
         ignoreDuplicates: true
       });
       if (error) throw error;
-      inserted += chunk.length;
+      sent += chunk.length;
     }
 
     await sb.from("import_logs").insert({
       import_type: "donor_import",
       imported_count: records.length,
-      skipped_count: (parsed.skippedNoUnit || 0) + (parsed.skippedCannotDonate || 0) + (parsed.skippedMissing || 0),
-      message: `mode=${parsed.mode}, file=${file.name}`
+      skipped_count: (parsed.skippedNoUnit || 0) + (parsed.skippedCannotDonate || 0) + (parsed.skippedMissing || 0) + (pendingDonorImport.duplicateInFile || 0),
+      message: `mode=${parsed.mode || "-"}, file=${fileName}`
     });
 
     setStaffResult(box,
       "นำเข้าข้อมูลผู้บริจาคเสร็จแล้ว\n\n" +
-      "โหมดไฟล์: " + parsed.mode + "\n" +
-      "ส่งเข้า Supabase: " + inserted + " รายการ\n" +
+      "ชื่อไฟล์: " + fileName + "\n" +
+      "โหมดไฟล์: " + (parsed.mode || "-") + "\n" +
+      "ส่งเข้า Supabase: " + sent + " รายการ\n" +
       "ข้าม เพราะไม่มี Unit No: " + (parsed.skippedNoUnit || 0) + " รายการ\n" +
       "ข้าม เพราะบริจาคไม่ได้: " + (parsed.skippedCannotDonate || 0) + " รายการ\n" +
-      "ข้าม เพราะข้อมูลสำคัญไม่ครบ: " + (parsed.skippedMissing || 0) + " รายการ\n\n" +
-      "หมายเหตุ: ข้อมูลซ้ำจะไม่เพิ่มซ้ำจาก key Donor ID + วันที่บริจาค + ชนิดบริจาค",
+      "ข้าม เพราะข้อมูลสำคัญไม่ครบ: " + (parsed.skippedMissing || 0) + " รายการ\n" +
+      "ข้อมูลซ้ำในไฟล์เดียวกัน: " + (pendingDonorImport.duplicateInFile || 0) + " รายการ\n\n" +
+      "หมายเหตุ: ข้อมูลที่ซ้ำกับฐานข้อมูลเดิมจะไม่เพิ่มซ้ำจาก key Donor ID + วันที่บริจาค + ชนิดบริจาค",
       true
     );
+
+    pendingDonorImport = null;
+    if (btn) btn.disabled = true;
+    if (previewBox) previewBox.style.display = "none";
+    loadStaffDashboard();
   } catch (err) {
     setStaffResult(box, "นำเข้าไม่สำเร็จ\n" + (err.message || err), false);
   } finally {
-    showBusy(btn, false, "นำเข้า Supabase", "กำลังอ่านไฟล์...");
+    showBusy(btn, false, "ยืนยันนำเข้า Supabase", "กำลังนำเข้า...");
   }
+}
+
+// compatibility เผื่อมีปุ่มเก่าค้าง cache
+async function importDonorFile() {
+  await previewDonorFile();
 }
 
 function setStaffResult(box, text, ok) {
@@ -1445,6 +1671,9 @@ function initInputs() {
   if (bookingDate) { bookingDate.min = today; bookingDate.addEventListener("change", loadBookingSlots); }
   const slotDate = $("slotDate"); if (slotDate) slotDate.min = today;
   const bookingListDate = $("bookingListDate"); if (bookingListDate) bookingListDate.value = today;
+
+  const donorImportFile = $("donorImportFile");
+  if (donorImportFile) donorImportFile.addEventListener("change", resetDonorImportState);
 }
 
 document.addEventListener("DOMContentLoaded", async function() {
