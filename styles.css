@@ -70,3 +70,46 @@ body {
   .choice-grid, .slot-grid, .staff-tabs { grid-template-columns:1fr; }
   .staff-wide { transform:none; margin-left:0; width:100%; }
 }
+
+/* v4 donor-friendly adjustments */
+.primary-menu {
+  border: 2px solid rgba(214,48,49,.15);
+  box-shadow: 0 8px 22px rgba(214,48,49,.10);
+}
+.quick-tip-card {
+  background: #fff8e1;
+  border: 1px solid #ffe0a3;
+  color: #5f4300;
+  border-radius: 18px;
+  padding: 14px 16px;
+  line-height: 1.55;
+}
+.mini-help-btn {
+  width: 100%;
+  border: 1px dashed #d63031;
+  color: #b32526;
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: .9rem;
+}
+.form-text {
+  color: #777;
+}
+.form-control::placeholder {
+  color: #9aa0a6;
+}
+.btn-clear-cnmi {
+  min-width: 60px;
+}
+.result-card .border-top {
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  body.p-3 { padding: 10px !important; }
+  .container { padding-left: 0; padding-right: 0; }
+  .home-menu-card { padding: 16px; }
+  .page-title { font-size: 1.1rem; }
+  .form-control { font-size: 1rem; }
+}

@@ -22,12 +22,17 @@
         <p class="mb-0 small">ตรวจสอบข้อมูล คัดกรองเบื้องต้น และจองคิวในลิงก์เดียว</p>
       </div>
 
-      <button type="button" class="home-menu-card mb-3" onclick="showPage('check')">
+      <div class="quick-tip-card mb-3">
+        <div class="fw-bold mb-1">ใช้งานครั้งแรก แนะนำกดเมนูแรก</div>
+        <div class="small text-muted">ถ้าจำ Donor ID ไม่ได้ ให้เลือก “ไม่มี / ลืม Donor ID” ในหน้าตรวจสอบข้อมูล</div>
+      </div>
+
+      <button type="button" class="home-menu-card primary-menu mb-3" onclick="showPage('check')">
         <div class="d-flex gap-3 align-items-center">
           <div class="home-icon">🩸</div>
           <div class="flex-grow-1">
             <div class="fw-bold">ตรวจสอบข้อมูลผู้บริจาค</div>
-            <div class="text-muted small">ดูจำนวนครั้ง สถานะ และประวัติบริจาค</div>
+            <div class="text-muted small">เช็กว่ายังเหลือกี่วันถึงบริจาคครั้งถัดไป</div>
           </div>
           <div class="text-danger fw-bold">›</div>
         </div>
@@ -37,8 +42,8 @@
         <div class="d-flex gap-3 align-items-center">
           <div class="home-icon">✅</div>
           <div class="flex-grow-1">
-            <div class="fw-bold">คัดกรองตนเอง / จองคิว</div>
-            <div class="text-muted small">ประเมินความพร้อมเบื้องต้นก่อนจองคิว</div>
+            <div class="fw-bold">จองคิวบริจาคโลหิต</div>
+            <div class="text-muted small">ตอบคำถามสั้น ๆ แล้วเลือกวัน-เวลา</div>
           </div>
           <div class="text-danger fw-bold">›</div>
         </div>
@@ -48,8 +53,8 @@
         <div class="d-flex gap-3 align-items-center">
           <div class="home-icon">📋</div>
           <div class="flex-grow-1">
-            <div class="fw-bold">ตรวจสอบ / ยกเลิกนัดหมาย</div>
-            <div class="text-muted small">ดูรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้</div>
+            <div class="fw-bold">ดู / ยกเลิกคิวที่จองไว้</div>
+            <div class="text-muted small">ใช้เลขที่จองและเบอร์โทรเพื่อดูหรือยกเลิก</div>
           </div>
           <div class="text-danger fw-bold">›</div>
         </div>
@@ -59,8 +64,8 @@
         <div class="d-flex gap-3 align-items-center">
           <div class="home-icon">📍</div>
           <div class="flex-grow-1">
-            <div class="fw-bold">วันทำการ / สถานที่ / ติดต่อ</div>
-            <div class="text-muted small">เวลาเปิดทำการ เบอร์โทร และแผนที่</div>
+            <div class="fw-bold">เวลาเปิดทำการ / แผนที่ / โทร</div>
+            <div class="text-muted small">ดูเวลาเปิดทำการและเบอร์ติดต่อ</div>
           </div>
           <div class="text-danger fw-bold">›</div>
         </div>
@@ -77,24 +82,25 @@
 
       <div class="card main-card p-3 mb-4">
         <div class="mode-tabs mb-3">
-          <button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')">เช็กข้อมูลปกติ</button>
-          <button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')">ลืม Donor ID</button>
+          <button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')">มี Donor ID</button>
+          <button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')">ไม่มี / ลืม Donor ID</button>
         </div>
 
         <div id="checkForm" class="form-section active">
-          <div class="safe-note mb-3">ใช้สำหรับตรวจสอบจำนวนครั้งบริจาค และวันที่สามารถบริจาคครั้งถัดไป</div>
+          <div class="safe-note mb-3">กรอก 3 อย่างนี้เพื่อดูจำนวนครั้ง ประวัติ และวันที่บริจาคครั้งถัดไป</div>
+          <button type="button" class="mini-help-btn mb-3" onclick="switchMode('forgot')">จำ Donor ID ไม่ได้? กดค้นหา Donor ID ก่อน</button>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">เลขผู้บริจาค Donor ID</label>
             <input type="text" id="donorIdInput" class="form-control text-center p-3" placeholder="กรอก Donor ID" autocomplete="off">
           </div>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-            <input type="date" id="donorDobCheck" class="form-control text-center p-3" inputmode="none">
-            <div class="form-text small">*กรุณาเลือกวันเกิดจากปฏิทิน</div>
+            <input type="text" id="donorDobCheck" class="form-control text-center p-3" placeholder="เช่น 29/09/1992 หรือ 29/09/2535" inputmode="numeric" autocomplete="bday">
+            <div class="form-text small">พิมพ์วันเกิดเป็น วัน/เดือน/ปี ได้เลย รองรับ ค.ศ. และ พ.ศ.</div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
-            <input type="tel" id="phoneLast4Check" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 6050" inputmode="numeric" autocomplete="off">
+            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ หรือ 4 ตัวท้าย</label>
+            <input type="tel" id="phoneLast4Check" class="form-control text-center p-3" maxlength="10" placeholder="เช่น 0812347556 หรือ 7556" inputmode="numeric" autocomplete="tel">
           </div>
           <div class="d-flex gap-2">
             <button type="button" id="btnCheckSearch" class="btn btn-search flex-grow-1 p-3" onclick="runCheckSearch()">🔍 ตรวจสอบข้อมูล</button>
@@ -103,19 +109,19 @@
         </div>
 
         <div id="forgotForm" class="form-section">
-          <div class="safe-note mb-3">ใช้สำหรับค้นหาเลขผู้บริจาคเท่านั้น ระบบจะแสดงเฉพาะ Donor ID</div>
+          <div class="safe-note mb-3">กรณีจำ Donor ID ไม่ได้ ให้ใช้เลขบัตรประชาชน / Passport / เลขเอกสารที่เคยให้ไว้ เพื่อค้นหา Donor ID ก่อน</div>
           <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เลขบัตรประชาชน / Passport / เลขเอกสาร</label>
+            <label class="form-label small fw-bold text-muted">เลขบัตรประชาชน / Passport / เลขเอกสารที่เคยให้ไว้</label>
             <input type="text" id="idDocForgot" class="form-control text-center p-3" placeholder="กรอกเลขเอกสาร" autocomplete="off">
           </div>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-            <input type="date" id="donorDobForgot" class="form-control text-center p-3" inputmode="none">
-            <div class="form-text small">*กรุณาเลือกวันเกิดจากปฏิทิน</div>
+            <input type="text" id="donorDobForgot" class="form-control text-center p-3" placeholder="เช่น 29/09/1992 หรือ 29/09/2535" inputmode="numeric" autocomplete="bday">
+            <div class="form-text small">พิมพ์วันเกิดเป็น วัน/เดือน/ปี ได้เลย รองรับ ค.ศ. และ พ.ศ.</div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label>
-            <input type="tel" id="phoneLast4Forgot" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 6050" inputmode="numeric" autocomplete="off">
+            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ หรือ 4 ตัวท้าย</label>
+            <input type="tel" id="phoneLast4Forgot" class="form-control text-center p-3" maxlength="10" placeholder="เช่น 0812347556 หรือ 7556" inputmode="numeric" autocomplete="tel">
           </div>
           <div class="d-flex gap-2">
             <button type="button" id="btnForgotSearch" class="btn btn-search flex-grow-1 p-3" onclick="runForgotSearch()">🔎 ค้นหา Donor ID</button>
@@ -144,7 +150,7 @@
           <p id="displayDob" class="text-muted small text-center mb-3" style="font-size:.85rem;"></p>
           <div class="text-center mb-3"><span id="displayBlood" class="blood-badge"></span></div>
           <div class="d-flex justify-content-between small text-muted border-top pt-3 mt-3">
-            <span>นัดหมายครั้งถัดไป:</span>
+            <span>บริจาคได้อีกครั้งตั้งแต่:</span>
             <span id="displayNextDate" class="fw-bold text-dark"></span>
           </div>
         </div>
@@ -158,7 +164,8 @@
           <p class="text-muted small mb-1">พบข้อมูลของท่าน</p>
           <h5 class="fw-bold mb-3">เลขผู้บริจาค Donor ID</h5>
           <div class="info-box mb-3"><div id="forgotDonorIdText" class="donor-id-big"></div></div>
-          <p class="text-muted small mb-0">กรุณาจดเลขนี้ไว้สำหรับตรวจสอบจำนวนครั้งบริจาคในครั้งต่อไป</p>
+          <p class="text-muted small mb-3">กดปุ่มด้านล่างเพื่อเอาเลขนี้ไปตรวจสอบข้อมูลต่อได้เลย</p>
+          <button type="button" class="btn btn-search w-100 p-3" onclick="useForgotDonorIdForCheck()">ใช้ Donor ID นี้ตรวจสอบข้อมูลต่อ</button>
         </div>
       </div>
     </div>
@@ -191,7 +198,7 @@
 
     <div id="pageBooking" class="app-page">
       <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">จองคิวบริจาคโลหิต</h5></div>
-      <div class="safe-note mb-3">ผ่านการคัดกรองเบื้องต้นแล้ว กรุณากรอกข้อมูลสำหรับจองคิว ระบบนี้เป็นการจองคิวเข้ารับบริการเท่านั้น ไม่ใช่การบันทึกว่าท่านได้มาบริจาคโลหิตแล้ว</div>
+      <div class="safe-note mb-3">กรอกชื่อ เบอร์โทร เลือกวันที่ แล้วเลือกช่วงเวลาที่ว่าง ระบบนี้เป็นการจองคิวเข้ารับบริการเท่านั้น ไม่ใช่การบันทึกว่าท่านได้บริจาคโลหิตแล้ว</div>
       <div class="card main-card p-4 mb-4">
         <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อ-นามสกุล</label><input type="text" id="bookingName" class="form-control p-3" placeholder="กรอกชื่อ-นามสกุล"></div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">Donor ID ถ้ามี</label><input type="text" id="bookingDonorId" class="form-control p-3" placeholder="ถ้าไม่ทราบ เว้นว่างได้"></div>
@@ -204,7 +211,7 @@
     </div>
 
     <div id="pageManage" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">ตรวจสอบ / ยกเลิกนัดหมาย</h5></div>
+      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">ดู / ยกเลิกคิวที่จองไว้</h5></div>
       <div class="card main-card p-4 mb-4">
         <div class="safe-note mb-3">ใช้สำหรับตรวจสอบรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้ โดยใช้เลขที่จองและเบอร์โทรศัพท์ 4 ตัวท้าย</div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">เลขที่จอง Booking ID</label><input type="text" id="manageBookingId" class="form-control text-center p-3" placeholder="เช่น BK202609051030001"></div>

@@ -79,6 +79,48 @@ function cleanLookupText(value) { return String(value || "").replace(/[^A-Za-z0-
 function pad2(n) { return String(n).padStart(2, "0"); }
 function todayISO() { return new Date().toISOString().split("T")[0]; }
 
+function normalizePublicDobInput(value) {
+  let text = String(value || "").trim();
+  if (!text) return "";
+
+  // ถ้าเป็น input date เดิมหรือ browser คืนค่า yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+
+  text = text.replace(/[.\-]/g, "/").replace(/\s+/g, "");
+  const parts = text.split("/");
+  if (parts.length !== 3) return "";
+
+  let d = parseInt(parts[0], 10);
+  let m = parseInt(parts[1], 10);
+  let yRaw = String(parts[2] || "").trim();
+  let y = parseInt(yRaw, 10);
+
+  if (!d || !m || Number.isNaN(y)) return "";
+
+  // รองรับ พ.ศ.
+  if (y > 2400) y = y - 543;
+
+  // รองรับปี ค.ศ. 2 หลัก เช่น 35 = 2535/1992? สำหรับวันเกิดให้เดาเป็น 1900/2000 ตามปีปัจจุบัน
+  if (/^\d{1,2}$/.test(yRaw)) {
+    const currentYY = Number(new Date().getFullYear().toString().slice(-2));
+    y = y <= currentYY ? 2000 + y : 1900 + y;
+  }
+
+  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > new Date().getFullYear()) return "";
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
+function formatDobInputOnBlur(input) {
+  if (!input) return;
+  const iso = normalizePublicDobInput(input.value);
+  if (!iso) return;
+  input.value = isoToDDMMYYYY(iso);
+}
+
+function last4FromInput(value) {
+  return onlyDigits(value).slice(-4);
+}
+
 function isoToThaiDate(iso, longMonth) {
   if (!iso) return "-";
   const p = String(iso).split("-");
@@ -150,12 +192,13 @@ function clearSearch() {
 
 async function runCheckSearch() {
   const donorId = $("donorIdInput").value.trim();
-  const dob = $("donorDobCheck").value;
-  const phoneLast4 = onlyDigits($("phoneLast4Check").value);
+  const dobRaw = $("donorDobCheck").value;
+  const dob = normalizePublicDobInput(dobRaw);
+  const phoneLast4 = last4FromInput($("phoneLast4Check").value);
   const btn = $("btnCheckSearch");
 
   if (!donorId || !dob || phoneLast4.length !== 4) {
-    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Donor ID เลือกวันเกิด และกรอกเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Donor ID วันเกิดเป็น วัน/เดือน/ปี และเบอร์โทรศัพท์หรือ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
     return;
   }
 
@@ -196,7 +239,7 @@ function renderDonorResult(res, fallbackDonorId) {
     const daysLeft = Number(res.daysLeft || 0);
     $("resultDaysLeft").innerText = daysLeft <= 0 ? "0" : daysLeft;
     $("resultDaysLabel").innerText = daysLeft <= 0 ? "บริจาคได้เลย!" : "วัน";
-    $("resultStatus").innerText = daysLeft <= 0 ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้" : "❤️ ยังไม่ถึงกำหนดบริจาคครั้งถัดไป";
+    $("resultStatus").innerText = daysLeft <= 0 ? "❤️ วันนี้ท่านสามารถบริจาคโลหิตได้" : "❤️ บริจาคได้อีกครั้งตั้งแต่วันที่ " + isoToThaiDate(res.nextDate, true);
     $("displayNextDate").innerText = isoToThaiDate(res.nextDate, true);
   }
 
@@ -230,12 +273,13 @@ function renderDonorResult(res, fallbackDonorId) {
 
 async function runForgotSearch() {
   const idDoc = cleanLookupText($("idDocForgot").value);
-  const dob = $("donorDobForgot").value;
-  const phoneLast4 = onlyDigits($("phoneLast4Forgot").value);
+  const dobRaw = $("donorDobForgot").value;
+  const dob = normalizePublicDobInput(dobRaw);
+  const phoneLast4 = last4FromInput($("phoneLast4Forgot").value);
   const btn = $("btnForgotSearch");
 
   if (!idDoc || !dob || phoneLast4.length !== 4) {
-    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกเลขเอกสาร เลือกวันเกิด และกรอกเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกเลขเอกสาร วันเกิดเป็น วัน/เดือน/ปี และเบอร์โทรศัพท์หรือ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
     return;
   }
 
@@ -262,6 +306,23 @@ async function runForgotSearch() {
 
   $("forgotDonorIdText").innerText = data.donorId || "-";
   $("forgotResult").style.display = "block";
+}
+
+function useForgotDonorIdForCheck() {
+  const donorId = ($("forgotDonorIdText")?.innerText || "").trim();
+  if (!donorId || donorId === "-") return;
+
+  $("donorIdInput").value = donorId;
+  $("donorDobCheck").value = $("donorDobForgot").value;
+  $("phoneLast4Check").value = $("phoneLast4Forgot").value;
+  switchMode("check");
+  window.scrollTo(0, 0);
+  showModal({
+    title:"ใส่ Donor ID ให้แล้ว",
+    message:"ตรวจสอบวันเกิดและเบอร์โทร แล้วกดตรวจสอบข้อมูลได้เลยครับ",
+    iconText:"✓",
+    type:"success"
+  });
 }
 
 function startScreening() { showPage("screening"); resetScreening(); }
@@ -1357,10 +1418,26 @@ function initConfigText() {
 
 function initInputs() {
   const today = todayISO();
-  ["donorDobCheck", "donorDobForgot"].forEach(id => { const input = $(id); if (input) input.max = today; });
-  ["phoneLast4Check", "phoneLast4Forgot", "managePhoneLast4"].forEach(id => {
-    const input = $(id); if (input) input.addEventListener("input", () => input.value = onlyDigits(input.value).slice(0,4));
+
+  ["donorDobCheck", "donorDobForgot"].forEach(id => {
+    const input = $(id);
+    if (!input) return;
+    input.addEventListener("blur", () => formatDobInputOnBlur(input));
+    input.addEventListener("input", () => {
+      input.value = String(input.value || "").replace(/[^0-9/.-]/g, "").slice(0, 10);
+    });
   });
+
+  ["phoneLast4Check", "phoneLast4Forgot"].forEach(id => {
+    const input = $(id);
+    if (input) input.addEventListener("input", () => input.value = onlyDigits(input.value).slice(0,10));
+  });
+
+  ["managePhoneLast4"].forEach(id => {
+    const input = $(id);
+    if (input) input.addEventListener("input", () => input.value = onlyDigits(input.value).slice(0,4));
+  });
+
   ["bookingPhone"].forEach(id => {
     const input = $(id); if (input) input.addEventListener("input", () => input.value = onlyDigits(input.value).slice(0,10));
   });
