@@ -178,7 +178,7 @@ function normalizeStaffEmail(value) {
 
   if (!text) return "";
 
-  // ให้กรอกได้ทั้ง parichat.ink และ parichat.ink@mahidol.ac.th
+  // ให้กรอกได้ทั้ง username.sur และ username.sur@mahidol.ac.th
   if (text.endsWith("@")) text = text.slice(0, -1);
   if (!text.includes("@")) return text + "@" + domain;
 
