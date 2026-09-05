@@ -17,7 +17,7 @@ let pendingDonorImport = null;
 sb.auth.onAuthStateChange(async function(event, session) {
   if (event === "PASSWORD_RECOVERY") {
     pendingPasswordRecovery = true;
-    if ($("pagePasswordReset")) showPage("passwordReset");
+    if ($("pageStaffChangePassword")) showPage("staffChangePassword");
   }
 });
 
@@ -62,7 +62,7 @@ function modalSecondaryClick() { closeModal(); if (modalSecondaryCallback) { con
 function showPage(page) {
   const pages = {
     home:"pageHome", check:"pageCheck", screening:"pageScreening", booking:"pageBooking",
-    manage:"pageManage", info:"pageInfo", staffLogin:"pageStaffLogin", passwordReset:"pagePasswordReset", staff:"pageStaff"
+    manage:"pageManage", info:"pageInfo", staffLogin:"pageStaffLogin", staffChangePassword:"pageStaffChangePassword", staff:"pageStaff"
   };
   Object.keys(pages).forEach(function(key){ const el = $(pages[key]); if (el) el.classList.remove("active"); });
   const target = $(pages[page] || "pageHome");
@@ -600,7 +600,7 @@ async function cancelBookingUI() {
 
 async function showStaffGate() {
   const ok = await ensureStaff(false);
-  if (ok) showPage("staff");
+  if (ok) routeStaffAfterAuth();
   else showPage("staffLogin");
 }
 
@@ -622,7 +622,7 @@ async function staffLogin() {
   }
 
   const ok = await ensureStaff(true);
-  if (ok) showPage("staff");
+  if (ok) routeStaffAfterAuth();
 }
 
 function toggleStaffPanel(panel) {
@@ -780,13 +780,52 @@ async function ensureStaff(showError) {
   return true;
 }
 
+function routeStaffAfterAuth() {
+  if (currentStaffProfile && currentStaffProfile.must_change_password) {
+    showPage("staffChangePassword");
+    return;
+  }
+  showPage("staff");
+}
+
+async function changeTemporaryPassword() {
+  const password = $("tempNewPassword").value;
+  const password2 = $("tempNewPassword2").value;
+  const btn = $("btnChangeTempPassword");
+  const box = $("changeTempPasswordResult");
+
+  if (!password || !password2) { setStaffResult(box, "กรุณากรอก Password ใหม่ทั้งสองช่อง", false); return; }
+  if (password.length < 8) { setStaffResult(box, "กรุณาตั้ง Password อย่างน้อย 8 ตัวอักษร", false); return; }
+  if (password !== password2) { setStaffResult(box, "Password ทั้งสองช่องไม่ตรงกัน", false); return; }
+
+  showBusy(btn, true, "บันทึกรหัสผ่านใหม่", "กำลังบันทึก...");
+  const { error } = await sb.auth.updateUser({ password: password });
+  if (error) {
+    showBusy(btn, false, "บันทึกรหัสผ่านใหม่", "กำลังบันทึก...");
+    setStaffResult(box, "บันทึกรหัสผ่านใหม่ไม่สำเร็จ\n" + error.message, false);
+    return;
+  }
+
+  const { data, error: markError } = await sb.rpc("mark_my_password_changed");
+  showBusy(btn, false, "บันทึกรหัสผ่านใหม่", "กำลังบันทึก...");
+
+  if (markError || !data || data.ok !== true) {
+    setStaffResult(box, "บันทึกรหัสแล้ว แต่ปรับสถานะใช้งานครั้งแรกไม่สำเร็จ\nกรุณาแจ้งแอดมิน", false);
+    return;
+  }
+
+  setStaffResult(box, "เปลี่ยนรหัสผ่านสำเร็จแล้ว กำลังเข้าสู่ระบบเจ้าหน้าที่...", true);
+  await ensureStaff(false);
+  setTimeout(function(){ showPage("staff"); }, 600);
+}
+
 function applyStaffProfileUI() {
   const profile = currentStaffProfile || {};
   const isAdmin = profile.role === "admin";
   const bar = $("staffProfileBar");
   if (bar) {
     bar.style.display = "block";
-    bar.innerText = "เข้าสู่ระบบ: " + (profile.display_name || profile.email || "เจ้าหน้าที่") + " | สิทธิ์: " + (profile.role || "staff");
+    bar.innerText = "เข้าสู่ระบบ: " + (profile.display_name || profile.email || "เจ้าหน้าที่") + " | สิทธิ์: " + (profile.role || "staff") + (profile.must_change_password ? " | ต้องเปลี่ยนรหัสผ่าน" : "");
   }
   const adminBtn = $("staffTabBtn_admin");
   if (adminBtn) adminBtn.style.display = isAdmin ? "block" : "none";
@@ -795,6 +834,10 @@ function applyStaffProfileUI() {
 async function requireAdmin() {
   const ok = await ensureStaff(true);
   if (!ok) return false;
+  if (currentStaffProfile && currentStaffProfile.must_change_password) {
+    showPage("staffChangePassword");
+    return false;
+  }
   if (!currentStaffProfile || currentStaffProfile.role !== "admin") {
     showModal({ title:"ไม่มีสิทธิ์ Admin", message:"เมนูนี้ใช้ได้เฉพาะผู้ดูแลระบบ", iconText:"!" });
     return false;
@@ -1558,44 +1601,134 @@ async function loadStaffBookings() {
     '</tbody></table>';
 }
 
-async function adminSaveStaffAccess() {
+async function getSessionAccessToken() {
+  const { data } = await sb.auth.getSession();
+  return data && data.session ? data.session.access_token : "";
+}
+
+async function callAdminStaffFunction(action, payload) {
+  const token = await getSessionAccessToken();
+  if (!token) return { data:null, error:new Error("ไม่พบ session เจ้าหน้าที่ กรุณาเข้าสู่ระบบใหม่") };
+
+  const body = Object.assign({ action: action }, payload || {});
+  const { data, error } = await sb.functions.invoke("admin-staff", {
+    body: body,
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  return { data, error };
+}
+
+function getAdminStaffFormValues() {
+  return {
+    email: normalizeStaffEmail($("adminStaffEmail").value),
+    display_name: String($("adminStaffDisplayName").value || "").trim(),
+    role: $("adminStaffRole").value || "staff",
+    is_active: String($("adminStaffActive") ? $("adminStaffActive").value : "true") === "true",
+    temporary_password: String($("adminTempPassword") ? $("adminTempPassword").value : "").trim()
+  };
+}
+
+function validateAdminStaffBase(form, box) {
+  if (!form.email || !form.display_name) {
+    setStaffResult(box, "กรุณากรอก Email และชื่อที่แสดง", false);
+    return false;
+  }
+  if (!isAllowedStaffEmail(form.email)) {
+    setStaffResult(box, "กรุณาใช้ email @" + (CONFIG.STAFF_EMAIL_DOMAIN || "mahidol.ac.th"), false);
+    return false;
+  }
+  return true;
+}
+
+async function adminCreateOrResetStaff() {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return;
 
-  const email = normalizeStaffEmail($("adminStaffEmail").value);
-  const displayName = String($("adminStaffDisplayName").value || "").trim();
-  const role = $("adminStaffRole").value || "staff";
-  const btn = $("btnAdminSaveStaff");
+  const form = getAdminStaffFormValues();
+  const btn = $("btnAdminCreateStaff");
   const box = $("adminStaffResult");
 
-  if (!email || !displayName) { setStaffResult(box, "กรุณากรอก Email และชื่อที่แสดง", false); return; }
-  if (!isAllowedStaffEmail(email)) { setStaffResult(box, "กรุณาใช้ email @" + (CONFIG.STAFF_EMAIL_DOMAIN || "mahidol.ac.th"), false); return; }
+  if (!validateAdminStaffBase(form, box)) return;
+  if (!form.temporary_password || form.temporary_password.length < 8) {
+    setStaffResult(box, "กรุณาตั้งรหัสผ่านชั่วคราวอย่างน้อย 8 ตัวอักษร", false);
+    return;
+  }
 
-  showBusy(btn, true, "เพิ่ม/แก้ไขสิทธิ์เจ้าหน้าที่", "กำลังบันทึก...");
-  const { data, error } = await sb.rpc("admin_upsert_staff_access", {
-    p_email: email,
-    p_display_name: displayName,
-    p_role: role,
-    p_is_active: true
-  });
-  showBusy(btn, false, "เพิ่ม/แก้ไขสิทธิ์เจ้าหน้าที่", "กำลังบันทึก...");
+  showBusy(btn, true, "สร้าง/อัปเดตบัญชี + ตั้งรหัสชั่วคราว", "กำลังบันทึก...");
+  const { data, error } = await callAdminStaffFunction("upsert_staff_temp_password", form);
+  showBusy(btn, false, "สร้าง/อัปเดตบัญชี + ตั้งรหัสชั่วคราว", "กำลังบันทึก...");
 
   if (error || !data || data.ok !== true) {
     setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || "ไม่สามารถบันทึกได้"), false);
     return;
   }
 
-  setStaffResult(box, "บันทึกสิทธิ์เจ้าหน้าที่สำเร็จ\n\nEmail: " + email + "\nสิทธิ์: " + role + "\n\nถ้าเป็นผู้ใช้ใหม่ ให้น้องกด 'ตั้งรหัสผ่านครั้งแรก' แล้วตั้งรหัสเอง", true);
+  setStaffResult(
+    box,
+    "บันทึกสำเร็จ\n\n" +
+    "Email: " + form.email + "\n" +
+    "ชื่อ: " + form.display_name + "\n" +
+    "สิทธิ์: " + form.role + "\n" +
+    "สถานะ: " + (form.is_active ? "เปิดใช้" : "ปิดสิทธิ์") + "\n\n" +
+    "ให้น้องเข้าสู่ระบบด้วยรหัสผ่านชั่วคราว แล้วระบบจะบังคับเปลี่ยนรหัสผ่านเองทันที",
+    true
+  );
+
+  if ($("adminTempPassword")) $("adminTempPassword").value = "";
   adminLoadStaffAccessList();
 }
 
-async function adminSendPasswordReset() {
+async function adminUpdateStaffStatusOnly() {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return;
 
-  const email = normalizeStaffEmail($("adminStaffEmail").value);
-  const ok = await sendPasswordResetEmail(email, $("adminStaffResult"), $("btnAdminSendReset"), "ส่งอีเมลรีเซตรหัสผ่านให้คนนี้");
-  if (ok) adminLoadStaffAccessList();
+  const form = getAdminStaffFormValues();
+  const btn = $("btnAdminSaveStatus");
+  const box = $("adminStaffResult");
+
+  if (!validateAdminStaffBase(form, box)) return;
+
+  showBusy(btn, true, "บันทึกชื่อ/สิทธิ์/สถานะอย่างเดียว", "กำลังบันทึก...");
+  const { data, error } = await callAdminStaffFunction("update_staff_status", form);
+  showBusy(btn, false, "บันทึกชื่อ/สิทธิ์/สถานะอย่างเดียว", "กำลังบันทึก...");
+
+  if (error || !data || data.ok !== true) {
+    setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || "ไม่สามารถบันทึกได้"), false);
+    return;
+  }
+
+  setStaffResult(box, "บันทึกชื่อ/สิทธิ์/สถานะสำเร็จ", true);
+  adminLoadStaffAccessList();
+}
+
+function adminFillStaffForm(email, displayName, role, isActive) {
+  if ($("adminStaffEmail")) $("adminStaffEmail").value = email || "";
+  if ($("adminStaffDisplayName")) $("adminStaffDisplayName").value = displayName || "";
+  if ($("adminStaffRole")) $("adminStaffRole").value = role || "staff";
+  if ($("adminStaffActive")) $("adminStaffActive").value = isActive ? "true" : "false";
+  if ($("adminTempPassword")) $("adminTempPassword").focus();
+}
+
+async function adminSetActive(email, displayName, role, isActive) {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return;
+
+  const box = $("adminStaffResult");
+  const { data, error } = await callAdminStaffFunction("update_staff_status", {
+    email: email,
+    display_name: displayName || email,
+    role: role || "staff",
+    is_active: !!isActive
+  });
+
+  if (error || !data || data.ok !== true) {
+    setStaffResult(box, "ปรับสถานะไม่สำเร็จ\n" + (error?.message || data?.message || "ไม่สามารถบันทึกได้"), false);
+    return;
+  }
+
+  setStaffResult(box, (isActive ? "เปิดใช้สิทธิ์แล้ว" : "ปิดสิทธิ์แล้ว") + "\n" + email, true);
+  adminLoadStaffAccessList();
 }
 
 async function adminLoadStaffAccessList() {
@@ -1621,14 +1754,28 @@ async function adminLoadStaffAccessList() {
   }
 
   box.className = "table-responsive";
-  box.innerHTML = '<table class="table table-sm preview-table"><thead><tr><th>Email</th><th>ชื่อ</th><th>สิทธิ์</th><th>สถานะ</th><th>สมัครแล้ว</th></tr></thead><tbody>' +
+  box.innerHTML = '<table class="table table-sm preview-table"><thead><tr><th>Email</th><th>ชื่อ</th><th>สิทธิ์</th><th>สถานะ</th><th>บัญชี</th><th>รหัส</th><th>จัดการ</th></tr></thead><tbody>' +
     rows.map(function(r) {
+      const email = escapeHtml(r.email || '');
+      const name = escapeHtml(r.display_name || '');
+      const role = escapeHtml(r.role || 'staff');
+      const activeText = r.is_active ? 'เปิดใช้' : 'ปิดสิทธิ์';
+      const accountText = r.has_auth_user ? 'มีบัญชีแล้ว' : 'ยังไม่มีบัญชี';
+      const passText = r.must_change_password ? 'รอเปลี่ยนรหัส' : 'ปกติ';
+      const safeEmailArg = JSON.stringify(r.email || '');
+      const safeNameArg = JSON.stringify(r.display_name || '');
+      const safeRoleArg = JSON.stringify(r.role || 'staff');
       return '<tr>' +
-        '<td>' + escapeHtml(r.email || '') + '</td>' +
-        '<td>' + escapeHtml(r.display_name || '') + '</td>' +
-        '<td>' + escapeHtml(r.role || '') + '</td>' +
-        '<td>' + (r.is_active ? 'เปิดใช้' : 'ปิดใช้') + '</td>' +
-        '<td>' + (r.has_auth_user ? 'มีบัญชีแล้ว' : 'ยังไม่สมัคร') + '</td>' +
+        '<td>' + email + '</td>' +
+        '<td>' + name + '</td>' +
+        '<td>' + role + '</td>' +
+        '<td>' + activeText + '</td>' +
+        '<td>' + accountText + '</td>' +
+        '<td>' + passText + '</td>' +
+        '<td class="text-nowrap">' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="adminFillStaffForm(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'true' : 'false') + ')">เลือก</button>' +
+          '<button type="button" class="btn btn-sm ' + (r.is_active ? 'btn-outline-danger' : 'btn-outline-success') + '" onclick="adminSetActive(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'false' : 'true') + ')">' + (r.is_active ? 'ปิด' : 'เปิด') + '</button>' +
+        '</td>' +
         '</tr>';
     }).join('') +
     '</tbody></table>';
@@ -1682,7 +1829,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   const hashText = String(window.location.hash || "") + " " + String(window.location.search || "");
   if (pendingPasswordRecovery || hashText.includes("type=recovery")) {
-    showPage("passwordReset");
+    showPage("staffChangePassword");
     return;
   }
 

@@ -244,43 +244,22 @@
       <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">เข้าสู่ระบบเจ้าหน้าที่</h5></div>
 
       <div class="card main-card p-4 mb-4">
-        <div class="safe-note mb-3">ส่วนนี้ใช้สำหรับเจ้าหน้าที่อัปเดตข้อมูลผู้บริจาคและผล infectious positive เท่านั้น</div>
+        <div class="safe-note mb-3">ส่วนนี้ใช้สำหรับเจ้าหน้าที่เท่านั้น บัญชีและรหัสผ่านชั่วคราวจะถูกสร้างโดยแอดมิน</div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">Email</label><input type="email" id="staffEmail" class="form-control p-3" placeholder="name@mahidol.ac.th"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">Password</label><input type="password" id="staffPassword" class="form-control p-3" placeholder="รหัสผ่าน"></div>
+        <div class="mb-3"><label class="form-label small fw-bold text-muted">Password</label><input type="password" id="staffPassword" class="form-control p-3" placeholder="รหัสผ่าน หรือรหัสผ่านชั่วคราวที่แอดมินให้"></div>
         <button type="button" id="btnStaffLogin" class="btn btn-search w-100 p-3" onclick="staffLogin()">เข้าสู่ระบบ</button>
-        <div class="d-grid gap-2 mt-3">
-          <button type="button" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="toggleStaffPanel('first')">ตั้งรหัสผ่านครั้งแรก</button>
-          <button type="button" class="btn btn-link w-100 small" onclick="toggleStaffPanel('forgot')">ลืมรหัสผ่าน / ขออีเมลตั้งรหัสใหม่</button>
-        </div>
-      </div>
-
-      <div id="firstTimePanel" class="card main-card p-4 mb-4" style="display:none;">
-        <h6 class="fw-bold text-danger mb-2">ตั้งรหัสผ่านครั้งแรก</h6>
-        <p class="text-muted small mb-3">ใช้สำหรับเจ้าหน้าที่ที่แอดมินเพิ่ม Email ไว้ในระบบแล้วเท่านั้น เจ้าหน้าที่เป็นคนตั้ง Password เอง</p>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อที่แสดงในระบบ</label><input type="text" id="firstDisplayName" class="form-control p-3" placeholder="เช่น มัส / มาย / หนิง"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">Email</label><input type="email" id="firstEmail" class="form-control p-3" placeholder="name@mahidol.ac.th"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">ตั้ง Password</label><input type="password" id="firstPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">ยืนยัน Password</label><input type="password" id="firstPassword2" class="form-control p-3" placeholder="กรอกซ้ำอีกครั้ง"></div>
-        <button type="button" id="btnFirstSignup" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="staffFirstTimeSignup()">สร้างบัญชี / ตั้งรหัสผ่าน</button>
-      </div>
-
-      <div id="forgotPasswordPanel" class="card main-card p-4 mb-4" style="display:none;">
-        <h6 class="fw-bold text-danger mb-2">ขออีเมลตั้งรหัสผ่านใหม่</h6>
-        <p class="text-muted small mb-3">ใช้เมื่อลืมรหัสผ่าน หรือแอดมินให้ตั้งรหัสใหม่ ระบบจะส่งลิงก์ไปที่อีเมล แล้วเจ้าหน้าที่ตั้งรหัสเอง</p>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">Email</label><input type="email" id="resetEmail" class="form-control p-3" placeholder="name@mahidol.ac.th"></div>
-        <button type="button" id="btnSendReset" class="btn btn-outline-secondary w-100 p-3 fw-bold" onclick="sendPasswordResetSelf()">ส่งอีเมลตั้งรหัสใหม่</button>
-        <div id="passwordResetRequestResult" class="staff-result mt-3" style="display:none;"></div>
+        <div class="safe-note mt-3">ถ้าเข้าครั้งแรกหรือเพิ่งให้แอดมินรีเซตรหัส ให้เข้าสู่ระบบด้วยรหัสชั่วคราว แล้วระบบจะให้เปลี่ยนรหัสผ่านเองทันที</div>
       </div>
     </div>
 
-    <div id="pagePasswordReset" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">ตั้งรหัสผ่านใหม่</h5></div>
+    <div id="pageStaffChangePassword" class="app-page">
+      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="staffLogout()">‹ ออกจากระบบ</button><h5 class="page-title flex-grow-1">เปลี่ยนรหัสผ่านก่อนใช้งาน</h5></div>
       <div class="card main-card p-4 mb-4">
-        <div class="safe-note mb-3">กรุณาตั้งรหัสผ่านใหม่หลังจากกดลิงก์จากอีเมล Supabase</div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">Password ใหม่</label><input type="password" id="newPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">ยืนยัน Password ใหม่</label><input type="password" id="newPassword2" class="form-control p-3" placeholder="กรอกซ้ำอีกครั้ง"></div>
-        <button type="button" id="btnUpdatePassword" class="btn btn-search w-100 p-3" onclick="updatePasswordFromRecovery()">บันทึกรหัสผ่านใหม่</button>
-        <div id="updatePasswordResult" class="staff-result mt-3" style="display:none;"></div>
+        <div class="safe-note mb-3">บัญชีนี้กำลังใช้รหัสผ่านชั่วคราว กรุณาตั้งรหัสผ่านใหม่ของตนเองก่อนเข้าใช้งานหลังบ้าน</div>
+        <div class="mb-3"><label class="form-label small fw-bold text-muted">Password ใหม่</label><input type="password" id="tempNewPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร"></div>
+        <div class="mb-3"><label class="form-label small fw-bold text-muted">ยืนยัน Password ใหม่</label><input type="password" id="tempNewPassword2" class="form-control p-3" placeholder="กรอกซ้ำอีกครั้ง"></div>
+        <button type="button" id="btnChangeTempPassword" class="btn btn-search w-100 p-3" onclick="changeTemporaryPassword()">บันทึกรหัสผ่านใหม่</button>
+        <div id="changeTempPasswordResult" class="staff-result mt-3" style="display:none;"></div>
       </div>
     </div>
 
@@ -381,17 +360,21 @@
       <div id="staffTab_admin" class="staff-tab-page">
         <div class="card main-card p-4 mb-4">
           <h5 class="fw-bold text-danger">👤 จัดการเจ้าหน้าที่</h5>
-          <p class="text-muted small">เฉพาะ admin เท่านั้น ใช้เพิ่มสิทธิ์เจ้าหน้าที่ก่อนสมัครครั้งแรก และส่งอีเมลให้ตั้งรหัสใหม่</p>
+          <p class="text-muted small">เฉพาะ admin เท่านั้น ใช้สร้างบัญชีเจ้าหน้าที่ ตั้งรหัสผ่านชั่วคราว รีเซตรหัสผ่าน และเปิด/ปิดสิทธิ์ ไม่ต้องส่งอีเมล reset</p>
 
           <div class="row g-2 mb-2">
             <div class="col-md-7"><label class="form-label small fw-bold text-muted">Email เจ้าหน้าที่</label><input type="email" id="adminStaffEmail" class="form-control p-3" placeholder="name@mahidol.ac.th"></div>
             <div class="col-md-5"><label class="form-label small fw-bold text-muted">สิทธิ์</label><select id="adminStaffRole" class="form-control p-3"><option value="staff">staff</option><option value="admin">admin</option></select></div>
           </div>
           <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อที่แสดง</label><input type="text" id="adminStaffDisplayName" class="form-control p-3" placeholder="เช่น มาย / หนิง / ปาริฉัตร"></div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-7"><label class="form-label small fw-bold text-muted">รหัสผ่านชั่วคราว</label><input type="text" id="adminTempPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร เช่น Cnmi@123456"></div>
+            <div class="col-md-5"><label class="form-label small fw-bold text-muted">สถานะ</label><select id="adminStaffActive" class="form-control p-3"><option value="true">เปิดใช้</option><option value="false">ปิดสิทธิ์</option></select></div>
+          </div>
 
           <div class="d-grid gap-2">
-            <button type="button" id="btnAdminSaveStaff" class="btn btn-search p-3" onclick="adminSaveStaffAccess()">เพิ่ม/แก้ไขสิทธิ์เจ้าหน้าที่</button>
-            <button type="button" id="btnAdminSendReset" class="btn btn-outline-danger p-3 fw-bold" onclick="adminSendPasswordReset()">ส่งอีเมลรีเซตรหัสผ่านให้คนนี้</button>
+            <button type="button" id="btnAdminCreateStaff" class="btn btn-search p-3" onclick="adminCreateOrResetStaff()">สร้าง/อัปเดตบัญชี + ตั้งรหัสชั่วคราว</button>
+            <button type="button" id="btnAdminSaveStatus" class="btn btn-outline-secondary p-3 fw-bold" onclick="adminUpdateStaffStatusOnly()">บันทึกชื่อ/สิทธิ์/สถานะอย่างเดียว</button>
           </div>
 
           <div id="adminStaffResult" class="staff-result mt-3" style="display:none;"></div>
