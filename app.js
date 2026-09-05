@@ -525,9 +525,27 @@ async function staffLogin() {
 }
 
 function toggleStaffPanel(panel) {
+  const firstPanel = $("firstTimePanel");
+  const forgotPanel = $("forgotPasswordPanel");
+  const loginEmail = normalizeStaffEmail($("staffEmail") ? $("staffEmail").value : "");
+
+  if (panel === "first") {
+    if (firstPanel) {
+      const willOpen = firstPanel.style.display === "none" || firstPanel.style.display === "";
+      firstPanel.style.display = willOpen ? "block" : "none";
+      if (willOpen && loginEmail && $("firstEmail") && !$("firstEmail").value) $("firstEmail").value = loginEmail;
+    }
+    if (forgotPanel) forgotPanel.style.display = "none";
+    return;
+  }
+
   if (panel === "forgot") {
-    const el = $("forgotPasswordPanel");
-    if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+    if (forgotPanel) {
+      const willOpen = forgotPanel.style.display === "none" || forgotPanel.style.display === "";
+      forgotPanel.style.display = willOpen ? "block" : "none";
+      if (willOpen && loginEmail && $("resetEmail") && !$("resetEmail").value) $("resetEmail").value = loginEmail;
+    }
+    if (firstPanel) firstPanel.style.display = "none";
   }
 }
 
@@ -555,7 +573,7 @@ async function staffFirstTimeSignup() {
     return;
   }
 
-  showBusy(btn, true, "สร้างบัญชี / ตั้งรหัสครั้งแรก", "กำลังสร้างบัญชี...");
+  showBusy(btn, true, "สร้างบัญชี / ตั้งรหัสผ่าน", "กำลังสร้างบัญชี...");
   const { data, error } = await sb.auth.signUp({
     email: email,
     password: password,
@@ -564,7 +582,7 @@ async function staffFirstTimeSignup() {
       emailRedirectTo: getAuthRedirectUrl()
     }
   });
-  showBusy(btn, false, "สร้างบัญชี / ตั้งรหัสครั้งแรก", "กำลังสร้างบัญชี...");
+  showBusy(btn, false, "สร้างบัญชี / ตั้งรหัสผ่าน", "กำลังสร้างบัญชี...");
 
   if (error) {
     showModal({ title:"สร้างบัญชีไม่สำเร็จ", message:error.message, iconText:"!" });
@@ -611,7 +629,7 @@ async function sendPasswordResetEmail(email, box, btn, normalText) {
   }
 
   if (box) {
-    setStaffResult(box, "ส่งอีเมลตั้งรหัสผ่านใหม่แล้ว\n\nให้เจ้าหน้าที่เปิดอีเมล แล้วกดลิงก์เพื่อตั้งรหัสใหม่", true);
+    setStaffResult(box, "ส่งอีเมลตั้งรหัสผ่านใหม่แล้ว\n\nให้เจ้าหน้าที่เปิดอีเมล แล้วกดลิงก์เพื่อตั้งรหัสใหม่เอง", true);
   }
   return true;
 }
@@ -1280,7 +1298,7 @@ async function adminSaveStaffAccess() {
     return;
   }
 
-  setStaffResult(box, "บันทึกสิทธิ์เจ้าหน้าที่สำเร็จ\n\nEmail: " + email + "\nสิทธิ์: " + role + "\n\nถ้าเป็นผู้ใช้ใหม่ ให้น้องกด 'ใช้งานครั้งแรก' แล้วตั้งรหัสเอง", true);
+  setStaffResult(box, "บันทึกสิทธิ์เจ้าหน้าที่สำเร็จ\n\nEmail: " + email + "\nสิทธิ์: " + role + "\n\nถ้าเป็นผู้ใช้ใหม่ ให้น้องกด 'ตั้งรหัสผ่านครั้งแรก' แล้วตั้งรหัสเอง", true);
   adminLoadStaffAccessList();
 }
 

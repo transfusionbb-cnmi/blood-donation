@@ -240,22 +240,25 @@
         <div class="mb-3"><label class="form-label small fw-bold text-muted">Email</label><input type="email" id="staffEmail" class="form-control p-3" placeholder="name@mahidol.ac.th"></div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">Password</label><input type="password" id="staffPassword" class="form-control p-3" placeholder="รหัสผ่าน"></div>
         <button type="button" id="btnStaffLogin" class="btn btn-search w-100 p-3" onclick="staffLogin()">เข้าสู่ระบบ</button>
-        <button type="button" class="btn btn-link w-100 mt-2 small" onclick="toggleStaffPanel('forgot')">ลืมรหัสผ่าน / ขออีเมลตั้งรหัสใหม่</button>
+        <div class="d-grid gap-2 mt-3">
+          <button type="button" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="toggleStaffPanel('first')">ตั้งรหัสผ่านครั้งแรก</button>
+          <button type="button" class="btn btn-link w-100 small" onclick="toggleStaffPanel('forgot')">ลืมรหัสผ่าน / ขออีเมลตั้งรหัสใหม่</button>
+        </div>
       </div>
 
-      <div class="card main-card p-4 mb-4">
-        <h6 class="fw-bold text-danger mb-2">ใช้งานครั้งแรก</h6>
-        <p class="text-muted small mb-3">ใช้ได้เฉพาะอีเมลที่แอดมินเพิ่มสิทธิ์ไว้แล้ว เจ้าหน้าที่ตั้งรหัสผ่านเองได้</p>
+      <div id="firstTimePanel" class="card main-card p-4 mb-4" style="display:none;">
+        <h6 class="fw-bold text-danger mb-2">ตั้งรหัสผ่านครั้งแรก</h6>
+        <p class="text-muted small mb-3">ใช้สำหรับเจ้าหน้าที่ที่แอดมินเพิ่ม Email ไว้ในระบบแล้วเท่านั้น เจ้าหน้าที่เป็นคนตั้ง Password เอง</p>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อที่แสดงในระบบ</label><input type="text" id="firstDisplayName" class="form-control p-3" placeholder="เช่น มัส / มาย / หนิง"></div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">Email</label><input type="email" id="firstEmail" class="form-control p-3" placeholder="name@mahidol.ac.th"></div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">ตั้ง Password</label><input type="password" id="firstPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร"></div>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">ยืนยัน Password</label><input type="password" id="firstPassword2" class="form-control p-3" placeholder="กรอกซ้ำอีกครั้ง"></div>
-        <button type="button" id="btnFirstSignup" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="staffFirstTimeSignup()">สร้างบัญชี / ตั้งรหัสครั้งแรก</button>
+        <button type="button" id="btnFirstSignup" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="staffFirstTimeSignup()">สร้างบัญชี / ตั้งรหัสผ่าน</button>
       </div>
 
       <div id="forgotPasswordPanel" class="card main-card p-4 mb-4" style="display:none;">
         <h6 class="fw-bold text-danger mb-2">ขออีเมลตั้งรหัสผ่านใหม่</h6>
-        <p class="text-muted small mb-3">ระบบจะส่งลิงก์ไปที่อีเมล เจ้าหน้าที่กดลิงก์แล้วตั้งรหัสใหม่เอง</p>
+        <p class="text-muted small mb-3">ใช้เมื่อลืมรหัสผ่าน หรือแอดมินให้ตั้งรหัสใหม่ ระบบจะส่งลิงก์ไปที่อีเมล แล้วเจ้าหน้าที่ตั้งรหัสเอง</p>
         <div class="mb-3"><label class="form-label small fw-bold text-muted">Email</label><input type="email" id="resetEmail" class="form-control p-3" placeholder="name@mahidol.ac.th"></div>
         <button type="button" id="btnSendReset" class="btn btn-outline-secondary w-100 p-3 fw-bold" onclick="sendPasswordResetSelf()">ส่งอีเมลตั้งรหัสใหม่</button>
         <div id="passwordResetRequestResult" class="staff-result mt-3" style="display:none;"></div>
