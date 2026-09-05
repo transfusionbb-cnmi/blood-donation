@@ -183,3 +183,27 @@ body {
     font-size: 1.8rem;
   }
 }
+
+/* v7 staff email suffix */
+.email-suffix-group .form-control {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  text-align: left;
+}
+.email-suffix-group .input-group-text {
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
+  border-color: #e6e6e6;
+  background: #fff7f7;
+  color: #d63031;
+  font-weight: 800;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+@media (max-width: 480px) {
+  .email-suffix-group .input-group-text {
+    font-size: .88rem;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}

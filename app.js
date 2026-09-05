@@ -168,12 +168,33 @@ function getAuthRedirectUrl() {
   return window.location.origin + window.location.pathname;
 }
 
+function getStaffEmailDomain_() {
+  return String(CONFIG.STAFF_EMAIL_DOMAIN || "mahidol.ac.th").trim().toLowerCase().replace(/^@+/, "");
+}
+
 function normalizeStaffEmail(value) {
-  return String(value || "").trim().toLowerCase();
+  let text = String(value || "").trim().toLowerCase().replace(/\s/g, "");
+  const domain = getStaffEmailDomain_();
+
+  if (!text) return "";
+
+  // ให้กรอกได้ทั้ง parichat.ink และ parichat.ink@mahidol.ac.th
+  if (text.endsWith("@")) text = text.slice(0, -1);
+  if (!text.includes("@")) return text + "@" + domain;
+
+  return text;
+}
+
+function staffEmailLocalPart(value) {
+  const text = String(value || "").trim().toLowerCase().replace(/\s/g, "");
+  const suffix = "@" + getStaffEmailDomain_();
+
+  if (text.endsWith(suffix)) return text.slice(0, -suffix.length);
+  return text.replace(/@+$/, "");
 }
 
 function isAllowedStaffEmail(email) {
-  const domain = String(CONFIG.STAFF_EMAIL_DOMAIN || "mahidol.ac.th").toLowerCase();
+  const domain = getStaffEmailDomain_();
   return normalizeStaffEmail(email).endsWith("@" + domain);
 }
 
@@ -1703,7 +1724,7 @@ async function adminUpdateStaffStatusOnly() {
 }
 
 function adminFillStaffForm(email, displayName, role, isActive) {
-  if ($("adminStaffEmail")) $("adminStaffEmail").value = email || "";
+  if ($("adminStaffEmail")) $("adminStaffEmail").value = staffEmailLocalPart(email || "");
   if ($("adminStaffDisplayName")) $("adminStaffDisplayName").value = displayName || "";
   if ($("adminStaffRole")) $("adminStaffRole").value = role || "staff";
   if ($("adminStaffActive")) $("adminStaffActive").value = isActive ? "true" : "false";
@@ -1818,6 +1839,19 @@ function initInputs() {
   if (bookingDate) { bookingDate.min = today; bookingDate.addEventListener("change", loadBookingSlots); }
   const slotDate = $("slotDate"); if (slotDate) slotDate.min = today;
   const bookingListDate = $("bookingListDate"); if (bookingListDate) bookingListDate.value = today;
+
+  ["staffEmail", "adminStaffEmail"].forEach(id => {
+    const input = $(id);
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+      input.value = String(input.value || "").toLowerCase().replace(/\s/g, "");
+    });
+
+    input.addEventListener("blur", () => {
+      input.value = staffEmailLocalPart(input.value);
+    });
+  });
 
   const donorImportFile = $("donorImportFile");
   if (donorImportFile) donorImportFile.addEventListener("change", resetDonorImportState);
