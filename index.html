@@ -365,9 +365,14 @@
 
 
       <div id="staffTab_admin" class="staff-tab-page">
-        <div class="card main-card p-4 mb-4">
+        <div class="card main-card p-4 mb-4" id="adminStaffFormCard">
           <h5 class="fw-bold text-danger">👤 จัดการเจ้าหน้าที่</h5>
-          <p class="text-muted small">เฉพาะ admin เท่านั้น ใช้สร้างบัญชีเจ้าหน้าที่ ตั้งรหัสผ่านชั่วคราว รีเซตรหัสผ่าน และเปิด/ปิดสิทธิ์ ไม่ต้องส่งอีเมล reset</p>
+          <p class="text-muted small mb-3">เฉพาะ admin เท่านั้น ใช้สร้างบัญชี ตั้งรหัสผ่านชั่วคราว รีเซตรหัสผ่าน และเปิด/ปิดสิทธิ์ ไม่ต้องส่งอีเมล reset</p>
+
+          <div id="adminStaffActionHelp" class="admin-action-help mb-3">
+            <div class="fw-bold">วิธีใช้เร็ว</div>
+            <div class="small">กดปุ่ม <b>สร้างบัญชี</b> หรือ <b>รีเซตรหัส</b> ที่ตารางด้านล่าง ระบบจะดึงข้อมูลขึ้นมาให้ แล้วใส่รหัสชั่วคราวหรือกดสุ่มรหัส จากนั้นกดปุ่มสีแดง</div>
+          </div>
 
           <div class="row g-2 mb-2">
             <div class="col-md-7">
@@ -382,12 +387,20 @@
           </div>
           <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อที่แสดง</label><input type="text" id="adminStaffDisplayName" class="form-control p-3" placeholder="เช่น มาย / หนิง / ปาริฉัตร"></div>
           <div class="row g-2 mb-3">
-            <div class="col-md-7"><label class="form-label small fw-bold text-muted">รหัสผ่านชั่วคราว</label><input type="text" id="adminTempPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร เช่น Cnmi@123456"></div>
+            <div class="col-md-7">
+              <label class="form-label small fw-bold text-muted">รหัสผ่านชั่วคราว</label>
+              <div class="input-group input-group-lg temp-password-group">
+                <input type="text" id="adminTempPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร เช่น Cnmi@123456" autocomplete="new-password">
+                <button type="button" class="btn btn-outline-secondary fw-bold" onclick="adminGenerateTempPassword()">สุ่ม</button>
+                <button type="button" class="btn btn-outline-secondary fw-bold" onclick="adminCopyTempPassword()">คัดลอก</button>
+              </div>
+              <div class="form-text small">รหัสนี้ใช้ชั่วคราวเท่านั้น น้อง login แล้วระบบจะบังคับเปลี่ยนรหัสใหม่เอง</div>
+            </div>
             <div class="col-md-5"><label class="form-label small fw-bold text-muted">สถานะ</label><select id="adminStaffActive" class="form-control p-3"><option value="true">เปิดใช้</option><option value="false">ปิดสิทธิ์</option></select></div>
           </div>
 
           <div class="d-grid gap-2">
-            <button type="button" id="btnAdminCreateStaff" class="btn btn-search p-3" onclick="adminCreateOrResetStaff()">สร้าง/อัปเดตบัญชี + ตั้งรหัสชั่วคราว</button>
+            <button type="button" id="btnAdminCreateStaff" class="btn btn-search p-3" data-normal-text="สร้าง/รีเซตบัญชี + ตั้งรหัสชั่วคราว" onclick="adminCreateOrResetStaff()">สร้าง/รีเซตบัญชี + ตั้งรหัสชั่วคราว</button>
             <button type="button" id="btnAdminSaveStatus" class="btn btn-outline-secondary p-3 fw-bold" onclick="adminUpdateStaffStatusOnly()">บันทึกชื่อ/สิทธิ์/สถานะอย่างเดียว</button>
           </div>
 
@@ -396,7 +409,10 @@
 
         <div class="card main-card p-4 mb-4">
           <div class="d-flex align-items-center gap-2 mb-3">
-            <h6 class="fw-bold text-danger flex-grow-1 mb-0">รายชื่อที่อนุญาตให้ใช้หลังบ้าน</h6>
+            <div class="flex-grow-1">
+              <h6 class="fw-bold text-danger mb-1">รายชื่อที่อนุญาตให้ใช้หลังบ้าน</h6>
+              <div class="small text-muted">กด <b>สร้างบัญชี</b> สำหรับคนที่ยังไม่มีบัญชี หรือกด <b>รีเซตรหัส</b> สำหรับคนที่ลืมรหัส</div>
+            </div>
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="adminLoadStaffAccessList()">Refresh</button>
           </div>
           <div id="adminStaffList" class="table-responsive staff-result">กด Refresh เพื่อโหลดรายชื่อ</div>

@@ -207,3 +207,34 @@ body {
     padding-right: 10px;
   }
 }
+
+/* v8 clearer admin password/reset controls */
+.admin-action-help {
+  background: #fff8e1;
+  border: 1px solid #ffe0a3;
+  color: #6f4b00;
+  border-radius: 16px;
+  padding: 12px 14px;
+  line-height: 1.55;
+}
+.temp-password-group .form-control {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.temp-password-group .btn {
+  border-color: #e6e6e6;
+  background: #fff;
+  color: #555;
+}
+.staff-access-table td,
+.staff-access-table th {
+  vertical-align: middle;
+}
+.staff-access-table .btn {
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .staff-access-table {
+    min-width: 980px;
+  }
+}

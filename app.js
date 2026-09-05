@@ -1676,9 +1676,11 @@ async function adminCreateOrResetStaff() {
     return;
   }
 
-  showBusy(btn, true, "สร้าง/อัปเดตบัญชี + ตั้งรหัสชั่วคราว", "กำลังบันทึก...");
+  const normalBtnText = (btn && btn.dataset && btn.dataset.normalText) ? btn.dataset.normalText : "สร้าง/รีเซตบัญชี + ตั้งรหัสชั่วคราว";
+
+  showBusy(btn, true, normalBtnText, "กำลังบันทึก...");
   const { data, error } = await callAdminStaffFunction("upsert_staff_temp_password", form);
-  showBusy(btn, false, "สร้าง/อัปเดตบัญชี + ตั้งรหัสชั่วคราว", "กำลังบันทึก...");
+  showBusy(btn, false, normalBtnText, "กำลังบันทึก...");
 
   if (error || !data || data.ok !== true) {
     setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || "ไม่สามารถบันทึกได้"), false);
@@ -1723,12 +1725,102 @@ async function adminUpdateStaffStatusOnly() {
   adminLoadStaffAccessList();
 }
 
+function setStaffNotice(box, text) {
+  if (!box) return;
+  box.style.display = "block";
+  box.className = "staff-result mt-3";
+  box.innerText = text;
+}
+
+function setAdminStaffPrimaryButtonText(text) {
+  const btn = $("btnAdminCreateStaff");
+  if (!btn) return;
+  btn.innerText = text;
+  btn.dataset.normalText = text;
+}
+
+function adminGenerateTempPassword() {
+  const input = $("adminTempPassword");
+  if (!input) return "";
+
+  let num = Math.floor(Math.random() * 900000) + 100000;
+  if (window.crypto && window.crypto.getRandomValues) {
+    const arr = new Uint32Array(1);
+    window.crypto.getRandomValues(arr);
+    num = 100000 + (arr[0] % 900000);
+  }
+
+  const password = "Cnmi@" + String(num);
+  input.value = password;
+  input.focus();
+  input.select();
+  return password;
+}
+
+async function adminCopyTempPassword() {
+  const input = $("adminTempPassword");
+  const box = $("adminStaffResult");
+  const password = String(input ? input.value : "").trim();
+
+  if (!password) {
+    setStaffNotice(box, `ยังไม่มีรหัสผ่านชั่วคราวให้คัดลอก
+ให้กรอกเอง หรือกดปุ่ม สุ่ม ก่อน`);
+    return;
+  }
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(password);
+      setStaffNotice(box, `คัดลอกรหัสผ่านชั่วคราวแล้ว
+นำไปแจ้งน้องเจ้าหน้าที่ได้เลย`);
+    } else {
+      input.focus();
+      input.select();
+      setStaffNotice(box, `เลือกข้อความรหัสผ่านไว้ให้แล้ว
+กด Ctrl+C เพื่อคัดลอก`);
+    }
+  } catch (err) {
+    input.focus();
+    input.select();
+    setStaffNotice(box, `คัดลอกอัตโนมัติไม่ได้
+กด Ctrl+C เพื่อคัดลอกจากช่องรหัสผ่านชั่วคราว`);
+  }
+}
+
 function adminFillStaffForm(email, displayName, role, isActive) {
   if ($("adminStaffEmail")) $("adminStaffEmail").value = staffEmailLocalPart(email || "");
   if ($("adminStaffDisplayName")) $("adminStaffDisplayName").value = displayName || "";
   if ($("adminStaffRole")) $("adminStaffRole").value = role || "staff";
   if ($("adminStaffActive")) $("adminStaffActive").value = isActive ? "true" : "false";
-  if ($("adminTempPassword")) $("adminTempPassword").focus();
+  setAdminStaffPrimaryButtonText("สร้าง/รีเซตบัญชี + ตั้งรหัสชั่วคราว");
+  const box = $("adminStaffResult");
+  setStaffNotice(box, `เลือกข้อมูลเจ้าหน้าที่แล้ว
+ถ้าต้องการแก้เฉพาะชื่อ/สิทธิ์/สถานะ ให้กดปุ่มสีเทา
+ถ้าต้องการตั้งหรือรีเซตรหัส ให้ใส่รหัสชั่วคราว แล้วกดปุ่มสีแดง`);
+  const card = $("adminStaffFormCard");
+  if (card && card.scrollIntoView) card.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function adminPreparePasswordForm(email, displayName, role, isActive, hasAuthUser) {
+  adminFillStaffForm(email, displayName, role, isActive);
+
+  const actionText = hasAuthUser
+    ? "รีเซตรหัสผ่านชั่วคราว"
+    : "สร้างบัญชี + ตั้งรหัสชั่วคราว";
+
+  setAdminStaffPrimaryButtonText(actionText);
+
+  const password = adminGenerateTempPassword();
+  const box = $("adminStaffResult");
+  setStaffNotice(
+    box,
+    `เลือกเจ้าหน้าที่: ${email || "-"}
+งานที่จะทำ: ${actionText}
+
+ระบบสุ่มรหัสชั่วคราวไว้ให้แล้ว: ${password}
+ตรวจชื่อ/สิทธิ์/สถานะอีกครั้ง แล้วกดปุ่มสีแดงเพื่อบันทึกจริง
+หลังจากนั้นให้น้อง login ด้วยรหัสนี้ แล้วระบบจะบังคับเปลี่ยนรหัสผ่านเอง`
+  );
 }
 
 async function adminSetActive(email, displayName, role, isActive) {
@@ -1775,7 +1867,7 @@ async function adminLoadStaffAccessList() {
   }
 
   box.className = "table-responsive";
-  box.innerHTML = '<table class="table table-sm preview-table"><thead><tr><th>Email</th><th>ชื่อ</th><th>สิทธิ์</th><th>สถานะ</th><th>บัญชี</th><th>รหัส</th><th>จัดการ</th></tr></thead><tbody>' +
+  box.innerHTML = '<table class="table table-sm preview-table staff-access-table"><thead><tr><th>Email</th><th>ชื่อ</th><th>สิทธิ์</th><th>สถานะ</th><th>บัญชี</th><th>รหัส</th><th>ตั้ง/รีเซต</th><th>เปิด/ปิด</th></tr></thead><tbody>' +
     rows.map(function(r) {
       const email = escapeHtml(r.email || '');
       const name = escapeHtml(r.display_name || '');
@@ -1783,6 +1875,8 @@ async function adminLoadStaffAccessList() {
       const activeText = r.is_active ? 'เปิดใช้' : 'ปิดสิทธิ์';
       const accountText = r.has_auth_user ? 'มีบัญชีแล้ว' : 'ยังไม่มีบัญชี';
       const passText = r.must_change_password ? 'รอเปลี่ยนรหัส' : 'ปกติ';
+      const passwordBtnText = r.has_auth_user ? 'รีเซตรหัส' : 'สร้างบัญชี';
+      const passwordBtnClass = r.has_auth_user ? 'btn-outline-warning' : 'btn-outline-primary';
       const safeEmailArg = JSON.stringify(r.email || '');
       const safeNameArg = JSON.stringify(r.display_name || '');
       const safeRoleArg = JSON.stringify(r.role || 'staff');
@@ -1794,8 +1888,11 @@ async function adminLoadStaffAccessList() {
         '<td>' + accountText + '</td>' +
         '<td>' + passText + '</td>' +
         '<td class="text-nowrap">' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="adminFillStaffForm(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'true' : 'false') + ')">เลือก</button>' +
-          '<button type="button" class="btn btn-sm ' + (r.is_active ? 'btn-outline-danger' : 'btn-outline-success') + '" onclick="adminSetActive(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'false' : 'true') + ')">' + (r.is_active ? 'ปิด' : 'เปิด') + '</button>' +
+          '<button type="button" class="btn btn-sm ' + passwordBtnClass + ' fw-bold me-1" onclick="adminPreparePasswordForm(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'true' : 'false') + ',' + (r.has_auth_user ? 'true' : 'false') + ')">' + passwordBtnText + '</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminFillStaffForm(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'true' : 'false') + ')">แก้ข้อมูล</button>' +
+        '</td>' +
+        '<td class="text-nowrap">' +
+          '<button type="button" class="btn btn-sm ' + (r.is_active ? 'btn-outline-danger' : 'btn-outline-success') + '" onclick="adminSetActive(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'false' : 'true') + ')">' + (r.is_active ? 'ปิดสิทธิ์' : 'เปิดใช้') + '</button>' +
         '</td>' +
         '</tr>';
     }).join('') +
