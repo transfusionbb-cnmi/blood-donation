@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.4 */
+/* CNMI Blood Donation Supabase Frontend v15.5 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -642,6 +642,24 @@ async function triggerExternalNotification(sourceType, sourceId, eventType) {
   } catch (err) {
     // Notification must never block a successfully saved booking/request.
     console.warn("CNMI notification function unavailable:", err);
+  }
+}
+
+async function syncStaffPlannerEvent(sourceType, sourceId, eventType) {
+  if (!sourceType || !sourceId) return;
+  try {
+    const { error } = await sb.functions.invoke("notify-donor-request", {
+      body: {
+        sourceType:String(sourceType),
+        sourceId:String(sourceId),
+        eventType:String(eventType || "sync"),
+        syncOnly:true
+      }
+    });
+    if (error) console.warn("CNMI Staff Planner sync:", error.message || error);
+  } catch (err) {
+    // Cross-app sync must never block the main Donor App workflow.
+    console.warn("CNMI Staff Planner sync unavailable:", err);
   }
 }
 
@@ -1310,6 +1328,8 @@ async function cancelBookingUI() {
     showModal({ title:"ยกเลิกไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่ครับ", iconText:"!" });
     return;
   }
+
+  syncStaffPlannerEvent("platelet", currentManageBooking.bookingId, "cancel");
 
   showModal({
     title:"ยกเลิกนัดหมายสำเร็จ",
@@ -2661,6 +2681,7 @@ async function staffSetPlateletBookingStatus(bookingId, status) {
     showModal({ title:"บันทึกไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
     return;
   }
+  syncStaffPlannerEvent("platelet", bookingId, "status");
   await loadStaffBookings();
   await loadPlateletMonthAdmin();
 }
@@ -3423,6 +3444,7 @@ async function staffSetMobileUnitRequestStatus(requestId, status) {
     showModal({ title:"อัปเดตไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
     return;
   }
+  syncStaffPlannerEvent("mobile", requestId, "status");
   await loadStaffMobileUnitRequests();
 }
 
@@ -3457,7 +3479,11 @@ async function staffSetGroupRequestStatus(requestId, status) {
   if (!status) return;
   const isStaff = await ensureStaff(true); if (!isStaff) return;
   const { data, error } = await sb.rpc("staff_set_group_request_status", { p_request_id:requestId, p_status:status });
-  if (error || !data || data.ok !== true) showModal({ title:"บันทึกไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
+  if (error || !data || data.ok !== true) {
+    showModal({ title:"บันทึกไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
+    return;
+  }
+  syncStaffPlannerEvent("group", requestId, "status");
   await loadStaffGroupRequests();
 }
 
@@ -4032,7 +4058,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.4").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.5").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
