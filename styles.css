@@ -42,6 +42,11 @@ button, .btn, .home-menu-card, .staff-tab, .mode-tab, .choice-btn, .slot-btn {
 }
 
 .public-shell { max-width: 720px !important; }
+/* Staff desktop uses the available browser width while public pages stay compact. */
+body[data-page="staff"] .public-shell {
+  width: 100%;
+  max-width: 1380px !important;
+}
 .app-page { display: none; }
 .app-page.active { display: block; animation: pageIn .18s ease both; }
 @keyframes pageIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -478,10 +483,10 @@ textarea.form-control { min-height: 120px; resize: vertical; }
 
 /* Staff shell */
 .staff-wide {
-  width: min(1380px, calc(100vw - 48px));
-  max-width: 1380px;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  transform: none;
 }
 .staff-topbar {
   display: flex;
@@ -591,7 +596,7 @@ textarea.form-control { min-height: 120px; resize: vertical; }
 
 /* Tablet */
 @media (max-width: 1100px) {
-  .staff-wide { width: min(960px, calc(100vw - 30px)); }
+  .staff-wide { width: 100%; }
   .staff-layout { grid-template-columns: 200px minmax(0,1fr); gap: 14px; }
   .dashboard-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .staff-form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
