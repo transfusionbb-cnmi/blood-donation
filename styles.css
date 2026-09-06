@@ -1666,3 +1666,20 @@ button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow
 .platelet-slot-mini.has-booking:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(28,86,61,.10);border-color:rgba(36,109,78,.36)}
 .platelet-slot-mini.has-booking.closed{border-color:rgba(156,42,47,.18)}
 .notification-item-actions .btn-search{min-width:112px}
+
+/* v15.7 — staff booking delete + audit log */
+.booking-row-actions{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.booking-audit-list{display:grid;gap:.65rem}
+.booking-audit-item{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;padding:.85rem 1rem;border:1px solid #e8ecef;border-radius:16px;background:#fff}
+.booking-audit-item>div{display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.booking-audit-item b{font-weight:800;color:#27323a}
+.booking-audit-item span{color:#64727c;overflow-wrap:anywhere}
+.booking-audit-item small{color:#7e8992;white-space:nowrap}
+.booking-audit-item.audit-delete{border-left:4px solid #d84850;background:#fff8f8}
+.booking-audit-item.audit-delete b{color:#c83a43}
+.booking-audit-item.audit-status{border-left:4px solid #3c9a76;background:#f8fcfa}
+@media (max-width:720px){
+  .booking-audit-item{flex-direction:column;gap:.45rem}
+  .booking-audit-item small{white-space:normal}
+  .booking-row-actions .btn{width:100%;margin-right:0!important}
+}

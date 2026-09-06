@@ -2688,19 +2688,26 @@ async function loadStaffBookings() {
     .order("time_slot", { ascending:true });
   if (error) {
     box.innerHTML = '<div class="staff-result fail">โหลดไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>';
+    await loadPlateletBookingAuditLog();
     return;
   }
   if (!data || data.length === 0) {
     box.innerHTML = '<div class="staff-result">ไม่พบรายการจองเกล็ดเลือดในวันนี้</div>';
+    await loadPlateletBookingAuditLog();
     return;
   }
   box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>เวลา</th><th>เลขนัด</th><th>ชื่อ</th><th>โทร / อีเมล</th><th>Donor ID</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>' +
     data.map(r => {
-      const safeId = String(r.booking_id || "").replace(/'/g, "\\'");
+      const safeId = encodeURIComponent(String(r.booking_id || ""));
+      const safeName = encodeURIComponent(String(r.full_name || ""));
+      const safeDate = encodeURIComponent(String(r.booking_date || ""));
+      const safeTime = encodeURIComponent(String(r.time_slot || "").slice(0,5));
       const statusClass = r.status === 'ต้องติดต่อ' ? 'booking-status-contact' : (r.status === 'ยกเลิก' ? 'booking-status-cancel' : 'booking-status-ok');
-      const actions = r.status === 'ต้องติดต่อ'
-        ? "<button type='button' class='btn btn-sm btn-outline-success me-1' onclick=\"staffSetPlateletBookingStatus('" + safeId + "','จองแล้ว')\">ยืนยันคิว</button><button type='button' class='btn btn-sm btn-outline-danger' onclick=\"staffSetPlateletBookingStatus('" + safeId + "','ยกเลิก')\">ยกเลิก</button>"
-        : '-';
+      const statusActions = r.status === 'ต้องติดต่อ'
+        ? "<button type='button' class='btn btn-sm btn-outline-success me-1' onclick=\"staffSetPlateletBookingStatus(decodeURIComponent('" + safeId + "'),'จองแล้ว')\">ยืนยันคิว</button><button type='button' class='btn btn-sm btn-outline-secondary me-1' onclick=\"staffSetPlateletBookingStatus(decodeURIComponent('" + safeId + "'),'ยกเลิก')\">ยกเลิกคิว</button>"
+        : (r.status !== 'ยกเลิก' ? "<button type='button' class='btn btn-sm btn-outline-secondary me-1' onclick=\"staffSetPlateletBookingStatus(decodeURIComponent('" + safeId + "'),'ยกเลิก')\">ยกเลิกคิว</button>" : '');
+      const deleteAction = "<button type='button' class='btn btn-sm btn-outline-danger' onclick=\"confirmStaffDeletePlateletBooking(decodeURIComponent('" + safeId + "'),decodeURIComponent('" + safeName + "'),decodeURIComponent('" + safeDate + "'),decodeURIComponent('" + safeTime + "'))\"><i class='bi bi-trash3'></i> ลบรายการ</button>";
+      const actions = statusActions + deleteAction;
       return '<tr>' +
         '<td data-label="เวลา">' + escapeHtml(String(r.time_slot).slice(0,5)) + '</td>' +
         '<td data-label="เลขนัด">' + escapeHtml(r.public_code || r.booking_id || '') + '</td>' +
@@ -2708,10 +2715,11 @@ async function loadStaffBookings() {
         '<td data-label="ติดต่อ"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a>' + (r.email ? '<br><a class="mail-link-btn" href="' + escapeHtml(buildMailtoHref(r.email, 'CNMI Blood Donation — นัดบริจาคเกล็ดเลือด', 'เรียน ' + (r.full_name || '') + '\n\nเกี่ยวกับนัดบริจาคเกล็ดเลือด เลขนัด ' + (r.public_code || r.booking_id || '') + '\nวันที่ ' + isoToThaiDate(r.booking_date, true) + ' เวลา ' + String(r.time_slot).slice(0,5) + ' น.\n\nห้องบริจาคโลหิต CNMI')) + '"><i class="bi bi-envelope"></i> ' + escapeHtml(r.email) + '</a>' : '') + '</td>' +
         '<td data-label="Donor ID">' + escapeHtml(r.donor_id || '') + '</td>' +
         '<td data-label="สถานะ"><span class="booking-status-pill ' + statusClass + '">' + escapeHtml(r.status) + '</span></td>' +
-        '<td data-label="จัดการ">' + actions + '</td>' +
+        '<td data-label="จัดการ"><div class="booking-row-actions">' + actions + '</div></td>' +
         '</tr>';
     }).join("") +
     '</tbody></table>';
+  await loadPlateletBookingAuditLog();
 }
 
 async function staffSetPlateletBookingStatus(bookingId, status) {
@@ -2724,6 +2732,63 @@ async function staffSetPlateletBookingStatus(bookingId, status) {
   syncStaffPlannerEvent("platelet", bookingId, "status");
   await loadStaffBookings();
   await loadPlateletMonthAdmin();
+}
+
+function confirmStaffDeletePlateletBooking(bookingId, fullName, bookingDate, timeSlot) {
+  const label = [fullName || "-", bookingDate ? isoToThaiDate(bookingDate, true) : "", timeSlot ? timeSlot + " น." : ""].filter(Boolean).join(" · ");
+  showModal({
+    title:"ยืนยันลบรายการจอง",
+    message:"รายการนี้จะหายจากคิวและปฏิทินทันที แต่ระบบจะเก็บ Audit Log ว่าใครเป็นผู้ลบ พร้อมข้อมูลก่อนลบไว้ตรวจสอบย้อนหลัง\n\n" + label,
+    iconText:"!",
+    primaryText:"ลบรายการ",
+    secondaryText:"ยกเลิก",
+    onPrimary:function(){ staffDeletePlateletBooking(bookingId); }
+  });
+}
+
+async function staffDeletePlateletBooking(bookingId) {
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("staff_delete_platelet_booking", { p_booking_id:bookingId });
+  if (error || !data || data.ok !== true) {
+    showModal({ title:"ลบรายการไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
+    return;
+  }
+  syncStaffPlannerEvent("platelet", bookingId, "delete");
+  await loadStaffBookings();
+  await loadPlateletMonthAdmin();
+  await refreshStaffNotificationBadge();
+  showModal({ title:"ลบรายการแล้ว", message:"ลบคิว " + (data.publicCode || bookingId) + " เรียบร้อยแล้ว\nระบบเก็บชื่อผู้ดำเนินการ วันเวลา และข้อมูลก่อนลบไว้ใน Audit Log", iconText:"✓", type:"success" });
+}
+
+async function loadPlateletBookingAuditLog() {
+  const box = $("bookingAuditResult"); if (!box || !currentStaffProfile) return;
+  const date = $("bookingListDate")?.value || todayISO();
+  box.innerHTML = '<div class="staff-result">กำลังโหลดประวัติ...</div>';
+  const { data, error } = await sb.from("staff_booking_audit_log")
+    .select("id,booking_id,public_code,booking_date,time_slot,full_name,action,old_status,new_status,acted_by_name,acted_by_email,created_at")
+    .eq("donation_type", "Platelet")
+    .eq("booking_date", date)
+    .order("created_at", { ascending:false })
+    .limit(50);
+  if (error) {
+    box.innerHTML = '<div class="staff-result fail">โหลด Audit Log ไม่สำเร็จ<br>' + escapeHtml(error.message || '') + '</div>';
+    return;
+  }
+  const rows = Array.isArray(data) ? data : [];
+  if (!rows.length) {
+    box.innerHTML = '<div class="staff-result">ยังไม่มีประวัติการแก้ไขหรือลบคิวในวันที่เลือก</div>';
+    return;
+  }
+  box.innerHTML = '<div class="booking-audit-list">' + rows.map(r => {
+    const actionLabel = r.action === 'delete' ? 'ลบรายการ' : 'เปลี่ยนสถานะ';
+    const actionClass = r.action === 'delete' ? 'audit-delete' : 'audit-status';
+    const statusText = r.action === 'status_change' ? (' · ' + escapeHtml(r.old_status || '-') + ' → ' + escapeHtml(r.new_status || '-')) : '';
+    const actor = r.acted_by_name || r.acted_by_email || 'เจ้าหน้าที่';
+    return '<article class="booking-audit-item ' + actionClass + '">' +
+      '<div><b>' + escapeHtml(actionLabel) + '</b><span>' + escapeHtml(r.public_code || r.booking_id || '-') + ' · ' + escapeHtml(r.full_name || '-') + statusText + '</span></div>' +
+      '<small><i class="bi bi-person-check"></i> ' + escapeHtml(actor) + ' · ' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</small>' +
+    '</article>';
+  }).join('') + '</div>';
 }
 
 
