@@ -1430,3 +1430,20 @@ button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow
 @media (min-width: 901px) {
   .staff-nav-card { max-height: calc(100vh - 150px); overflow-y:auto; scrollbar-width:thin; }
 }
+
+/* v15.1 — mobile unit request + inherited group calendar */
+.mobile-unit-card { border-color: #d7e5ea; background: linear-gradient(180deg,#fff 0%,#fbfdfe 100%); }
+.mobile-unit-card .donation-type-icon { background: #eef6f8; color: #477b89; }
+.donation-type-kicker.mobile-unit { color: #477b89; }
+.mobile-unit-card .btn-soft { background: #f1f7f9 !important; border-color: #d4e4e9 !important; color: #3f7180 !important; }
+.mobile-unit-card .btn-soft:hover { background: #e8f2f5 !important; }
+
+/* Group calendar now inherits room open/close state. */
+.platelet-day-cell.group-day.group-open { border-color: #cfe8da; background: #f2faf5; }
+.platelet-day-cell.group-day.day-closed { border-color: #ead9da; background: #fff7f7; }
+.group-day-status b { line-height: 1.2; }
+
+@media (max-width: 700px) {
+  .mobile-unit-card { grid-template-columns: 46px 1fr; }
+  .mobile-unit-card .donation-type-action { grid-column: 1 / -1; width: 100%; }
+}

@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.0 */
+/* CNMI Blood Donation Supabase Frontend v15.1 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -73,6 +73,7 @@ function modalSecondaryClick() { closeModal(); if (modalSecondaryCallback) { con
 function showPage(page) {
   const pages = {
     home:"pageHome", check:"pageCheck", donationChoice:"pageDonationChoice", groupBooking:"pageGroupBooking",
+    mobileUnitRequest:"pageMobileUnitRequest",
     screening:"pageScreening", booking:"pageBooking", bookingSuccess:"pageBookingSuccess", manage:"pageManage",
     roomCalendar:"pageRoomCalendar", info:"pageInfo",
     staffLogin:"pageStaffLogin", staffChangePassword:"pageStaffChangePassword", staff:"pageStaff"
@@ -98,7 +99,7 @@ function showPage(page) {
 function updateMobileNav(page) {
   document.querySelectorAll(".mobile-bottom-nav button").forEach(function(btn) {
     const targetPage = btn.getAttribute("data-nav-page");
-    const bookingPages = ["donationChoice", "groupBooking", "screening", "booking", "bookingSuccess"];
+    const bookingPages = ["donationChoice", "groupBooking", "mobileUnitRequest", "screening", "booking", "bookingSuccess"];
     const active = targetPage === page || (targetPage === "donationChoice" && bookingPages.includes(page));
     btn.classList.toggle("active", active);
     if (active) btn.setAttribute("aria-current", "page");
@@ -120,6 +121,13 @@ function todayISO() {
     timeZone:"Asia/Bangkok", year:"numeric", month:"2-digit", day:"2-digit"
   }).formatToParts(new Date()).reduce((acc, part) => { acc[part.type] = part.value; return acc; }, {});
   return parts.year + "-" + parts.month + "-" + parts.day;
+}
+
+function addDaysISO(value, days) {
+  const d = isoDateObj(value);
+  if (!d) return value;
+  d.setDate(d.getDate() + Number(days || 0));
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
 }
 
 function isoDateObj(value) {
@@ -605,9 +613,10 @@ function renderBookingSlots(slots) {
   grid.innerHTML = slots.map(function(slot) {
     const remaining = Number(slot.remaining || 0);
     const maxQueue = Number(slot.max || 2);
-    const isFull = remaining <= 0 || slot.status === "ปิด";
+    const leadTimeClosed = slot.status === "ล่วงหน้าไม่ถึง 24 ชม.";
+    const isFull = remaining <= 0 || slot.status === "ปิด" || leadTimeClosed;
     const cls = isFull ? "slot-btn full" : "slot-btn";
-    const text = slot.status === "ปิด" ? "งดรับ" : (remaining <= 0 ? "เต็มแล้ว" : "ว่าง " + remaining + "/" + maxQueue);
+    const text = leadTimeClosed ? "ต้องจองล่วงหน้า 24 ชม." : (slot.status === "ปิด" ? "งดรับ" : (remaining <= 0 ? "เต็มแล้ว" : "ว่าง " + remaining + "/" + maxQueue));
     return '<button type="button" class="' + cls + '" onclick="selectSlot(this, \'' + escapeHtml(slot.time) + '\')"><b>' + escapeHtml(slot.time) + ' น.</b><br><span><i class="bi bi-people"></i> ' + text + '</span></button>';
   }).join("");
 }
@@ -922,11 +931,6 @@ async function submitGroupBookingRequest() {
     showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกชื่อกลุ่ม วันที่ จำนวนมากกว่า 10 คน ชื่อผู้ประสานงาน และเบอร์โทรให้ครบ", iconText:"!" });
     return;
   }
-  if (isWeekendISO(requestedDate)) {
-    showModal({ title:"กรุณาเลือกวันจันทร์–ศุกร์", message:"การรับบริจาคหมู่คณะในระบบนี้เปิดรับคำขอเฉพาะวันทำการ", iconText:"!" });
-    return;
-  }
-
   showBusy(btn, true, "ส่งคำขอนัดหมาย", "กำลังส่งคำขอ...");
   const { data, error } = await sb.rpc("create_group_booking_request", {
     p_group_name: groupName,
@@ -956,6 +960,64 @@ async function submitGroupBookingRequest() {
     $("groupSelectedDate").innerHTML = '<i class="bi bi-calendar-check"></i><span>กรุณาเลือกวันที่จากตารางด้านบน</span>';
   }
   document.querySelectorAll(".group-public-day.selected").forEach(el => el.classList.remove("selected"));
+}
+
+
+async function submitMobileUnitRequest() {
+  const organizationName = $("mobileUnitOrg")?.value.trim() || "";
+  const preferredDate = $("mobileUnitDate")?.value || "";
+  const estimatedPeople = Number($("mobileUnitCount")?.value || 0);
+  const coordinator = $("mobileUnitCoordinator")?.value.trim() || "";
+  const phone = onlyDigits($("mobileUnitPhone")?.value || "");
+  const locationText = $("mobileUnitLocation")?.value.trim() || "";
+  const note = $("mobileUnitNote")?.value.trim() || "";
+  const btn = $("btnSubmitMobileUnitRequest");
+
+  if (!organizationName || !preferredDate || estimatedPeople < 40 || !coordinator || phone.length < 9 || !locationText) {
+    showModal({
+      title:"กรอกข้อมูลไม่ครบ",
+      message:"กรุณากรอกหน่วยงาน วันที่ จำนวนอย่างน้อย 40 คน สถานที่ ผู้ประสานงาน และเบอร์โทรให้ครบ",
+      iconText:"!"
+    });
+    return;
+  }
+
+  showBusy(btn, true, "ส่งคำขอให้ติดต่อกลับ", "กำลังส่งคำขอ...");
+  const { data, error } = await sb.rpc("create_mobile_unit_request", {
+    p_organization_name: organizationName,
+    p_estimated_people: estimatedPeople,
+    p_preferred_date: preferredDate,
+    p_coordinator_name: coordinator,
+    p_phone: phone,
+    p_location_text: locationText,
+    p_note: note
+  });
+  showBusy(btn, false, "ส่งคำขอให้ติดต่อกลับ", "กำลังส่งคำขอ...");
+
+  if (error || !data || data.ok !== true) {
+    showModal({
+      title:"ส่งคำขอไม่สำเร็จ",
+      message:error?.message || data?.message || "กรุณาลองใหม่",
+      iconText:"!"
+    });
+    return;
+  }
+
+  showModal({
+    title:"ส่งคำขอเรียบร้อยแล้ว",
+    message:"เลขที่คำขอ: " + data.requestId +
+      "\nวันที่ที่ต้องการ: " + isoToThaiDate(data.preferredDate, true) +
+      "\nจำนวนประมาณ " + estimatedPeople + " คน" +
+      "\n\nเจ้าหน้าที่จะติดต่อกลับเพื่อประสานรายละเอียดและยืนยันความพร้อม",
+    iconText:"✓",
+    type:"success",
+    onPrimary:function(){ showPage("home"); }
+  });
+
+  ["mobileUnitOrg","mobileUnitCount","mobileUnitCoordinator","mobileUnitPhone","mobileUnitLocation","mobileUnitNote"].forEach(id => {
+    if ($(id)) $(id).value = "";
+  });
+  if ($("mobileUnitDate")) $("mobileUnitDate").value = "";
 }
 
 function clearManageBooking() {
@@ -1353,6 +1415,7 @@ function showStaffTab(tab) {
   if (tab === "bookings") loadStaffBookings();
   if (tab === "groupSlots") loadGroupBookingMonthAdmin();
   if (tab === "groups") loadStaffGroupRequests();
+  if (tab === "mobileUnits") loadStaffMobileUnitRequests();
   if (tab === "roomCalendar") loadRoomCalendarAdmin();
   if (tab === "admin") adminLoadStaffAccessList();
 }
@@ -2436,16 +2499,17 @@ async function loadGroupPublicCalendar(allowAutoNext) {
 
   for (let day = 1; day <= range.days; day++) {
     const iso = month + "-" + pad2(day);
-    const dt = new Date(range.year, range.month - 1, day, 12);
-    const weekend = dt.getDay() === 0 || dt.getDay() === 6;
     const row = dayMap[iso];
     const past = iso < today;
-    const open = !weekend && !past && row && row.open === true;
+    const open = !past && row && row.open === true;
 
     if (open) {
       html += '<button type="button" class="group-public-day open" data-date="' + iso + '" onclick="selectGroupPublicDate(\'' + iso + '\')"><b>' + day + '</b><span>เปิดรับ</span></button>';
     } else {
-      html += '<div class="group-public-day closed ' + (past ? 'past' : '') + '"><b>' + day + '</b><span>' + (weekend ? 'ไม่เปิด' : past ? 'ผ่านแล้ว' : 'งดรับ') + '</span></div>';
+      let reason = past ? "ผ่านแล้ว" : "งดรับ";
+      if (!past && row && row.leadTimeOk === false) reason = "ไม่ถึง 24 ชม.";
+      else if (!past && row && row.roomOpen === false) reason = "ห้องปิด";
+      html += '<div class="group-public-day closed ' + (past ? 'past' : '') + '"><b>' + day + '</b><span>' + escapeHtml(reason) + '</span></div>';
     }
   }
   html += '</div>';
@@ -2496,7 +2560,7 @@ async function setGroupBookingDayOpen(open) {
     setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
   } else {
     const affected = Number(data.affectedRequests || 0);
-    setStaffResult(box, (open ? "เปิดรับหมู่คณะวันที่นี้แล้ว" : "งดรับหมู่คณะวันที่นี้แล้ว") + (affected ? "\nมีคำขอเดิม " + affected + " รายการ เปลี่ยนเป็น “ต้องติดต่อ”" : ""), true);
+    setStaffResult(box, (open ? "นำวันที่นี้กลับไปอิงตามปฏิทินห้องแล้ว" : "งดรับหมู่คณะวันที่นี้แล้ว") + (affected ? "\nมีคำขอเดิม " + affected + " รายการ เปลี่ยนเป็น “ต้องติดต่อ”" : ""), true);
   }
   await loadGroupBookingMonthAdmin();
 }
@@ -2525,10 +2589,10 @@ async function loadGroupBookingMonthAdmin() {
 
   currentGroupAdminDays = Array.isArray(data.days) ? data.days : [];
   if ($("groupAdminMonthStatus")) {
-    $("groupAdminMonthStatus").innerText = data.published ? "เปิดให้ส่งคำขอแล้ว" : (currentGroupAdminDays.length ? "ฉบับร่าง · ยังไม่เปิดรับ" : "ยังไม่ได้เตรียมตาราง");
+    $("groupAdminMonthStatus").innerText = data.published ? "ปฏิทินห้องเผยแพร่แล้ว" : "ปฏิทินห้องยังไม่เผยแพร่";
     $("groupAdminMonthStatus").className = data.published ? "published" : "draft";
   }
-  if ($("groupAdminMonthHint")) $("groupAdminMonthHint").innerText = data.published ? "ผู้บริจาคเห็นวันที่เปิดรับเดือนนี้แล้ว" : "ปิดวันที่ไม่สะดวกให้เรียบร้อยก่อนเปิดรับ";
+  if ($("groupAdminMonthHint")) $("groupAdminMonthHint").innerText = data.published ? "วันเปิดรับหมู่คณะอิงจากตารางห้องโดยอัตโนมัติ" : "ผู้บริจาคจะยังเลือกวันไม่ได้จนกว่าจะเผยแพร่ตารางเปิด–ปิดห้อง";
 
   const dayMap = {};
   currentGroupAdminDays.forEach(d => dayMap[d.date] = d);
@@ -2538,20 +2602,35 @@ async function loadGroupBookingMonthAdmin() {
   for (let i=0;i<offset;i++) html += '<div class="platelet-day-cell empty"></div>';
   for (let day=1; day<=range.days; day++) {
     const iso = month + "-" + pad2(day);
-    const dt = new Date(range.year, range.month - 1, day, 12);
-    const weekend = dt.getDay() === 0 || dt.getDay() === 6;
     const row = dayMap[iso];
-    if (weekend) {
-      html += '<div class="platelet-day-cell weekend"><div class="platelet-day-number">' + day + '</div><span>ไม่เปิด</span></div>';
-    } else if (!row) {
-      html += '<button type="button" class="platelet-day-cell weekday group-unprepared" onclick="selectGroupAdminDate(\'' + iso + '\')"><div class="platelet-day-number">' + day + '</div><span>ยังไม่เตรียม</span></button>';
-    } else {
-      html += '<button type="button" class="platelet-day-cell weekday group-day ' + (row.open ? 'group-open' : 'day-closed') + '" onclick="selectGroupAdminDate(\'' + iso + '\')">' +
-        '<div class="platelet-day-number">' + day + '</div>' +
-        '<div class="group-day-status"><b>' + (row.open ? 'เปิดรับ' : 'งดรับ') + '</b><span>' + escapeHtml(String(row.requests || 0)) + ' คำขอ</span></div>' +
-        (row.note ? '<small class="group-day-note">' + escapeHtml(row.note) + '</small>' : '') +
-        '</button>';
+    if (!row) {
+      html += '<button type="button" class="platelet-day-cell weekday group-unprepared" onclick="selectGroupAdminDate(\'' + iso + '\')"><div class="platelet-day-number">' + day + '</div><span>ไม่มีข้อมูล</span></button>';
+      continue;
     }
+
+    let cls = row.open ? 'group-open' : 'day-closed';
+    let label = row.open ? 'เปิดรับ' : 'งดรับ';
+    let sub = escapeHtml(String(row.requests || 0)) + ' คำขอ';
+    let note = row.note || "";
+    if (row.roomOpen === false) {
+      cls = 'day-closed';
+      label = 'ห้องปิด';
+      sub = row.roomTitle ? escapeHtml(row.roomTitle) : 'อิงปฏิทินห้อง';
+    } else if (row.groupBlocked) {
+      cls = 'day-closed';
+      label = 'งดรับหมู่คณะ';
+      sub = escapeHtml(String(row.requests || 0)) + ' คำขอ';
+    } else if (row.leadTimeOk === false) {
+      cls = 'group-open';
+      label = 'เปิดตามตารางห้อง';
+      sub = 'เลยช่วงจอง 24 ชม.';
+    }
+
+    html += '<button type="button" class="platelet-day-cell weekday group-day ' + cls + '" onclick="selectGroupAdminDate(\'' + iso + '\')">' +
+      '<div class="platelet-day-number">' + day + '</div>' +
+      '<div class="group-day-status"><b>' + label + '</b><span>' + sub + '</span></div>' +
+      (note ? '<small class="group-day-note">' + escapeHtml(note) + '</small>' : '') +
+      '</button>';
   }
   html += '</div>';
   calendar.innerHTML = html;
@@ -2562,8 +2641,6 @@ function showRoomCalendarPublic() {
 }
 
 function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
-  const dt = new Date(range.year, range.month - 1, day, 12);
-  const weekend = dt.getDay() === 0 || dt.getDay() === 6;
   const meta = event ? roomEventMeta(event.type) : null;
   let className = "room-day-cell";
   let label = "";
@@ -2575,16 +2652,11 @@ function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
     label = meta.label;
     icon = '<i class="bi ' + meta.icon + '"></i>';
     detail = event.title || event.location || event.time || "";
-  } else if (weekend) {
-    className += " event-weekend";
-    label = "ปิด";
-    icon = '<i class="bi bi-moon-stars"></i>';
-    detail = "วันหยุดประจำสัปดาห์";
   } else {
     className += " event-normal";
     label = "เปิด";
     icon = '<i class="bi bi-check-circle"></i>';
-    detail = publicMode ? "08:30–15:30" : "ปกติ";
+    detail = publicMode ? "เปิดตามปกติ" : "ปกติ";
   }
 
   const inner = '<div class="room-day-number">' + day + '</div><div class="room-day-state">' + icon + '<b>' + escapeHtml(label) + '</b></div>' + (detail ? '<small>' + escapeHtml(detail) + '</small>' : '');
@@ -2613,7 +2685,7 @@ function renderRoomHighlights(container, events) {
   if (!container) return;
   const visible = (events || []).filter(e => e.type !== "open" || e.title || e.note || e.location || e.time);
   if (!visible.length) {
-    container.innerHTML = '<div class="public-calendar-message"><i class="bi bi-check-circle"></i><div><b>ไม่มีประกาศพิเศษในเดือนนี้</b><span>เปิดทำการปกติ จันทร์–ศุกร์ 08:30–15:30 น.</span></div></div>';
+    container.innerHTML = '<div class="public-calendar-message"><i class="bi bi-check-circle"></i><div><b>ไม่มีประกาศพิเศษในเดือนนี้</b><span>วันที่ไม่มีสถานะพิเศษถือว่าเปิดทำการตามปกติ</span></div></div>';
     return;
   }
   container.innerHTML = visible.map(e => {
@@ -2670,7 +2742,7 @@ async function prepareRoomCalendarMonth() {
   const isStaff = await ensureStaff(true); if (!isStaff) return;
   const { data, error } = await sb.rpc("prepare_room_calendar_month", { p_month:month });
   if (error || !data || data.ok !== true) setStaffResult(box, "เตรียมเดือนไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
-  else setStaffResult(box, "เตรียมปฏิทิน " + thaiMonthLabel(month) + " แล้ว\nเพิ่มเฉพาะวันที่ปิด รับจำกัด ออกหน่วย หรือมีกิจกรรมพิเศษได้เลย", true);
+  else setStaffResult(box, "เตรียมปฏิทิน " + thaiMonthLabel(month) + " แล้ว\nทุกวันตั้งต้นเป็นเปิด ให้เพิ่มเฉพาะวันที่ปิด รับจำกัด ออกหน่วย หรือมีกิจกรรมพิเศษ", true);
   await loadRoomCalendarAdmin();
 }
 
@@ -2725,7 +2797,7 @@ async function deleteRoomCalendarEvent() {
   const { data, error } = await sb.rpc("delete_room_calendar_event", { p_event_date:date });
   if (error || !data || data.ok !== true) setStaffResult(box, "ลบไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
   else {
-    setStaffResult(box, "ลบสถานะพิเศษของวันที่นี้แล้ว ระบบจะกลับไปใช้วันเปิด/ปิดปกติ", true);
+    setStaffResult(box, "ลบสถานะพิเศษของวันที่นี้แล้ว ระบบจะกลับเป็น “เปิดตามปกติ”", true);
     ["roomEventTitle","roomEventNote","roomEventLocation","roomEventTime"].forEach(id => { if ($(id)) $(id).value = ""; });
   }
   await loadRoomCalendarAdmin();
@@ -2748,7 +2820,7 @@ function buildRoomAnnouncement(month, events) {
   const lines = [];
   lines.push("📅 ตารางห้องบริจาคโลหิต ประจำเดือน " + thaiMonthLabel(month));
   lines.push("");
-  lines.push("เวลาทำการปกติ: จันทร์–ศุกร์ 08:30–15:30 น.");
+  lines.push("วันที่ไม่มีประกาศพิเศษ: เปิดทำการตามปกติ");
   if (!sorted.length) {
     lines.push("เดือนนี้ไม่มีประกาศเปลี่ยนแปลงเพิ่มเติม");
   } else {
@@ -2930,13 +3002,12 @@ async function downloadRoomCalendarPoster() {
 
       const iso = month + "-" + pad2(day);
       const dt = new Date(range.year, range.month - 1, day, 12);
-      const weekend = dt.getDay() === 0 || dt.getDay() === 6;
       const event = eventMap[iso];
-      let fill = weekend ? "#f1efee" : "#ffffff";
+      let fill = "#ffffff";
       let stroke = "#e6e1df";
-      let statusColor = weekend ? "#858d91" : "#43805f";
-      let statusText = weekend ? "ปิด" : "เปิด";
-      let detail = weekend ? "วันหยุด" : "08:30–15:30";
+      let statusColor = "#43805f";
+      let statusText = "เปิด";
+      let detail = "ปกติ";
 
       if (event) {
         const st = posterEventStyle(event.type);
@@ -2988,7 +3059,7 @@ async function downloadRoomCalendarPoster() {
 
     ctx.fillStyle = "#69757c";
     ctx.font = '600 20px "Noto Sans Thai", sans-serif';
-    ctx.fillText("เวลาทำการปกติ จันทร์–ศุกร์ 08:30–15:30 น.", 62, 1288);
+    ctx.fillText("วันที่ไม่มีสถานะพิเศษถือว่าเปิดทำการตามปกติ", 62, 1288);
     ctx.fillStyle = "#c94149";
     ctx.font = '800 22px "Noto Sans Thai", sans-serif';
     ctx.fillText("สอบถาม " + (CONFIG.PHONE_TEXT || "02-839-6050") + "  •  donor.cnmiblood.com", 62, 1322);
@@ -3004,6 +3075,68 @@ async function downloadRoomCalendarPoster() {
   } catch (err) {
     showModal({ title:"สร้างภาพไม่สำเร็จ", message:"กรุณาลองใหม่อีกครั้ง หรือใช้ปุ่มคัดลอกข้อความแทน", iconText:"!" });
   }
+}
+
+
+async function loadStaffMobileUnitRequests() {
+  const box = $("staffMobileUnitRequestsResult"); if (!box) return;
+  const from = $("mobileUnitListFrom")?.value || todayISO();
+  if ($("mobileUnitListFrom") && !$("mobileUnitListFrom").value) $("mobileUnitListFrom").value = from;
+  const isStaff = await ensureStaff(false); if (!isStaff) return;
+
+  box.innerHTML = '<div class="staff-result">กำลังโหลดคำขอออกหน่วย...</div>';
+  const { data, error } = await sb.from("mobile_unit_requests")
+    .select("request_id,organization_name,estimated_people,preferred_date,coordinator_name,phone,location_text,note,status,created_at")
+    .gte("preferred_date", from)
+    .order("preferred_date", { ascending:true })
+    .order("created_at", { ascending:true })
+    .limit(200);
+
+  if (error) {
+    box.innerHTML = '<div class="staff-result fail">โหลดคำขอไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>';
+    return;
+  }
+
+  if (!Array.isArray(data) || !data.length) {
+    box.innerHTML = '<div class="staff-result">ไม่พบคำขอออกหน่วยตั้งแต่วันที่เลือก</div>';
+    return;
+  }
+
+  let html = '<table class="table preview-table align-middle"><thead><tr><th>วันที่ต้องการ</th><th>หน่วยงาน</th><th>จำนวน</th><th>สถานที่</th><th>ผู้ประสานงาน</th><th>โทร</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>';
+  data.forEach(r => {
+    const idArg = JSON.stringify(r.request_id || "");
+    const phone = String(r.phone || "");
+    const note = r.note ? '<small class="d-block text-muted mt-1">' + escapeHtml(r.note) + '</small>' : '';
+    html += '<tr>' +
+      '<td data-label="วันที่">' + escapeHtml(isoToThaiDate(r.preferred_date, true)) + '<small class="d-block text-muted">' + escapeHtml(r.request_id || "") + '</small></td>' +
+      '<td data-label="หน่วยงาน"><b>' + escapeHtml(r.organization_name || "") + '</b>' + note + '</td>' +
+      '<td data-label="จำนวน">' + escapeHtml(String(r.estimated_people || 0)) + ' คน</td>' +
+      '<td data-label="สถานที่">' + escapeHtml(r.location_text || "") + '</td>' +
+      '<td data-label="ผู้ประสานงาน">' + escapeHtml(r.coordinator_name || "") + '</td>' +
+      '<td data-label="โทร"><a href="tel:' + escapeHtml(phone) + '">' + escapeHtml(phone) + '</a></td>' +
+      '<td data-label="สถานะ"><span class="booking-status-pill">' + escapeHtml(r.status || "") + '</span></td>' +
+      '<td data-label="จัดการ"><div class="table-action-stack">' +
+        "<button type=\"button\" class=\"btn btn-soft btn-sm\" onclick='staffSetMobileUnitRequestStatus(" + idArg + ",\"กำลังประสาน\")'>กำลังประสาน</button>" +
+        "<button type=\"button\" class=\"btn btn-soft btn-sm\" onclick='staffSetMobileUnitRequestStatus(" + idArg + ",\"ยืนยันแล้ว\")'>ยืนยันแล้ว</button>" +
+        "<button type=\"button\" class=\"btn btn-outline-danger btn-sm\" onclick='staffSetMobileUnitRequestStatus(" + idArg + ",\"ไม่รับ\")'>ไม่รับ</button>" +
+      '</div></td>' +
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  box.innerHTML = html;
+}
+
+async function staffSetMobileUnitRequestStatus(requestId, status) {
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("staff_set_mobile_unit_request_status", {
+    p_request_id: requestId,
+    p_status: status
+  });
+  if (error || !data || data.ok !== true) {
+    showModal({ title:"อัปเดตไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
+    return;
+  }
+  await loadStaffMobileUnitRequests();
 }
 
 async function loadStaffGroupRequests() {
@@ -3353,13 +3486,17 @@ function initInputs() {
   });
   const bookingDate = $("bookingDate");
   if (bookingDate) {
-    bookingDate.min = today;
+    const tomorrow = addDaysISO(today, 1);
+    bookingDate.min = tomorrow;
     bookingDate.max = getNextMonthEndISO();
     bookingDate.addEventListener("change", loadBookingSlots);
   }
   const groupPhone = $("groupPhone"); if (groupPhone) groupPhone.addEventListener("input", () => groupPhone.value = onlyDigits(groupPhone.value).slice(0,10));
+  const mobileUnitPhone = $("mobileUnitPhone"); if (mobileUnitPhone) mobileUnitPhone.addEventListener("input", () => mobileUnitPhone.value = onlyDigits(mobileUnitPhone.value).slice(0,10));
+  const mobileUnitDate = $("mobileUnitDate"); if (mobileUnitDate) { mobileUnitDate.min = addDaysISO(today, 1); }
   const bookingListDate = $("bookingListDate"); if (bookingListDate) bookingListDate.value = today;
   const groupListFrom = $("groupListFrom"); if (groupListFrom) groupListFrom.value = today;
+  const mobileUnitListFrom = $("mobileUnitListFrom"); if (mobileUnitListFrom) mobileUnitListFrom.value = today;
   const importLogDate = $("importLogDate"); if (importLogDate) importLogDate.value = today;
 
   const groupPublicMonth = $("groupPublicMonth");
@@ -3521,7 +3658,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.0").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.1").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

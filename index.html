@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.0" rel="stylesheet">
+  <link href="styles.css?v=15.1" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -209,10 +209,21 @@
           <div class="donation-type-copy">
             <div class="donation-type-kicker walkin">ไม่ต้องจองคิวรายบุคคล</div>
             <h3>บริจาคเลือดแดง</h3>
-            <p><b>Walk-in ได้ตามปกติ</b> ในวันและเวลาทำการ</p>
-            <small>กรณีมาเป็นหมู่คณะมากกว่า 10 คน กรุณาแจ้งนัดหมายล่วงหน้าเพื่อให้เจ้าหน้าที่เตรียมความพร้อม</small>
+            <p><b>Walk-in ได้ตามปกติ</b> ในวันที่ห้องบริจาคเปิดทำการ</p>
+            <small>กรณีมาเป็นหมู่คณะมากกว่า 10 คน กรุณาแจ้งนัดหมายล่วงหน้าอย่างน้อย 24 ชั่วโมง เพื่อให้เจ้าหน้าที่ตรวจสอบความพร้อม</small>
           </div>
           <button type="button" class="btn btn-soft donation-type-action" onclick="showPage('groupBooking')"><i class="bi bi-people"></i> แจ้งนัดหมายหมู่คณะ &gt; 10 คน</button>
+        </div>
+
+        <div class="donation-type-card mobile-unit-card">
+          <div class="donation-type-icon"><i class="bi bi-truck"></i></div>
+          <div class="donation-type-copy">
+            <div class="donation-type-kicker mobile-unit">สำหรับหน่วยงาน / ชุมชน</div>
+            <h3>เชิญออกหน่วยนอกสถานที่</h3>
+            <p>สำหรับผู้บริจาคโดยประมาณ <b>40 คนขึ้นไป</b></p>
+            <small>ส่งข้อมูลเพื่อให้ห้องบริจาคโลหิตติดต่อกลับและประสานวัน เวลา สถานที่ และความพร้อมของหน่วย</small>
+          </div>
+          <button type="button" class="btn btn-soft donation-type-action" onclick="showPage('mobileUnitRequest')"><i class="bi bi-telephone-outbound"></i> ขอให้ติดต่อกลับ</button>
         </div>
       </div>
     </div>
@@ -220,13 +231,13 @@
     <div id="pageGroupBooking" class="app-page">
       <div class="page-head mb-3">
         <button type="button" class="icon-back" onclick="showPage('donationChoice')"><i class="bi bi-arrow-left"></i></button>
-        <div><div class="page-kicker">WHOLE BLOOD · GROUP</div><h2 class="page-title">แจ้งนัดหมายบริจาคเป็นหมู่คณะ</h2><p class="page-subtitle">สำหรับกลุ่มมากกว่า 10 คน เจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันวันนัด</p></div>
+        <div><div class="page-kicker">WHOLE BLOOD · GROUP</div><h2 class="page-title">แจ้งนัดหมายบริจาคเป็นหมู่คณะ</h2><p class="page-subtitle">สำหรับกลุ่มมากกว่า 10 คน · กรุณาแจ้งล่วงหน้าอย่างน้อย 24 ชั่วโมง</p></div>
       </div>
-      <div class="compact-notice mb-3"><i class="bi bi-info-circle"></i><span>การส่งแบบฟอร์มนี้เป็นการแจ้งความประสงค์ ยังไม่ถือว่ายืนยันนัดหมายจนกว่าเจ้าหน้าที่จะติดต่อกลับ</span></div>
+      <div class="compact-notice mb-3"><i class="bi bi-info-circle"></i><span>การส่งแบบฟอร์มนี้เป็นการแจ้งความประสงค์ ยังไม่ถือว่ายืนยันนัดหมายจนกว่าเจ้าหน้าที่จะติดต่อกลับ และต้องส่งล่วงหน้าอย่างน้อย 24 ชั่วโมง</span></div>
 
       <div class="card main-card p-3 p-md-4 mb-3 group-public-calendar-card">
         <div class="public-calendar-head">
-          <div><span class="page-kicker">วันที่เปิดรับหมู่คณะ</span><h4>เลือกวันที่สีเขียว</h4><p>ระบบแสดงเฉพาะเดือนที่ห้องบริจาคเปิดรับคำขอแล้ว</p></div>
+          <div><span class="page-kicker">วันที่เปิดรับหมู่คณะ</span><h4>เลือกวันที่สีเขียว</h4><p>อิงจากปฏิทินเปิด–ปิดห้องบริจาค และตัดวันที่งดรับหมู่คณะออกให้อัตโนมัติ</p></div>
           <input type="month" id="groupPublicMonth" class="form-control public-month-picker" aria-label="เลือกเดือน">
         </div>
         <div id="groupPublicCalendar" class="public-availability-calendar"><div class="empty-state-inline">กำลังโหลดวันที่เปิดรับ...</div></div>
@@ -249,6 +260,31 @@
         <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="groupPhone" class="form-control" inputmode="numeric" placeholder="เบอร์โทรที่ติดต่อได้"></div></div>
         <div class="field-block"><label class="form-label">หมายเหตุ <span class="optional">ถ้ามี</span></label><textarea id="groupNote" class="form-control" rows="3" placeholder="รายละเอียดเพิ่มเติม เช่น ช่วงเวลาที่สะดวก"></textarea></div>
         <button type="button" id="btnSubmitGroupRequest" class="btn btn-search w-100" onclick="submitGroupBookingRequest()">ส่งคำขอนัดหมาย <i class="bi bi-send"></i></button>
+      </div>
+    </div>
+
+    <div id="pageMobileUnitRequest" class="app-page">
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('donationChoice')"><i class="bi bi-arrow-left"></i></button>
+        <div><div class="page-kicker">MOBILE BLOOD DRIVE</div><h2 class="page-title">เชิญออกหน่วยนอกสถานที่</h2><p class="page-subtitle">สำหรับหน่วยงานหรือชุมชนที่คาดว่าจะมีผู้บริจาคตั้งแต่ 40 คนขึ้นไป</p></div>
+      </div>
+      <div class="compact-notice mb-3"><i class="bi bi-info-circle"></i><span>แบบฟอร์มนี้เป็นคำขอให้ติดต่อกลับ ยังไม่ถือว่ายืนยันการออกหน่วย เจ้าหน้าที่จะประสานรายละเอียดและความพร้อมอีกครั้ง</span></div>
+
+      <div class="card main-card p-3 p-md-4 mb-4">
+        <div class="form-step-title"><span>1</span><div><b>ข้อมูลหน่วยงานและวันที่ต้องการ</b><small>กรุณาส่งคำขอล่วงหน้าอย่างน้อย 24 ชั่วโมง</small></div></div>
+        <div class="field-block"><label class="form-label">ชื่อหน่วยงาน / ชุมชน</label><div class="input-with-icon"><i class="bi bi-building"></i><input type="text" id="mobileUnitOrg" class="form-control" placeholder="ชื่อหน่วยงานหรือชุมชน"></div></div>
+        <div class="staff-form-grid public-group-grid">
+          <div class="field-block"><label class="form-label">วันที่ที่ต้องการ</label><input type="date" id="mobileUnitDate" class="form-control"></div>
+          <div class="field-block"><label class="form-label">จำนวนผู้บริจาคโดยประมาณ</label><input type="number" id="mobileUnitCount" class="form-control" min="40" step="1" placeholder="40 คนขึ้นไป"></div>
+        </div>
+        <div class="field-block"><label class="form-label">สถานที่จัดหน่วย</label><div class="input-with-icon"><i class="bi bi-geo-alt"></i><input type="text" id="mobileUnitLocation" class="form-control" placeholder="ชื่อสถานที่ / อำเภอ / จังหวัด"></div></div>
+
+        <div class="section-divider"></div>
+        <div class="form-step-title"><span>2</span><div><b>ผู้ประสานงาน</b><small>เจ้าหน้าที่จะใช้ข้อมูลนี้ติดต่อกลับ</small></div></div>
+        <div class="field-block"><label class="form-label">ชื่อผู้ประสานงาน</label><div class="input-with-icon"><i class="bi bi-person"></i><input type="text" id="mobileUnitCoordinator" class="form-control" placeholder="ชื่อ-นามสกุล"></div></div>
+        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="mobileUnitPhone" class="form-control" inputmode="numeric" placeholder="เบอร์โทรที่ติดต่อได้"></div></div>
+        <div class="field-block"><label class="form-label">รายละเอียดเพิ่มเติม <span class="optional">ถ้ามี</span></label><textarea id="mobileUnitNote" class="form-control" rows="3" placeholder="เช่น ช่วงเวลาที่สะดวก จำนวนที่คาดการณ์ หรือข้อมูลการประสานงานเพิ่มเติม"></textarea></div>
+        <button type="button" id="btnSubmitMobileUnitRequest" class="btn btn-search w-100" onclick="submitMobileUnitRequest()">ส่งคำขอให้ติดต่อกลับ <i class="bi bi-send"></i></button>
       </div>
     </div>
 
@@ -312,7 +348,7 @@
 
         <div class="section-divider"></div>
         <div class="form-step-title"><span>2</span><div><b>วันและเวลา</b><small>ระบบจะแสดงเฉพาะช่วงเวลาที่เปิดจอง</small></div></div>
-        <div class="field-block"><label class="form-label">วันที่ต้องการบริจาคเกล็ดเลือด</label><div class="input-with-icon"><i class="bi bi-calendar3"></i><input type="date" id="bookingDate" class="form-control" inputmode="none"></div><div class="form-text">เปิดจองเฉพาะเดือนที่เจ้าหน้าที่ประกาศแล้ว และไม่เกินเดือนถัดไป</div></div>
+        <div class="field-block"><label class="form-label">วันที่ต้องการบริจาคเกล็ดเลือด</label><div class="input-with-icon"><i class="bi bi-calendar3"></i><input type="date" id="bookingDate" class="form-control" inputmode="none"></div><div class="form-text">ต้องจองล่วงหน้าอย่างน้อย 24 ชั่วโมงก่อนเวลาบริจาค · เปิดเฉพาะเดือนที่เจ้าหน้าที่ประกาศแล้ว และไม่เกินเดือนถัดไป</div></div>
         <label class="form-label">ช่วงเวลาที่ว่าง</label>
         <div id="bookingSlotGrid" class="slot-grid mb-4"><div class="empty-state-inline">เลือกวันที่ก่อน แล้วช่วงเวลาที่ว่างจะแสดงตรงนี้</div></div>
 
@@ -392,7 +428,7 @@
         <div id="publicRoomCalendar" class="room-calendar-grid public-room-grid"></div>
       </div>
       <div id="publicRoomHighlights" class="room-highlight-list mb-4"></div>
-      <div class="compact-notice mb-4"><i class="bi bi-clock"></i><span>เวลาทำการปกติ จันทร์–ศุกร์ 08:30–15:30 น. หากมีประกาศพิเศษให้ยึดตามปฏิทินด้านบน</span></div>
+      <div class="compact-notice mb-4"><i class="bi bi-clock"></i><span>วันที่ไม่มีประกาศพิเศษถือว่าเปิดทำการตามปกติ หากมีวันปิด ออกหน่วย หรือกิจกรรมพิเศษให้ยึดตามปฏิทินด้านบน</span></div>
     </div>
 
     <div id="pageInfo" class="app-page">
@@ -460,6 +496,7 @@
               <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>คิวเกล็ดเลือด</span></button>
               <button type="button" class="staff-tab" data-staff-tab="groupSlots" onclick="showStaffTab('groupSlots')"><i class="bi bi-calendar2-week"></i><span>ตารางหมู่คณะ</span></button>
               <button type="button" class="staff-tab" data-staff-tab="groups" onclick="showStaffTab('groups')"><i class="bi bi-people"></i><span>คำขอหมู่คณะ</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="mobileUnits" onclick="showStaffTab('mobileUnits')"><i class="bi bi-truck"></i><span>คำขอออกหน่วย</span></button>
               <button type="button" class="staff-tab" data-staff-tab="roomCalendar" onclick="showStaffTab('roomCalendar')"><i class="bi bi-calendar-event"></i><span>เปิด–ปิดห้อง</span></button>
               <button type="button" id="staffTabBtn_admin" class="staff-tab admin-only" data-staff-tab="admin" onclick="showStaffTab('admin')" style="display:none;"><i class="bi bi-people"></i><span>เจ้าหน้าที่</span></button>
             </div>
@@ -574,33 +611,31 @@
           </div>
 
           <div id="staffTab_groupSlots" class="staff-tab-page">
-            <div class="staff-page-head"><div><span>WHOLE BLOOD · GROUP CALENDAR</span><h3>ตารางรับบริจาคเลือดแดงเป็นหมู่คณะ</h3><p>กำหนดวันจันทร์–ศุกร์ที่พร้อมรับคำขอหมู่คณะมากกว่า 10 คน แล้วเปิดรับเป็นรายเดือน</p></div></div>
+            <div class="staff-page-head"><div><span>WHOLE BLOOD · GROUP CALENDAR</span><h3>ตารางรับบริจาคเลือดแดงเป็นหมู่คณะ</h3><p>ตารางนี้อิงวันเปิด–ปิดห้องบริจาคโดยอัตโนมัติ ใช้เฉพาะกรณีต้องงดรับหมู่คณะเพิ่ม เช่น อบรมหรือกำลังคนไม่พอ</p></div></div>
             <div class="card main-card staff-card p-4 mb-3">
               <div class="platelet-month-toolbar">
-                <div class="field-block mb-0"><label class="form-label">เดือนที่จัดการ</label><input type="month" id="groupAdminMonth" class="form-control"></div>
-                <div class="month-status-box"><span>สถานะเดือน</span><b id="groupAdminMonthStatus">-</b><small id="groupAdminMonthHint">เลือกเดือนเพื่อโหลดตาราง</small></div>
+                <div class="field-block mb-0"><label class="form-label">เดือนที่ดู</label><input type="month" id="groupAdminMonth" class="form-control"></div>
+                <div class="month-status-box"><span>อ้างอิงจาก</span><b id="groupAdminMonthStatus">-</b><small id="groupAdminMonthHint">ต้องเผยแพร่ปฏิทินเปิด–ปิดห้องก่อน ผู้บริจาคจึงจะเลือกวันได้</small></div>
                 <div class="platelet-month-actions">
-                  <button type="button" class="btn btn-soft" onclick="prepareGroupBookingMonth()"><i class="bi bi-calendar-plus"></i> เตรียมตาราง</button>
-                  <button type="button" class="btn btn-search" onclick="publishGroupBookingMonth(true)"><i class="bi bi-megaphone"></i> เปิดรับเดือนนี้</button>
-                  <button type="button" class="btn btn-outline-secondary" onclick="publishGroupBookingMonth(false)"><i class="bi bi-pause-circle"></i> ปิดรอบเดือน</button>
+                  <button type="button" class="btn btn-soft" onclick="loadGroupBookingMonthAdmin()"><i class="bi bi-arrow-clockwise"></i> โหลดตามปฏิทินห้อง</button>
                 </div>
               </div>
               <div id="groupAdminResult" class="staff-result mt-3" style="display:none;"></div>
             </div>
             <div class="card main-card staff-card p-4 mb-3">
-              <div class="staff-section-head mb-3"><div><h5>เปิด / งดรับหมู่คณะเฉพาะวัน</h5><small>คำขอยังต้องรอเจ้าหน้าที่โทรยืนยันเหมือนเดิม</small></div></div>
+              <div class="staff-section-head mb-3"><div><h5>งดรับหมู่คณะเพิ่มเฉพาะวัน</h5><small>ถ้าห้องปิดจากเมนู “เปิด–ปิดห้อง” วันที่นั้นจะงดรับหมู่คณะให้อัตโนมัติอยู่แล้ว</small></div></div>
               <div class="staff-form-grid group-day-edit-grid">
                 <div class="field-block"><label class="form-label">วันที่</label><input type="date" id="groupAdminDate" class="form-control"></div>
-                <div class="field-block"><label class="form-label">หมายเหตุภายใน</label><input type="text" id="groupAdminNote" class="form-control" placeholder="เช่น คนไม่พอ / มีกิจกรรม / ไม่สะดวกรับกลุ่ม"></div>
+                <div class="field-block"><label class="form-label">เหตุผลงดรับหมู่คณะ</label><input type="text" id="groupAdminNote" class="form-control" placeholder="เช่น อบรม / กำลังคนไม่พอ / มีกิจกรรมภายใน"></div>
               </div>
               <div class="staff-action-row">
-                <button type="button" class="btn btn-outline-danger flex-grow-1" onclick="setGroupBookingDayOpen(false)"><i class="bi bi-calendar-x"></i> งดรับวันนี้</button>
-                <button type="button" class="btn btn-soft flex-grow-1" onclick="setGroupBookingDayOpen(true)"><i class="bi bi-calendar-check"></i> เปิดรับวันนี้</button>
+                <button type="button" class="btn btn-outline-danger flex-grow-1" onclick="setGroupBookingDayOpen(false)"><i class="bi bi-calendar-x"></i> งดรับหมู่คณะวันนี้</button>
+                <button type="button" class="btn btn-soft flex-grow-1" onclick="setGroupBookingDayOpen(true)"><i class="bi bi-arrow-counterclockwise"></i> กลับไปตามตารางห้อง</button>
               </div>
               <div class="form-text mt-2">ถ้าวันนั้นมีคำขออยู่แล้ว ระบบจะเปลี่ยนสถานะเป็น “ต้องติดต่อ” โดยไม่ลบคำขอเดิม</div>
             </div>
             <div class="card main-card staff-card p-3 p-md-4">
-              <div class="staff-section-head mb-3"><div><h5>ปฏิทินหมู่คณะเลือดแดง</h5><small>คลิกวันที่เพื่อเลือกไปจัดการด้านบน</small></div><button type="button" class="btn btn-soft btn-sm" onclick="loadGroupBookingMonthAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+              <div class="staff-section-head mb-3"><div><h5>ปฏิทินหมู่คณะเลือดแดง</h5><small>สีเขียว = ห้องเปิดและไม่ได้งดรับหมู่คณะ · สีเทา/แดง = ไม่รับคำขอ</small></div><button type="button" class="btn btn-soft btn-sm" onclick="loadGroupBookingMonthAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
               <div id="groupAdminCalendar" class="platelet-admin-calendar"><div class="staff-result">เลือกเดือนเพื่อโหลดตาราง</div></div>
             </div>
           </div>
@@ -610,6 +645,14 @@
             <div class="card main-card staff-card p-4">
               <div class="staff-filter-row"><div class="field-block mb-0"><label class="form-label">ตั้งแต่วันที่</label><input type="date" id="groupListFrom" class="form-control"></div><button type="button" class="btn btn-search" onclick="loadStaffGroupRequests()"><i class="bi bi-search"></i> โหลดคำขอ</button></div>
               <div id="staffGroupRequestsResult" class="table-responsive mt-3"></div>
+            </div>
+          </div>
+
+          <div id="staffTab_mobileUnits" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>MOBILE BLOOD DRIVE</span><h3>คำขอให้ออกหน่วยนอกสถานที่</h3><p>สำหรับหน่วยงานหรือชุมชนที่แจ้งผู้บริจาคตั้งแต่ 40 คนขึ้นไป ตรวจสอบแล้วติดต่อกลับเพื่อประสานงาน</p></div></div>
+            <div class="card main-card staff-card p-4">
+              <div class="staff-filter-row"><div class="field-block mb-0"><label class="form-label">ตั้งแต่วันที่ต้องการ</label><input type="date" id="mobileUnitListFrom" class="form-control"></div><button type="button" class="btn btn-search" onclick="loadStaffMobileUnitRequests()"><i class="bi bi-search"></i> โหลดคำขอ</button></div>
+              <div id="staffMobileUnitRequestsResult" class="table-responsive mt-3"></div>
             </div>
           </div>
 
@@ -629,10 +672,10 @@
             </div>
 
             <div class="card main-card staff-card p-4 mb-3">
-              <div class="staff-section-head mb-3"><div><h5>เพิ่มสถานะ / กิจกรรมในวันนั้น</h5><small>วันปกติไม่ต้องกรอก ระบบถือว่าเปิด จันทร์–ศุกร์ 08:30–15:30 น.</small></div></div>
+              <div class="staff-section-head mb-3"><div><h5>เพิ่มสถานะ / กิจกรรมในวันนั้น</h5><small>ทุกวันตั้งต้นเป็น “เปิด” ไม่ต้องกรอกวันปกติ ให้บันทึกเฉพาะวันที่ปิด รับจำกัด ออกหน่วย หรือมีกิจกรรมพิเศษ</small></div></div>
               <div class="staff-form-grid room-event-grid">
                 <div class="field-block"><label class="form-label">วันที่</label><input type="date" id="roomEventDate" class="form-control"></div>
-                <div class="field-block"><label class="form-label">ประเภท</label><select id="roomEventType" class="form-select" onchange="applyRoomEventTypeDefaults()"><option value="closed">ปิดทำการ</option><option value="limited">เปิดรับจำนวนจำกัด</option><option value="mobile_unit">ออกหน่วยนอกสถานที่</option><option value="activity">กิจกรรม / หมายเหตุพิเศษ</option><option value="open">เปิดทำการปกติเป็นกรณีพิเศษ</option></select></div>
+                <div class="field-block"><label class="form-label">ประเภท</label><select id="roomEventType" class="form-select" onchange="applyRoomEventTypeDefaults()"><option value="closed">ปิดทำการ</option><option value="limited">เปิดรับจำนวนจำกัด</option><option value="mobile_unit">ออกหน่วยนอกสถานที่</option><option value="activity">กิจกรรม / หมายเหตุพิเศษ</option><option value="open">เปิดทำการ / หมายเหตุเพิ่มเติม</option></select></div>
                 <div class="field-block"><label class="form-label">หัวข้อสั้น</label><input type="text" id="roomEventTitle" class="form-control" placeholder="เช่น วันหยุดนักขัตฤกษ์"></div>
                 <div class="field-block"><label class="form-label">เวลา <span class="optional">ถ้ามี</span></label><input type="text" id="roomEventTime" class="form-control" placeholder="เช่น 09:00–14:00 น."></div>
                 <div class="field-block"><label class="form-label">สถานที่ <span class="optional">ถ้ามี</span></label><input type="text" id="roomEventLocation" class="form-control" placeholder="เช่น สภ.บางพลี"></div>
@@ -705,7 +748,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="config.js?v=15.0"></script>
-  <script src="app.js?v=15.0"></script>
+  <script src="config.js?v=15.1"></script>
+  <script src="app.js?v=15.1"></script>
 </body>
 </html>
