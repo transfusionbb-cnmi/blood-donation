@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.9 */
+/* CNMI Blood Donation Supabase Frontend v15.10 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -24,6 +24,7 @@ let importLogHistoryTotalPages = 1;
 let screeningQuestionHistoryPage = 1;
 let screeningQuestionHistoryTotalPages = 1;
 let screeningQuestionAuditCache = [];
+let currentManualSectionId = "manual-start";
 let currentGroupAdminDays = [];
 let currentRoomAdminEvents = [];
 let currentPublicRoomEvents = [];
@@ -63,6 +64,14 @@ const STAFF_TAB_ROUTE_MAP = {
   screeningQuestionHistory: "screening-question-history",
   manual: "manual",
   admin: "admin"
+};
+
+const STAFF_TAB_GROUP_MAP = {
+  overview:"today", notifications:"today", bookings:"today",
+  donorImport:"donorData", infectiousImport:"donorData", importLogs:"donorData",
+  slots:"appointments", groupSlots:"appointments", groups:"appointments", mobileUnits:"appointments", roomCalendar:"appointments",
+  screeningQuestions:"screening", screeningQuestionHistory:"screening",
+  manual:"help", admin:"admin"
 };
 
 function getPublicBaseUrl() {
@@ -1632,6 +1641,8 @@ function applyStaffProfileUI() {
   }
   const adminBtn = $("staffTabBtn_admin");
   if (adminBtn) adminBtn.style.display = isAdminView() ? "block" : "none";
+  const adminGroup = document.querySelector('.staff-nav-group[data-nav-group="admin"]');
+  if (adminGroup) adminGroup.style.display = isAdminView() ? "block" : "none";
 
   const switchBtn = $("staffRoleSwitchBtn");
   if (switchBtn) {
@@ -1683,6 +1694,22 @@ async function staffLogout() {
   showPage("home");
 }
 
+function toggleStaffNavGroup(groupId, forceOpen) {
+  const group = document.querySelector('.staff-nav-group[data-nav-group="' + groupId + '"]');
+  if (!group) return;
+  const nextOpen = typeof forceOpen === "boolean" ? forceOpen : !group.classList.contains("open");
+  group.classList.toggle("open", nextOpen);
+}
+
+function openStaffNavGroupForTab(tab) {
+  const groupId = STAFF_TAB_GROUP_MAP[tab] || "today";
+  document.querySelectorAll('.staff-nav-group').forEach(function(group){
+    const id = group.dataset.navGroup || "";
+    const shouldOpen = id === groupId || (id === "today" && tab === "overview");
+    group.classList.toggle("open", shouldOpen);
+  });
+}
+
 function showStaffTab(tab, options) {
   options = options || {};
   if (tab === "admin" && !isAdminView()) {
@@ -1690,6 +1717,7 @@ function showStaffTab(tab, options) {
     return;
   }
   document.querySelectorAll(".staff-tab").forEach(btn => btn.classList.toggle("active", btn.dataset.staffTab === tab));
+  openStaffNavGroupForTab(tab);
   document.querySelectorAll(".staff-tab-page").forEach(page => page.classList.remove("active"));
   const target = $("staffTab_" + tab);
   if (target) target.classList.add("active");
@@ -1741,8 +1769,8 @@ const STAFF_MANUAL_SECTIONS = [
   {
     id: "manual-start",
     badge: "เริ่มต้น",
-    title: "ภาพรวมที่ควรรู้ก่อนใช้งาน",
-    intro: "ระบบนี้มีทั้งฝั่งผู้บริจาคและฝั่งเจ้าหน้าที่ ถ้าจำง่าย ๆ ให้คิดว่า ผู้บริจาคใช้เพื่อเช็กและจอง ส่วนเจ้าหน้าที่ใช้เพื่อดูคิว จัดตาราง และตอบคำขอ",
+    title: "เริ่มใช้งานจากตรงไหน",
+    intro: "ถ้าเพิ่งเริ่มใช้ ให้จำง่าย ๆ ว่า ผู้บริจาคใช้หน้าแรกเพื่อเช็กข้อมูลและจองคิว ส่วนเจ้าหน้าที่เข้าหลังบ้านเพื่อดูคิว จัดตาราง และตอบคำขอ",
     images: [
       { src:"help-images/home.png", caption:"หน้าแรกของผู้บริจาค: ใช้เป็นจุดเริ่มต้นของทุกอย่าง" },
       { src:"help-images/donate-choice.png", caption:"หน้าเลือกประเภทการบริจาค: เกล็ดเลือดต้องจองคิวล่วงหน้า ส่วนเลือดแดงเดินเข้ามาได้" },
@@ -1754,9 +1782,10 @@ const STAFF_MANUAL_SECTIONS = [
       "งานเช็กประวัติ ให้ผู้บริจาคกด ‘เช็กว่าบริจาคได้หรือยัง’ แล้วกรอกข้อมูลยืนยันตัวตน 3 รายการ",
       "ถ้าเป็นงานเจ้าหน้าที่ ให้เข้าปุ่ม ‘สำหรับเจ้าหน้าที่’ เพื่อจัดการข้อมูลด้านในระบบ"
     ],
+    noteTitle: "เวลาช่วยผู้บริจาค",
     tips: [
-      "หน้าสาธารณะมีไว้ให้ผู้บริจาคใช้งานเอง จึงควรเขียนข้อความให้สั้น เข้าใจง่าย และไม่ใช้ภาษาระบบ",
-      "ถ้าผู้บริจาคจำ Donor ID ไม่ได้ ระบบมีปุ่มช่วยค้นหาให้ ไม่ต้องบอกให้เริ่มใหม่ทั้งหมด"
+      "ข้อความที่ผู้บริจาคเห็น ขอให้เขียนสั้น ๆ แบบที่เราใช้คุยกันจริง เช่น ‘กรุณาติดต่อเจ้าหน้าที่ก่อนจองคิว’",
+      "ถ้าผู้บริจาคจำ Donor ID ไม่ได้ ให้กด ‘จำ Donor ID ไม่ได้’ แล้วค้นหาต่อได้เลย ไม่ต้องเริ่มกรอกใหม่"
     ]
   },
   {
@@ -1773,12 +1802,13 @@ const STAFF_MANUAL_SECTIONS = [
     steps: [
       "ไปที่เมนู ‘ตารางเกล็ดเลือด’ เพื่อดูภาพรวมทั้งเดือนก่อน ว่าวันไหนเปิดหรือปิดรอบ",
       "ถ้าต้องการดูรายชื่อคนในรอบ ให้กดที่รอบนั้น แล้วเลือก ‘ดูรายการของวันนี้’",
-      "ถ้าต้องติดต่อลูกค้า ให้เข้าเมนู ‘คิวเกล็ดเลือด’ แล้วเลือกวันที่เพื่อดูเบอร์โทร อีเมล และสถานะการจอง",
+      "ถ้าต้องติดต่อผู้บริจาค ให้เข้าเมนู ‘คิวเกล็ดเลือด’ แล้วเลือกวันที่เพื่อดูเบอร์โทร อีเมล และสถานะการจอง",
       "ถ้าจำเป็นต้องลบคิว เจ้าหน้าที่ทุกคนลบได้ แต่ระบบจะเก็บประวัติไว้ด้านล่างอัตโนมัติ"
     ],
+    noteTitle: "ก่อนกดจัดการคิว",
     tips: [
-      "ถ้าวันนั้นปิดรับ แต่มีคนจองอยู่แล้ว ระบบจะไม่ลบคนทิ้งเอง ต้องดูสถานะและติดต่อประสานให้เรียบร้อย",
-      "ก่อนลบคิว ควรเช็กชื่อและเลขนัดอีกครั้ง เพื่อกันลบผิดคน"
+      "ถ้าวันนั้นปิดรับแต่มีคนจองอยู่แล้ว รายชื่อจะยังอยู่ ให้ติดต่อผู้บริจาคก่อน ไม่ต้องลบคิวทิ้งทันที",
+      "ก่อนลบคิว ให้เช็กชื่อ วันที่ เวลา และเลขนัดอีกครั้ง เพื่อกันลบผิดคน"
     ]
   },
   {
@@ -1795,12 +1825,13 @@ const STAFF_MANUAL_SECTIONS = [
       "เริ่มจากเลือกเดือนที่ต้องการจัดการ แล้วกด ‘เตรียมเดือน’ ถ้ายังไม่เคยสร้างเดือนนั้น",
       "ถ้ามีวันหยุด วันออกหน่วย หรือวันเปิดรับไม่ปกติ ให้กรอกวันที่ ประเภท หัวข้อ เวลา สถานที่ และข้อความสั้นที่ผู้บริจาคควรเห็น",
       "กด ‘บันทึกวันนี้’ ทุกครั้งหลังกรอกข้อมูล เพื่อให้ข้อมูลขึ้นในปฏิทินด้านล่าง",
-      "เมื่อเช็กครบแล้ว ค่อยกด ‘เผยแพร่’ เพื่อให้หน้า Public เห็นข้อมูลชุดนั้น",
+      "เมื่อเช็กครบแล้ว ค่อยกด ‘เผยแพร่’ เพื่อให้ผู้บริจาคเห็นข้อมูลชุดนั้นในหน้าเว็บ",
       "ถ้าจะทำโพสต์หรือส่งข้อความต่อ ให้เลื่อนลงมาที่ ‘ประกาศพร้อมใช้’ แล้วกดคัดลอกหรือดาวน์โหลดภาพ"
     ],
+    noteTitle: "เวลาทำปฏิทิน",
     tips: [
-      "วันปกติไม่ต้องกรอกซ้ำทุกวัน ระบบมีเวลาเปิดรับมาตรฐานให้อัตโนมัติอยู่แล้ว",
-      "ถ้าวันไหนใช้เวลาไม่เหมือนปกติ ค่อยกรอกช่องเวลาเอง เพื่อไม่ให้คนเข้าใจผิด"
+      "วันปกติไม่ต้องกรอกซ้ำ ระบบใส่เวลาเปิดรับมาตรฐานให้อยู่แล้ว",
+      "ถ้าวันไหนเวลาเปลี่ยน ค่อยกรอกเวลาเฉพาะวันนั้น แล้วอ่านทวนก่อนกดเผยแพร่"
     ]
   },
   {
@@ -1818,11 +1849,12 @@ const STAFF_MANUAL_SECTIONS = [
       "กำหนดให้ชัดว่า คำตอบแบบไหนถึงถือว่า ‘ผ่าน’ เช่น บางข้อผ่านเมื่อกด ‘ใช่’ แต่บางข้อผ่านเมื่อกด ‘ไม่ใช่’",
       "ใส่ข้อความเมื่อไม่ผ่านให้เป็นภาษาคน เช่น ‘กรุณาติดต่อเจ้าหน้าที่ก่อนจองคิว’ ไม่ต้องใช้ประโยคแข็งหรือยาวเกินไป",
       "ถ้ายังไม่พร้อมใช้งานจริง สามารถตั้งสถานะเป็น ‘ปิดใช้’ ไว้ก่อนได้",
-      "ถ้าต้องตรวจสอบย้อนหลัง ให้ไปที่เมนู ‘ประวัติคำถาม’ ซึ่งระบบจะโชว์รายการล่าสุดของวันนี้ก่อน"
+      "ถ้าต้องตรวจสอบย้อนหลัง ให้ไปที่เมนู ‘ประวัติคำถาม’ ระบบจะแสดงรายการล่าสุดของวันนี้ให้ก่อน"
     ],
+    noteTitle: "เขียนคำถามให้อ่านง่าย",
     tips: [
-      "อย่าใส่หลายประเด็นรวมกันในคำถามเดียว เพราะเวลาผู้บริจาคตอบจะสับสน",
-      "ถ้าจะแก้คำถามเดิม ควรอ่านรายการที่ใช้อยู่ก่อน แล้วค่อยกดแก้ เพื่อไม่ให้ลำดับเพี้ยน"
+      "หนึ่งคำถามควรถามเรื่องเดียว ถ้าถามหลายเรื่องรวมกัน ผู้บริจาคจะไม่แน่ใจว่าควรตอบอะไร",
+      "ก่อนแก้คำถามเดิม ให้ดูรายการที่ใช้อยู่ก่อน แล้วเช็กลำดับหลังบันทึกอีกครั้ง"
     ]
   },
   {
@@ -1836,11 +1868,12 @@ const STAFF_MANUAL_SECTIONS = [
       "ถ้าลบหรือเปลี่ยนสถานะคิวเกล็ดเลือด ให้ดูช่องประวัติการจัดการคิวว่าระบบบันทึกไว้แล้ว",
       "ถ้าแก้คำถามคัดกรอง ให้เปิดเมนู ‘ประวัติคำถาม’ เช็กอีกรอบว่ารายการขึ้นในวันที่ถูกต้อง",
       "ถ้าทำประกาศรายเดือน ให้ลองคัดลอกข้อความอ่านทวน 1 รอบก่อนโพสต์จริง",
-      "ถ้ามีอะไรดูไม่ตรง ให้กด Refresh ของหน้านั้นก่อนสรุปว่าเป็นปัญหาระบบ"
+      "ถ้ามีอะไรดูไม่ตรง ให้กด Refresh ของหน้านั้นก่อน แล้วค่อยเช็กอีกครั้ง"
     ],
+    noteTitle: "ก่อนออกจากหน้า",
     tips: [
-      "หลักง่าย ๆ คือ แก้แล้วต้องเช็กผลที่แสดงจริงเสมอ อย่าเชื่อแค่ตอนกดบันทึกผ่าน",
-      "ถ้าใช้งานบนมือถือ เมนูเดียวกันทำงานได้เหมือนกัน แต่เลื่อนดูแต่ละส่วนให้ครบก่อนกดสรุป"
+      "แก้ข้อมูลแล้ว ให้ดูผลที่แสดงจริงอีกครั้ง ไม่ดูแค่ข้อความว่าบันทึกสำเร็จ",
+      "ถ้าใช้งานบนมือถือ ให้เลื่อนดูส่วนล่างของหน้าให้ครบ เพราะบางเมนูมีประวัติหรือปุ่มต่ออยู่ด้านล่าง"
     ]
   }
 ];
@@ -1945,19 +1978,34 @@ async function toggleScreeningQuestionActive(id, nextActive) {
 function renderStaffManual(force) {
   const box = $("staffManualContent");
   if (!box) return;
-  if (!force && box.dataset.rendered === "true") return;
+  if (force && !STAFF_MANUAL_SECTIONS.some(function(section){ return section.id === currentManualSectionId; })) currentManualSectionId = "manual-start";
+  const active = STAFF_MANUAL_SECTIONS.find(function(section){ return section.id === currentManualSectionId; }) || STAFF_MANUAL_SECTIONS[0];
 
-  const quickLinks = STAFF_MANUAL_SECTIONS.map(function(section){
-    return '<a href="#' + escapeHtml(section.id) + '" class="manual-quick-link">' + escapeHtml(section.badge) + ' · ' + escapeHtml(section.title) + '</a>';
+  const topics = STAFF_MANUAL_SECTIONS.map(function(section){
+    const activeClass = section.id === active.id ? " active" : "";
+    const iconMap = {
+      "manual-start":"bi-house-heart",
+      "manual-platelet-calendar":"bi-calendar2-check",
+      "manual-room-calendar":"bi-calendar-event",
+      "manual-screening":"bi-ui-checks-grid",
+      "manual-daily-check":"bi-check2-square"
+    };
+    return '<button type="button" class="manual-topic-card' + activeClass + '" onclick="showManualSection(\'' + escapeHtml(section.id) + '\')">' +
+      '<i class="bi ' + (iconMap[section.id] || 'bi-book') + '"></i><span><small>' + escapeHtml(section.badge) + '</small><b>' + escapeHtml(section.title) + '</b></span><i class="bi bi-chevron-right"></i></button>';
   }).join('');
 
-  box.innerHTML = '<div class="card main-card staff-card p-4 mb-3 manual-intro-card">' +
-    '<div class="manual-top-grid"><div><span class="manual-kicker">คู่มือฉบับย่อ</span><h4>เปิดดูหน้านี้เมื่อต้องการทวนขั้นตอนแบบเร็ว ๆ</h4><p>โน้ตหลักของหน้านี้คือ: อ่านหัวข้อ → ดูรูป → ทำตามทีละข้อ จะช่วยให้น้องใหม่ใช้งานได้เองง่ายขึ้น</p></div>' +
-    '<div class="manual-note-box"><b>จำสั้น ๆ 3 เรื่อง</b><ul><li>ข้อมูลที่ผู้บริจาคเห็น ต้องชัดและสุภาพ</li><li>ข้อมูลที่เจ้าหน้าที่แก้ ต้องเช็กผลจริงหลังบันทึก</li><li>ถ้าต้องดูย้อนหลัง ให้ใช้หน้าประวัติของเมนูนั้น</li></ul></div></div>' +
-    '<div class="manual-quick-links">' + quickLinks + '</div></div>' +
-    STAFF_MANUAL_SECTIONS.map(renderManualSection).join('');
+  box.innerHTML = '<div class="card main-card staff-card p-4 mb-3 manual-hub-card">' +
+    '<div class="manual-hub-head"><div><span class="manual-kicker">เลือกเรื่องที่ต้องการ</span><h4>ไม่ต้องไล่อ่านทั้งหน้า</h4><p>กดหัวข้อที่ต้องการ ระบบจะแสดงเฉพาะเรื่องนั้น พร้อมรูปและขั้นตอนที่เกี่ยวข้อง</p></div></div>' +
+    '<div class="manual-topic-grid">' + topics + '</div></div>' +
+    '<div id="manualSelectedSection">' + renderManualSection(active) + '</div>';
+}
 
-  box.dataset.rendered = "true";
+function showManualSection(sectionId) {
+  if (!STAFF_MANUAL_SECTIONS.some(function(section){ return section.id === sectionId; })) return;
+  currentManualSectionId = sectionId;
+  renderStaffManual(true);
+  const content = $("manualSelectedSection");
+  if (content) content.scrollIntoView({ behavior:"smooth", block:"start" });
 }
 
 function renderManualSection(section) {
@@ -1968,7 +2016,7 @@ function renderManualSection(section) {
     : '';
   const stepsHtml = '<ol class="manual-step-list">' + (section.steps || []).map(function(step){ return '<li>' + escapeHtml(step) + '</li>'; }).join('') + '</ol>';
   const tipsHtml = (section.tips || []).length
-    ? '<div class="manual-tip-box"><b>จุดที่ควรจำ</b><ul>' + section.tips.map(function(tip){ return '<li>' + escapeHtml(tip) + '</li>'; }).join('') + '</ul></div>'
+    ? '<div class="manual-tip-box"><b>' + escapeHtml(section.noteTitle || "ถ้าเจอแบบนี้") + '</b><ul>' + section.tips.map(function(tip){ return '<li>' + escapeHtml(tip) + '</li>'; }).join('') + '</ul></div>'
     : '';
   return '<section id="' + escapeHtml(section.id) + '" class="card main-card staff-card p-4 mb-3 manual-section-card">' +
     '<div class="manual-section-head"><div><span>' + escapeHtml(section.badge) + '</span><h5>' + escapeHtml(section.title) + '</h5><p>' + escapeHtml(section.intro || '') + '</p></div></div>' +

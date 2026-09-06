@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.9" rel="stylesheet">
+  <link href="styles.css?v=15.10" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -502,23 +502,56 @@
       <div class="staff-layout">
         <aside class="staff-sidebar">
           <div id="staffProfileBar" class="staff-profile-pill" style="display:none;"></div>
-          <nav class="staff-nav-card">
-            <div class="staff-tabs">
-              <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')"><i class="bi bi-grid-1x2"></i><span>ภาพรวม</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')"><i class="bi bi-cloud-arrow-up"></i><span>นำเข้าผู้บริจาค</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="infectiousImport" onclick="showStaffTab('infectiousImport')"><i class="bi bi-shield-exclamation"></i><span>ผลติดเชื้อ</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="importLogs" onclick="showStaffTab('importLogs')"><i class="bi bi-clock-history"></i><span>ประวัตินำเข้า</span></button>
-              <button type="button" class="staff-tab notification-tab" data-staff-tab="notifications" onclick="showStaffTab('notifications')"><i class="bi bi-bell"></i><span>แจ้งเตือน</span><b id="staffNotificationBadge" class="staff-notification-badge" style="display:none;">0</b></button>
-              <button type="button" class="staff-tab" data-staff-tab="slots" onclick="showStaffTab('slots')"><i class="bi bi-calendar3"></i><span>ตารางเกล็ดเลือด</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>คิวเกล็ดเลือด</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="groupSlots" onclick="showStaffTab('groupSlots')"><i class="bi bi-calendar2-week"></i><span>ตารางหมู่คณะ</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="groups" onclick="showStaffTab('groups')"><i class="bi bi-people"></i><span>คำขอหมู่คณะ</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="mobileUnits" onclick="showStaffTab('mobileUnits')"><i class="bi bi-truck"></i><span>คำขอออกหน่วย</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="roomCalendar" onclick="showStaffTab('roomCalendar')"><i class="bi bi-calendar-event"></i><span>เปิด–ปิดห้อง</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="screeningQuestions" onclick="showStaffTab('screeningQuestions')"><i class="bi bi-ui-checks-grid"></i><span>คำถามคัดกรอง</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="screeningQuestionHistory" onclick="showStaffTab('screeningQuestionHistory')"><i class="bi bi-clock-history"></i><span>ประวัติคำถาม</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="manual" onclick="showStaffTab('manual')"><i class="bi bi-journal-richtext"></i><span>คู่มือใช้งาน</span></button>
-              <button type="button" id="staffTabBtn_admin" class="staff-tab admin-only" data-staff-tab="admin" onclick="showStaffTab('admin')" style="display:none;"><i class="bi bi-people"></i><span>เจ้าหน้าที่</span></button>
+          <nav class="staff-nav-card staff-nav-groups">
+            <div class="staff-nav-group open" data-nav-group="today">
+              <button type="button" class="staff-nav-group-title" onclick="toggleStaffNavGroup('today')"><span><i class="bi bi-sun"></i> งานวันนี้</span><i class="bi bi-chevron-down nav-chevron"></i></button>
+              <div class="staff-nav-group-items">
+                <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')"><i class="bi bi-grid-1x2"></i><span>ภาพรวม</span></button>
+                <button type="button" class="staff-tab notification-tab" data-staff-tab="notifications" onclick="showStaffTab('notifications')"><i class="bi bi-bell"></i><span>แจ้งเตือน</span><b id="staffNotificationBadge" class="staff-notification-badge" style="display:none;">0</b></button>
+                <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>คิวเกล็ดเลือด</span></button>
+              </div>
+            </div>
+
+            <div class="staff-nav-group" data-nav-group="donorData">
+              <button type="button" class="staff-nav-group-title" onclick="toggleStaffNavGroup('donorData')"><span><i class="bi bi-person-vcard"></i> ข้อมูลผู้บริจาค</span><i class="bi bi-chevron-down nav-chevron"></i></button>
+              <div class="staff-nav-group-items">
+                <button type="button" class="staff-tab" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')"><i class="bi bi-cloud-arrow-up"></i><span>นำเข้าผู้บริจาค</span></button>
+                <button type="button" class="staff-tab" data-staff-tab="infectiousImport" onclick="showStaffTab('infectiousImport')"><i class="bi bi-shield-exclamation"></i><span>ผลติดเชื้อ</span></button>
+                <button type="button" class="staff-tab" data-staff-tab="importLogs" onclick="showStaffTab('importLogs')"><i class="bi bi-clock-history"></i><span>ประวัตินำเข้า</span></button>
+              </div>
+            </div>
+
+            <div class="staff-nav-group" data-nav-group="appointments">
+              <button type="button" class="staff-nav-group-title" onclick="toggleStaffNavGroup('appointments')"><span><i class="bi bi-calendar2-week"></i> นัดหมายและตาราง</span><i class="bi bi-chevron-down nav-chevron"></i></button>
+              <div class="staff-nav-group-items">
+                <button type="button" class="staff-tab" data-staff-tab="slots" onclick="showStaffTab('slots')"><i class="bi bi-calendar3"></i><span>ตารางเกล็ดเลือด</span></button>
+                <button type="button" class="staff-tab" data-staff-tab="groupSlots" onclick="showStaffTab('groupSlots')"><i class="bi bi-calendar2-week"></i><span>ตารางหมู่คณะ</span></button>
+                <button type="button" class="staff-tab" data-staff-tab="groups" onclick="showStaffTab('groups')"><i class="bi bi-people"></i><span>คำขอหมู่คณะ</span></button>
+                <button type="button" class="staff-tab" data-staff-tab="mobileUnits" onclick="showStaffTab('mobileUnits')"><i class="bi bi-truck"></i><span>คำขอออกหน่วย</span></button>
+                <button type="button" class="staff-tab" data-staff-tab="roomCalendar" onclick="showStaffTab('roomCalendar')"><i class="bi bi-calendar-event"></i><span>เปิด–ปิดห้อง</span></button>
+              </div>
+            </div>
+
+            <div class="staff-nav-group" data-nav-group="screening">
+              <button type="button" class="staff-nav-group-title" onclick="toggleStaffNavGroup('screening')"><span><i class="bi bi-ui-checks-grid"></i> คัดกรองเบื้องต้น</span><i class="bi bi-chevron-down nav-chevron"></i></button>
+              <div class="staff-nav-group-items">
+                <button type="button" class="staff-tab" data-staff-tab="screeningQuestions" onclick="showStaffTab('screeningQuestions')"><i class="bi bi-ui-checks-grid"></i><span>คำถามคัดกรอง</span></button>
+                <button type="button" class="staff-tab" data-staff-tab="screeningQuestionHistory" onclick="showStaffTab('screeningQuestionHistory')"><i class="bi bi-clock-history"></i><span>ประวัติการแก้ไข</span></button>
+              </div>
+            </div>
+
+            <div class="staff-nav-group" data-nav-group="help">
+              <button type="button" class="staff-nav-group-title" onclick="toggleStaffNavGroup('help')"><span><i class="bi bi-life-preserver"></i> ช่วยเหลือ</span><i class="bi bi-chevron-down nav-chevron"></i></button>
+              <div class="staff-nav-group-items">
+                <button type="button" class="staff-tab" data-staff-tab="manual" onclick="showStaffTab('manual')"><i class="bi bi-journal-richtext"></i><span>คู่มือใช้งาน</span></button>
+              </div>
+            </div>
+
+            <div class="staff-nav-group admin-only" data-nav-group="admin" style="display:none;">
+              <button type="button" class="staff-nav-group-title" onclick="toggleStaffNavGroup('admin')"><span><i class="bi bi-shield-lock"></i> ผู้ดูแลระบบ</span><i class="bi bi-chevron-down nav-chevron"></i></button>
+              <div class="staff-nav-group-items">
+                <button type="button" id="staffTabBtn_admin" class="staff-tab admin-only" data-staff-tab="admin" onclick="showStaffTab('admin')" style="display:none;"><i class="bi bi-people"></i><span>เจ้าหน้าที่</span></button>
+              </div>
             </div>
           </nav>
         </aside>
@@ -782,8 +815,8 @@
           </div>
 
           <div id="staffTab_manual" class="staff-tab-page">
-            <div class="staff-page-head"><div><span>WORK GUIDE</span><h3>คู่มือใช้งานแบบภาษาคนทำงาน</h3><p>รวมขั้นตอนที่ใช้บ่อย พร้อมภาพประกอบจากหน้าจอจริง อ่านแบบ WI ฉบับย่อได้เลย</p></div><button type="button" class="btn btn-soft btn-sm" onclick="renderStaffManual(true)"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
-            <div class="compact-notice mb-3"><i class="bi bi-journal-check"></i><span>คู่มือนี้ตั้งใจเขียนให้อ่านง่าย ไม่ใช้ภาษาระบบเกินจำเป็น เหมาะกับน้องที่เพิ่งเริ่มใช้แอพหรืออยากทวนขั้นตอนเร็ว ๆ</span></div>
+            <div class="staff-page-head"><div><span>คู่มือเจ้าหน้าที่</span><h3>คู่มือใช้งาน</h3><p>เลือกเรื่องที่ต้องการ แล้วดูทีละขั้น ไม่ต้องไล่อ่านยาวทั้งหน้า</p></div><button type="button" class="btn btn-soft btn-sm" onclick="renderStaffManual(true)"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+            <div class="compact-notice mb-3"><i class="bi bi-journal-check"></i><span>ถ้าไม่แน่ใจว่าต้องกดตรงไหน ให้เลือกหัวข้อด้านล่าง แล้วทำตามรูปและขั้นตอนได้เลย</span></div>
             <div id="staffManualContent"><div class="staff-result">กำลังเตรียมคู่มือ...</div></div>
           </div>
 
@@ -842,6 +875,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.9"></script>
+  <script src="app.js?v=15.10"></script>
 </body>
 </html>
