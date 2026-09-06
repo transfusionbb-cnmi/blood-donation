@@ -1558,3 +1558,105 @@ button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow
   .contact-hours-lines p { display:grid; gap:1px; }
   .contact-hours-lines strong { min-width:0; }
 }
+
+
+/* v15.4 — calmer room-calendar typography */
+.room-calendar-head > div {
+  font-size:.72rem;
+  font-weight:750;
+  letter-spacing:.01em;
+  color:#758087;
+}
+.room-day-cell {
+  min-height:112px;
+  padding:10px 10px 9px;
+  border-radius:17px;
+  justify-content:flex-start;
+  background:#fff;
+}
+.room-day-cell.is-weekend.event-normal { background:#fafbfb; }
+.room-day-number {
+  font-size:.78rem;
+  line-height:1;
+  font-weight:750;
+  color:#879198;
+}
+.room-day-state {
+  gap:5px;
+  margin-top:7px;
+  line-height:1.15;
+}
+.room-day-state i { font-size:.86rem; }
+.room-day-state b {
+  font-size:.76rem;
+  font-weight:750;
+  letter-spacing:0;
+}
+.room-day-detail {
+  margin-top:5px;
+  color:#737f86;
+  font-size:.61rem;
+  line-height:1.28;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  overflow-wrap:anywhere;
+}
+.room-day-hours {
+  display:grid !important;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:start;
+  gap:4px;
+  width:100%;
+  margin-top:auto;
+  padding-top:7px;
+  color:#637078 !important;
+  font-weight:550;
+  line-height:1.2 !important;
+}
+.room-day-hours > i {
+  margin-top:1px;
+  font-size:.68rem;
+  color:#8a959b;
+}
+.room-day-hours-lines {
+  display:grid;
+  gap:1px;
+  min-width:0;
+}
+.room-day-hours-lines > span {
+  display:block;
+  font-size:.59rem;
+  line-height:1.2;
+  white-space:nowrap;
+  font-weight:600;
+}
+.room-day-cell.event-normal .room-day-state { color:#3e8665; }
+.room-day-cell.event-closed .room-day-state { color:#b23b43; }
+.room-day-cell.event-closed .room-day-detail { color:#8a6265; }
+.room-day-cell.event-mobile .room-day-state { color:#337491; }
+.room-day-cell.event-limited .room-day-state { color:#9a6818; }
+.room-day-cell.event-activity .room-day-state { color:#73599a; }
+.room-day-cell.event-open .room-day-state { color:#287b54; }
+
+@media (min-width: 900px) {
+  .room-calendar-head, .room-calendar-days { gap:8px; }
+  .room-day-cell { min-height:116px; padding:11px 11px 10px; }
+  .room-day-number { font-size:.8rem; }
+  .room-day-state b { font-size:.77rem; }
+  .room-day-detail { font-size:.62rem; }
+  .room-day-hours-lines > span { font-size:.6rem; }
+}
+
+@media (max-width: 767px) {
+  .room-day-cell { min-height:98px; padding:8px 7px 7px; border-radius:14px; }
+  .room-day-number { font-size:.7rem; }
+  .room-day-state { margin-top:5px; gap:3px; }
+  .room-day-state i { font-size:.72rem; }
+  .room-day-state b { font-size:.66rem; }
+  .room-day-detail { margin-top:4px; font-size:.53rem; -webkit-line-clamp:2; }
+  .room-day-hours { padding-top:5px; gap:3px; }
+  .room-day-hours > i { font-size:.58rem; }
+  .room-day-hours-lines > span { font-size:.49rem; white-space:normal; }
+}

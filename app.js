@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.3 */
+/* CNMI Blood Donation Supabase Frontend v15.4 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -2909,25 +2909,38 @@ function roomHoursForEvent(dateIso, event) {
 function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
   const meta = event ? roomEventMeta(event.type) : null;
   const hours = roomHoursForEvent(iso, event);
-  let className = "room-day-cell";
+  const regular = roomRegularHours(iso);
+  let className = "room-day-cell" + (regular.dayLabel === "เสาร์–อาทิตย์" ? " is-weekend" : "");
   let label = "";
   let icon = "";
   let detail = "";
 
   if (event) {
     className += " " + meta.className;
-    label = meta.label;
+    const compactLabels = {
+      closed:"ปิด",
+      limited:"รับจำกัด",
+      mobile_unit:"ออกหน่วย",
+      activity:"กิจกรรม",
+      open:"เปิด"
+    };
+    label = compactLabels[event.type] || meta.label;
     icon = '<i class="bi ' + meta.icon + '"></i>';
     detail = event.title || event.location || "";
   } else {
     className += " event-normal";
     label = "เปิด";
     icon = '<i class="bi bi-check-circle"></i>';
-    detail = publicMode ? "เปิดตามปกติ" : "ปกติ";
   }
 
-  const hoursHtml = hours.show ? '<small class="room-day-hours"><i class="bi bi-clock"></i> ' + escapeHtml(hours.text) + '</small>' : '';
-  const inner = '<div class="room-day-number">' + day + '</div><div class="room-day-state">' + icon + '<b>' + escapeHtml(label) + '</b></div>' + (detail ? '<small class="room-day-detail">' + escapeHtml(detail) + '</small>' : '') + hoursHtml;
+  let hoursHtml = "";
+  if (hours.show && hours.text) {
+    const hourParts = String(hours.text).split("·").map(x => x.trim()).filter(Boolean);
+    const lines = hourParts.map(x => '<span>' + escapeHtml(x) + '</span>').join('');
+    hoursHtml = '<div class="room-day-hours"><i class="bi bi-clock"></i><span class="room-day-hours-lines">' + lines + '</span></div>';
+  }
+
+  const inner = '<div class="room-day-number">' + day + '</div><div class="room-day-state">' + icon + '<b>' + escapeHtml(label) + '</b></div>' + (detail ? '<div class="room-day-detail">' + escapeHtml(detail) + '</div>' : '') + hoursHtml;
   if (clickable) return '<button type="button" class="' + className + '" onclick="selectRoomAdminDate(\'' + iso + '\')">' + inner + '</button>';
   return '<div class="' + className + '">' + inner + '</div>';
 }
@@ -4019,7 +4032,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.3").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.4").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
