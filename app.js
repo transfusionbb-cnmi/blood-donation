@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.5 */
+/* CNMI Blood Donation Supabase Frontend v15.9 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -21,6 +21,9 @@ let dashboardImportRows = [];
 let dashboardImportPage = 1;
 let importLogHistoryPage = 1;
 let importLogHistoryTotalPages = 1;
+let screeningQuestionHistoryPage = 1;
+let screeningQuestionHistoryTotalPages = 1;
+let screeningQuestionAuditCache = [];
 let currentGroupAdminDays = [];
 let currentRoomAdminEvents = [];
 let currentPublicRoomEvents = [];
@@ -57,6 +60,8 @@ const STAFF_TAB_ROUTE_MAP = {
   mobileUnits: "mobile-unit-requests",
   roomCalendar: "room-calendar",
   screeningQuestions: "screening-questions",
+  screeningQuestionHistory: "screening-question-history",
+  manual: "manual",
   admin: "admin"
 };
 
@@ -1703,6 +1708,8 @@ function showStaffTab(tab, options) {
   if (tab === "mobileUnits") loadStaffMobileUnitRequests();
   if (tab === "roomCalendar") loadRoomCalendarAdmin();
   if (tab === "screeningQuestions") loadScreeningQuestionsAdmin();
+  if (tab === "screeningQuestionHistory") loadScreeningQuestionHistory(1);
+  if (tab === "manual") renderStaffManual();
   if (tab === "admin") adminLoadStaffAccessList();
 }
 
@@ -1730,6 +1737,114 @@ function screeningGenderLabel(value) {
 
 function screeningAnswerLabel(value) { return value === "no" ? "ไม่ใช่" : "ใช่"; }
 
+const STAFF_MANUAL_SECTIONS = [
+  {
+    id: "manual-start",
+    badge: "เริ่มต้น",
+    title: "ภาพรวมที่ควรรู้ก่อนใช้งาน",
+    intro: "ระบบนี้มีทั้งฝั่งผู้บริจาคและฝั่งเจ้าหน้าที่ ถ้าจำง่าย ๆ ให้คิดว่า ผู้บริจาคใช้เพื่อเช็กและจอง ส่วนเจ้าหน้าที่ใช้เพื่อดูคิว จัดตาราง และตอบคำขอ",
+    images: [
+      { src:"help-images/home.png", caption:"หน้าแรกของผู้บริจาค: ใช้เป็นจุดเริ่มต้นของทุกอย่าง" },
+      { src:"help-images/donate-choice.png", caption:"หน้าเลือกประเภทการบริจาค: เกล็ดเลือดต้องจองคิวล่วงหน้า ส่วนเลือดแดงเดินเข้ามาได้" },
+      { src:"help-images/check-eligibility.png", caption:"หน้าเช็กว่าวันนี้บริจาคได้ไหม: ใช้ตรวจสิทธิ์เบื้องต้นจาก Donor ID / วันเกิด / เบอร์โทร" }
+    ],
+    steps: [
+      "ถ้าผู้บริจาคถามว่าเริ่มจากตรงไหน ให้แนะนำจากหน้าแรก แล้วเลือกเมนูตามสิ่งที่ต้องการทำ",
+      "งานเกล็ดเลือด ให้ผู้บริจาคกด ‘บริจาคเกล็ดเลือด’ แล้วทำแบบคัดกรองก่อนเลือกวันและเวลา",
+      "งานเช็กประวัติ ให้ผู้บริจาคกด ‘เช็กว่าบริจาคได้หรือยัง’ แล้วกรอกข้อมูลยืนยันตัวตน 3 รายการ",
+      "ถ้าเป็นงานเจ้าหน้าที่ ให้เข้าปุ่ม ‘สำหรับเจ้าหน้าที่’ เพื่อจัดการข้อมูลด้านในระบบ"
+    ],
+    tips: [
+      "หน้าสาธารณะมีไว้ให้ผู้บริจาคใช้งานเอง จึงควรเขียนข้อความให้สั้น เข้าใจง่าย และไม่ใช้ภาษาระบบ",
+      "ถ้าผู้บริจาคจำ Donor ID ไม่ได้ ระบบมีปุ่มช่วยค้นหาให้ ไม่ต้องบอกให้เริ่มใหม่ทั้งหมด"
+    ]
+  },
+  {
+    id: "manual-platelet-calendar",
+    badge: "คิวเกล็ดเลือด",
+    title: "ดูตารางเกล็ดเลือดและเช็กรายชื่อผู้จอง",
+    intro: "หน้านี้ใช้เวลาต้องดูว่าแต่ละวันเปิดรับรอบไหนบ้าง มีคนจองไปแล้วกี่คน และวันนี้ต้องโทรหาหรือดูแลใครบ้าง",
+    images: [
+      { src:"help-images/platelet-calendar.png", caption:"ตารางเกล็ดเลือด: สีเขียวคือวันที่เปิดรับ รอบเช้า 09:00 และบ่าย 13:00" },
+      { src:"help-images/platelet-popup.png", caption:"เมื่อกดที่รอบ ระบบจะแสดงว่ามีกี่คน พร้อมปุ่มลัดไปดูรายการของวันนั้น" },
+      { src:"help-images/platelet-bookings-before-delete.png", caption:"หน้ารายการจอง: ใช้ดูชื่อ เบอร์โทร สถานะ และกดจัดการคิว" },
+      { src:"help-images/platelet-bookings-history.png", caption:"หลังลบคิว รายการจะไปอยู่ในประวัติการจัดการคิวของวันนั้นทันที" }
+    ],
+    steps: [
+      "ไปที่เมนู ‘ตารางเกล็ดเลือด’ เพื่อดูภาพรวมทั้งเดือนก่อน ว่าวันไหนเปิดหรือปิดรอบ",
+      "ถ้าต้องการดูรายชื่อคนในรอบ ให้กดที่รอบนั้น แล้วเลือก ‘ดูรายการของวันนี้’",
+      "ถ้าต้องติดต่อลูกค้า ให้เข้าเมนู ‘คิวเกล็ดเลือด’ แล้วเลือกวันที่เพื่อดูเบอร์โทร อีเมล และสถานะการจอง",
+      "ถ้าจำเป็นต้องลบคิว เจ้าหน้าที่ทุกคนลบได้ แต่ระบบจะเก็บประวัติไว้ด้านล่างอัตโนมัติ"
+    ],
+    tips: [
+      "ถ้าวันนั้นปิดรับ แต่มีคนจองอยู่แล้ว ระบบจะไม่ลบคนทิ้งเอง ต้องดูสถานะและติดต่อประสานให้เรียบร้อย",
+      "ก่อนลบคิว ควรเช็กชื่อและเลขนัดอีกครั้ง เพื่อกันลบผิดคน"
+    ]
+  },
+  {
+    id: "manual-room-calendar",
+    badge: "ปฏิทินห้อง",
+    title: "ตั้งวันเปิด–ปิดห้องและทำประกาศในหน้าเดียว",
+    intro: "หน้านี้สำคัญมาก เพราะเป็นต้นทางของปฏิทินที่ผู้บริจาคเห็น และยังใช้สร้างข้อความประกาศรายเดือนให้พร้อมโพสต์ต่อได้เลย",
+    images: [
+      { src:"help-images/room-calendar-form.png", caption:"ส่วนบนของหน้า: ใช้เลือกเดือน เตรียมเดือน และบันทึกกิจกรรมของแต่ละวัน" },
+      { src:"help-images/room-calendar-grid.png", caption:"ปฏิทินห้องบริจาค: คลิกแต่ละวันเพื่อดูหรือแก้รายละเอียดได้" },
+      { src:"help-images/room-announcement.png", caption:"ประกาศพร้อมใช้: ระบบสรุปข้อความให้ พร้อมคัดลอกหรือดาวน์โหลดภาพประกาศ" }
+    ],
+    steps: [
+      "เริ่มจากเลือกเดือนที่ต้องการจัดการ แล้วกด ‘เตรียมเดือน’ ถ้ายังไม่เคยสร้างเดือนนั้น",
+      "ถ้ามีวันหยุด วันออกหน่วย หรือวันเปิดรับไม่ปกติ ให้กรอกวันที่ ประเภท หัวข้อ เวลา สถานที่ และข้อความสั้นที่ผู้บริจาคควรเห็น",
+      "กด ‘บันทึกวันนี้’ ทุกครั้งหลังกรอกข้อมูล เพื่อให้ข้อมูลขึ้นในปฏิทินด้านล่าง",
+      "เมื่อเช็กครบแล้ว ค่อยกด ‘เผยแพร่’ เพื่อให้หน้า Public เห็นข้อมูลชุดนั้น",
+      "ถ้าจะทำโพสต์หรือส่งข้อความต่อ ให้เลื่อนลงมาที่ ‘ประกาศพร้อมใช้’ แล้วกดคัดลอกหรือดาวน์โหลดภาพ"
+    ],
+    tips: [
+      "วันปกติไม่ต้องกรอกซ้ำทุกวัน ระบบมีเวลาเปิดรับมาตรฐานให้อัตโนมัติอยู่แล้ว",
+      "ถ้าวันไหนใช้เวลาไม่เหมือนปกติ ค่อยกรอกช่องเวลาเอง เพื่อไม่ให้คนเข้าใจผิด"
+    ]
+  },
+  {
+    id: "manual-screening",
+    badge: "คำถามคัดกรอง",
+    title: "เพิ่มคำถามคัดกรองแบบที่น้องอ่านแล้วทำตามได้",
+    intro: "คำถามชุดนี้จะไปแสดงกับผู้บริจาคก่อนจองคิวเกล็ดเลือด ดังนั้นควรเขียนให้สั้น ชัด และบอกทางต่อให้ผู้บริจาคเข้าใจถ้าคำตอบไม่ผ่าน",
+    images: [
+      { src:"help-images/screening-form.png", caption:"แบบฟอร์มเพิ่มคำถาม: ระบุคำถาม คำตอบที่ถือว่าผ่าน ลำดับ และข้อความเมื่อไม่ผ่าน" },
+      { src:"help-images/screening-list.png", caption:"รายการคำถามที่ใช้อยู่: ใช้แก้ไขหรือปิดใช้โดยไม่ลบประวัติ" },
+      { src:"help-images/screening-history.png", caption:"หน้าประวัติคำถาม: แยกไว้อีกหน้าเพื่อดูว่าใครแก้อะไร เมื่อไร" }
+    ],
+    steps: [
+      "พิมพ์คำถามให้ตรงประเด็น เช่น ถามเรื่องพักผ่อน อาหาร อาการป่วย หรือข้อห้ามชั่วคราว",
+      "กำหนดให้ชัดว่า คำตอบแบบไหนถึงถือว่า ‘ผ่าน’ เช่น บางข้อผ่านเมื่อกด ‘ใช่’ แต่บางข้อผ่านเมื่อกด ‘ไม่ใช่’",
+      "ใส่ข้อความเมื่อไม่ผ่านให้เป็นภาษาคน เช่น ‘กรุณาติดต่อเจ้าหน้าที่ก่อนจองคิว’ ไม่ต้องใช้ประโยคแข็งหรือยาวเกินไป",
+      "ถ้ายังไม่พร้อมใช้งานจริง สามารถตั้งสถานะเป็น ‘ปิดใช้’ ไว้ก่อนได้",
+      "ถ้าต้องตรวจสอบย้อนหลัง ให้ไปที่เมนู ‘ประวัติคำถาม’ ซึ่งระบบจะโชว์รายการล่าสุดของวันนี้ก่อน"
+    ],
+    tips: [
+      "อย่าใส่หลายประเด็นรวมกันในคำถามเดียว เพราะเวลาผู้บริจาคตอบจะสับสน",
+      "ถ้าจะแก้คำถามเดิม ควรอ่านรายการที่ใช้อยู่ก่อน แล้วค่อยกดแก้ เพื่อไม่ให้ลำดับเพี้ยน"
+    ]
+  },
+  {
+    id: "manual-daily-check",
+    badge: "เช็กก่อนจบงาน",
+    title: "เช็กลิสต์สั้น ๆ ก่อนออกจากหน้า",
+    intro: "ถ้าทำงานกับแอพแล้วอยากกันพลาด ลองเช็ก 5 เรื่องนี้ทุกครั้งก่อนปิดงาน",
+    images: [],
+    steps: [
+      "ถ้ามีการปรับตารางหรือปิดวัน ให้เช็กว่ากดบันทึกแล้ว และถ้าต้องการให้ผู้บริจาคเห็น ต้องกดเผยแพร่ด้วย",
+      "ถ้าลบหรือเปลี่ยนสถานะคิวเกล็ดเลือด ให้ดูช่องประวัติการจัดการคิวว่าระบบบันทึกไว้แล้ว",
+      "ถ้าแก้คำถามคัดกรอง ให้เปิดเมนู ‘ประวัติคำถาม’ เช็กอีกรอบว่ารายการขึ้นในวันที่ถูกต้อง",
+      "ถ้าทำประกาศรายเดือน ให้ลองคัดลอกข้อความอ่านทวน 1 รอบก่อนโพสต์จริง",
+      "ถ้ามีอะไรดูไม่ตรง ให้กด Refresh ของหน้านั้นก่อนสรุปว่าเป็นปัญหาระบบ"
+    ],
+    tips: [
+      "หลักง่าย ๆ คือ แก้แล้วต้องเช็กผลที่แสดงจริงเสมอ อย่าเชื่อแค่ตอนกดบันทึกผ่าน",
+      "ถ้าใช้งานบนมือถือ เมนูเดียวกันทำงานได้เหมือนกัน แต่เลื่อนดูแต่ละส่วนให้ครบก่อนกดสรุป"
+    ]
+  }
+];
+
 async function loadScreeningQuestionsAdmin() {
   const box = $("screeningQuestionsAdminList");
   if (!box) return;
@@ -1743,7 +1858,6 @@ async function loadScreeningQuestionsAdmin() {
   if (!currentScreeningAdminRows.length) {
     box.innerHTML = '<div class="staff-result">ยังไม่มีคำถาม กรุณากด “เพิ่มคำถาม” ด้านบน</div>';
     resetScreeningQuestionForm();
-    loadScreeningQuestionAudit();
     return;
   }
   const rows = currentScreeningAdminRows.map(function(row, index){
@@ -1759,7 +1873,6 @@ async function loadScreeningQuestionsAdmin() {
   }).join("");
   box.innerHTML = rows;
   if (!$("screeningQuestionId").value) resetScreeningQuestionForm();
-  loadScreeningQuestionAudit();
 }
 
 function editScreeningQuestion(id) {
@@ -1829,18 +1942,178 @@ async function toggleScreeningQuestionActive(id, nextActive) {
   });
 }
 
-async function loadScreeningQuestionAudit() {
-  const box = $("screeningQuestionAuditResult");
+function renderStaffManual(force) {
+  const box = $("staffManualContent");
   if (!box) return;
-  const { data, error } = await sb.rpc("screening_question_audit_feed", { p_limit: 30 });
-  if (error) { box.innerHTML = '<div class="staff-result error">โหลดประวัติไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>'; return; }
-  if (!data || !data.length) { box.innerHTML = '<div class="staff-result">ยังไม่มีประวัติการแก้ไข</div>'; return; }
-  box.innerHTML = '<div class="screening-audit-list">' + data.map(function(row){
-    const actionMap = { insert:"เพิ่ม", update:"แก้ไข", delete:"ลบ" };
-    const snapshot = row.new_data || row.old_data || {};
-    return '<div class="screening-audit-row"><div><b>' + escapeHtml(actionMap[row.action] || row.action) + '</b> · ' + escapeHtml(snapshot.question_text || "คำถาม") + '</div>' +
-      '<small>' + escapeHtml(row.actor_name || "เจ้าหน้าที่") + ' · ' + escapeHtml(formatBangkokLogTime(row.created_at, true)) + '</small></div>';
-  }).join("") + '</div>';
+  if (!force && box.dataset.rendered === "true") return;
+
+  const quickLinks = STAFF_MANUAL_SECTIONS.map(function(section){
+    return '<a href="#' + escapeHtml(section.id) + '" class="manual-quick-link">' + escapeHtml(section.badge) + ' · ' + escapeHtml(section.title) + '</a>';
+  }).join('');
+
+  box.innerHTML = '<div class="card main-card staff-card p-4 mb-3 manual-intro-card">' +
+    '<div class="manual-top-grid"><div><span class="manual-kicker">คู่มือฉบับย่อ</span><h4>เปิดดูหน้านี้เมื่อต้องการทวนขั้นตอนแบบเร็ว ๆ</h4><p>โน้ตหลักของหน้านี้คือ: อ่านหัวข้อ → ดูรูป → ทำตามทีละข้อ จะช่วยให้น้องใหม่ใช้งานได้เองง่ายขึ้น</p></div>' +
+    '<div class="manual-note-box"><b>จำสั้น ๆ 3 เรื่อง</b><ul><li>ข้อมูลที่ผู้บริจาคเห็น ต้องชัดและสุภาพ</li><li>ข้อมูลที่เจ้าหน้าที่แก้ ต้องเช็กผลจริงหลังบันทึก</li><li>ถ้าต้องดูย้อนหลัง ให้ใช้หน้าประวัติของเมนูนั้น</li></ul></div></div>' +
+    '<div class="manual-quick-links">' + quickLinks + '</div></div>' +
+    STAFF_MANUAL_SECTIONS.map(renderManualSection).join('');
+
+  box.dataset.rendered = "true";
+}
+
+function renderManualSection(section) {
+  const imagesHtml = (section.images || []).length
+    ? '<div class="manual-image-grid">' + section.images.map(function(image){
+        return '<figure class="manual-shot"><img src="' + escapeHtml(image.src) + '" alt="' + escapeHtml(image.caption || section.title) + '" loading="lazy"><figcaption>' + escapeHtml(image.caption || '') + '</figcaption></figure>';
+      }).join('') + '</div>'
+    : '';
+  const stepsHtml = '<ol class="manual-step-list">' + (section.steps || []).map(function(step){ return '<li>' + escapeHtml(step) + '</li>'; }).join('') + '</ol>';
+  const tipsHtml = (section.tips || []).length
+    ? '<div class="manual-tip-box"><b>จุดที่ควรจำ</b><ul>' + section.tips.map(function(tip){ return '<li>' + escapeHtml(tip) + '</li>'; }).join('') + '</ul></div>'
+    : '';
+  return '<section id="' + escapeHtml(section.id) + '" class="card main-card staff-card p-4 mb-3 manual-section-card">' +
+    '<div class="manual-section-head"><div><span>' + escapeHtml(section.badge) + '</span><h5>' + escapeHtml(section.title) + '</h5><p>' + escapeHtml(section.intro || '') + '</p></div></div>' +
+    imagesHtml +
+    '<div class="manual-content-grid"><div><h6>ทำตามนี้ทีละขั้น</h6>' + stepsHtml + '</div>' + tipsHtml + '</div>' +
+  '</section>';
+}
+
+function screeningAuditActionLabel(action) {
+  if (action === "insert") return "เพิ่มคำถาม";
+  if (action === "update") return "แก้ไข / เปิด–ปิด";
+  if (action === "delete") return "ลบคำถาม";
+  return action || "รายการเปลี่ยนแปลง";
+}
+
+function screeningAuditFieldLabel(field) {
+  const labels = {
+    question_text: "คำถาม",
+    pass_answer: "คำตอบที่ถือว่าผ่าน",
+    fail_message: "ข้อความเมื่อไม่ผ่าน",
+    gender: "แสดงกับ",
+    sort_order: "ลำดับ",
+    is_active: "สถานะ"
+  };
+  return labels[field] || field;
+}
+
+function screeningAuditValueLabel(field, value) {
+  if (field === "pass_answer") return screeningAnswerLabel(value);
+  if (field === "gender") return screeningGenderLabel(value);
+  if (field === "is_active") return value === false ? "ปิดใช้" : "เปิดใช้";
+  if (value === null || value === undefined || value === "") return "-";
+  return String(value);
+}
+
+function getScreeningAuditQuestionText(row) {
+  const snapshot = row.new_data || row.old_data || {};
+  return snapshot.question_text || "คำถาม";
+}
+
+function buildScreeningAuditChangeRows(row) {
+  const oldData = row.old_data || {};
+  const newData = row.new_data || {};
+  if (row.action === "insert") {
+    return [
+      '<div class="screening-history-change"><span>คำถาม</span><b>' + escapeHtml(getScreeningAuditQuestionText(row)) + '</b></div>',
+      '<div class="screening-history-change"><span>คำตอบที่ผ่าน</span><b>' + escapeHtml(screeningAnswerLabel(newData.pass_answer)) + '</b></div>',
+      '<div class="screening-history-change"><span>แสดงกับ</span><b>' + escapeHtml(screeningGenderLabel(newData.gender)) + '</b></div>'
+    ];
+  }
+  if (row.action === "delete") {
+    return [
+      '<div class="screening-history-change"><span>คำถามที่ถูกลบ</span><b>' + escapeHtml(getScreeningAuditQuestionText(row)) + '</b></div>'
+    ];
+  }
+  const fields = ["question_text","pass_answer","fail_message","gender","sort_order","is_active"];
+  const changes = [];
+  fields.forEach(function(field){
+    const before = oldData[field];
+    const after = newData[field];
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    changes.push('<div class="screening-history-change"><span>' + escapeHtml(screeningAuditFieldLabel(field)) + '</span><div><small>เดิม: ' + escapeHtml(screeningAuditValueLabel(field, before)) + '</small><b>ใหม่: ' + escapeHtml(screeningAuditValueLabel(field, after)) + '</b></div></div>');
+  });
+  if (!changes.length) changes.push('<div class="screening-history-change"><span>สรุป</span><b>มีการอัปเดตข้อมูลของคำถามนี้</b></div>');
+  return changes;
+}
+
+function renderScreeningAuditCards(rows, options) {
+  options = options || {};
+  if (!rows || !rows.length) {
+    return '<div class="log-empty"><i class="bi bi-inbox"></i><span>' + escapeHtml(options.emptyText || 'ยังไม่มีประวัติในวันที่เลือก') + '</span></div>';
+  }
+  return '<div class="friendly-log-list screening-history-list">' + rows.map(function(row){
+    const action = screeningAuditActionLabel(row.action);
+    const icon = row.action === 'delete' ? 'bi-trash3' : (row.action === 'insert' ? 'bi-plus-circle' : 'bi-pencil-square');
+    const question = getScreeningAuditQuestionText(row);
+    return '<article class="friendly-log-card screening-history-card">' +
+      '<div class="friendly-log-top"><div><span class="friendly-log-type">' + escapeHtml(action) + '</span><b>' + escapeHtml(formatBangkokLogTime(row.created_at, false)) + '</b></div><i class="bi ' + icon + '"></i></div>' +
+      '<div class="friendly-log-file"><i class="bi bi-chat-left-text"></i><span>' + escapeHtml(question) + '</span></div>' +
+      '<div class="friendly-log-meta-line"><span>ผู้ดำเนินการ</span><b>' + escapeHtml(row.actor_name || 'เจ้าหน้าที่') + '</b></div>' +
+      '<div class="screening-history-changes">' + buildScreeningAuditChangeRows(row).join('') + '</div>' +
+    '</article>';
+  }).join('') + '</div>';
+}
+
+async function fetchScreeningQuestionAuditRows() {
+  const { data, error } = await sb.rpc("screening_question_audit_feed", { p_limit: 100 });
+  if (error) throw error;
+  screeningQuestionAuditCache = Array.isArray(data) ? data : [];
+  return screeningQuestionAuditCache;
+}
+
+async function loadScreeningQuestionHistory(page) {
+  const box = $("screeningQuestionHistoryResult");
+  if (!box) return;
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const date = $("screeningHistoryDate")?.value || todayISO();
+  const action = $("screeningHistoryAction")?.value || "";
+  if ($("screeningHistoryDate") && !$("screeningHistoryDate").value) $("screeningHistoryDate").value = date;
+
+  screeningQuestionHistoryPage = Math.max(1, Number(page || screeningQuestionHistoryPage || 1));
+  box.className = "staff-result";
+  box.innerHTML = "กำลังโหลดประวัติ...";
+
+  try {
+    const rows = await fetchScreeningQuestionAuditRows();
+    const bounds = bangkokDayBoundsISO(date);
+    const filtered = rows.filter(function(row){
+      const created = String(row.created_at || "");
+      if (created < bounds.start || created >= bounds.end) return false;
+      if (action && row.action !== action) return false;
+      return true;
+    });
+
+    const pageSize = 5;
+    const total = filtered.length;
+    screeningQuestionHistoryTotalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (screeningQuestionHistoryPage > screeningQuestionHistoryTotalPages && total > 0) {
+      screeningQuestionHistoryPage = screeningQuestionHistoryTotalPages;
+    }
+    const start = (screeningQuestionHistoryPage - 1) * pageSize;
+    const pageRows = filtered.slice(start, start + pageSize);
+
+    box.className = "staff-result friendly-log-box";
+    box.innerHTML = '<div class="log-day-heading"><div><span>วันที่</span><b>' + escapeHtml(isoToThaiDate(date, true)) + '</b></div><span>' + escapeHtml(total) + ' รายการ</span></div>' +
+      renderScreeningAuditCards(pageRows, { emptyText:'ไม่พบประวัติการแก้ไขในเงื่อนไขนี้' });
+
+    const pager = $("screeningQuestionHistoryPager");
+    const pageText = $("screeningQuestionHistoryPageText");
+    if (pager) pager.style.display = total > pageSize ? "flex" : "none";
+    if (pageText) pageText.innerText = screeningQuestionHistoryPage + " / " + screeningQuestionHistoryTotalPages;
+    if (pager) {
+      const buttons = pager.querySelectorAll('button');
+      if (buttons[0]) buttons[0].disabled = screeningQuestionHistoryPage <= 1;
+      if (buttons[1]) buttons[1].disabled = screeningQuestionHistoryPage >= screeningQuestionHistoryTotalPages;
+    }
+  } catch (err) {
+    box.className = "staff-result fail";
+    box.innerText = "โหลดประวัติไม่สำเร็จ\n" + (err.message || err);
+  }
+}
+
+function changeScreeningQuestionHistoryPage(delta) {
+  const next = Math.min(screeningQuestionHistoryTotalPages, Math.max(1, screeningQuestionHistoryPage + Number(delta || 0)));
+  if (next !== screeningQuestionHistoryPage) loadScreeningQuestionHistory(next);
 }
 
 async function getExactCount(builder) {

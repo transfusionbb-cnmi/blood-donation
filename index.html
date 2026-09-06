@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.8" rel="stylesheet">
+  <link href="styles.css?v=15.9" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -516,6 +516,8 @@
               <button type="button" class="staff-tab" data-staff-tab="mobileUnits" onclick="showStaffTab('mobileUnits')"><i class="bi bi-truck"></i><span>คำขอออกหน่วย</span></button>
               <button type="button" class="staff-tab" data-staff-tab="roomCalendar" onclick="showStaffTab('roomCalendar')"><i class="bi bi-calendar-event"></i><span>เปิด–ปิดห้อง</span></button>
               <button type="button" class="staff-tab" data-staff-tab="screeningQuestions" onclick="showStaffTab('screeningQuestions')"><i class="bi bi-ui-checks-grid"></i><span>คำถามคัดกรอง</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="screeningQuestionHistory" onclick="showStaffTab('screeningQuestionHistory')"><i class="bi bi-clock-history"></i><span>ประวัติคำถาม</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="manual" onclick="showStaffTab('manual')"><i class="bi bi-journal-richtext"></i><span>คู่มือใช้งาน</span></button>
               <button type="button" id="staffTabBtn_admin" class="staff-tab admin-only" data-staff-tab="admin" onclick="showStaffTab('admin')" style="display:none;"><i class="bi bi-people"></i><span>เจ้าหน้าที่</span></button>
             </div>
           </nav>
@@ -737,7 +739,7 @@
 
 
           <div id="staffTab_screeningQuestions" class="staff-tab-page">
-            <div class="staff-page-head"><div><span>PRE-SCREENING QUESTIONS</span><h3>จัดการคำถามคัดกรองเบื้องต้น</h3><p>เจ้าหน้าที่ทุกคนสามารถเพิ่ม แก้ไข และเปิด–ปิดคำถามได้ โดยระบบเก็บประวัติการเปลี่ยนแปลงทุกครั้ง</p></div><button type="button" class="btn btn-soft btn-sm" onclick="loadScreeningQuestionsAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+            <div class="staff-page-head"><div><span>PRE-SCREENING QUESTIONS</span><h3>จัดการคำถามคัดกรองเบื้องต้น</h3><p>เพิ่ม แก้ไข และเปิด–ปิดคำถามได้จากหน้านี้ ส่วนประวัติการแก้ไขย้ายไปอยู่อีกหน้าเพื่อเปิดดูง่ายขึ้น</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="showStaffTab('screeningQuestionHistory')"><i class="bi bi-clock-history"></i> ดูประวัติการแก้ไข</button><button type="button" class="btn btn-soft btn-sm" onclick="showStaffTab('manual')"><i class="bi bi-journal-richtext"></i> เปิดคู่มือ</button><button type="button" class="btn btn-soft btn-sm" onclick="loadScreeningQuestionsAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div></div>
             <div class="compact-notice warning mb-3"><i class="bi bi-exclamation-triangle"></i><span>คำถามหน้านี้จะแสดงกับผู้บริจาคก่อนจองเกล็ดเลือดทันที ควรใช้ถ้อยคำที่ผ่านการทบทวนของหน่วยก่อนเปิดใช้งาน</span></div>
             <div id="screeningQuestionFormCard" class="card main-card staff-card p-4 mb-3">
               <div class="staff-section-head mb-3"><div><h5 id="screeningQuestionFormTitle">เพิ่มคำถามใหม่</h5><small>กำหนดคำตอบที่ถือว่า “ผ่าน” และข้อความแนะนำเมื่อผู้บริจาคตอบไม่ผ่าน</small></div><button type="button" class="btn btn-soft btn-sm" onclick="resetScreeningQuestionForm()"><i class="bi bi-plus-circle"></i> แบบฟอร์มใหม่</button></div>
@@ -757,10 +759,32 @@
               <div class="staff-section-head mb-3"><div><h5>คำถามที่ใช้อยู่</h5><small>เรียงตามเลขลำดับ · ปิดใช้ได้โดยไม่ลบประวัติ</small></div></div>
               <div id="screeningQuestionsAdminList"><div class="staff-result">กำลังโหลด...</div></div>
             </div>
-            <div class="card main-card staff-card p-4">
-              <div class="staff-section-head mb-3"><div><h5>ประวัติการแก้ไขคำถาม</h5><small>เก็บว่าใครเพิ่มหรือแก้ไขอะไร และเมื่อไร</small></div><button type="button" class="btn btn-soft btn-sm" onclick="loadScreeningQuestionAudit()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
-              <div id="screeningQuestionAuditResult"><div class="staff-result">กำลังโหลด...</div></div>
+            <div class="compact-notice mb-3"><i class="bi bi-info-circle"></i><span>ถ้าต้องการดูว่าใครแก้ไขคำถามเมื่อไร ให้ไปที่เมนู “ประวัติคำถาม” ระบบจะแยกไว้ให้อ่านง่ายคล้ายหน้าประวัตินำเข้า</span></div>
+          </div>
+
+          <div id="staffTab_screeningQuestionHistory" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>SCREENING QUESTION HISTORY</span><h3>ประวัติการแก้ไขคำถามคัดกรอง</h3><p>ดูว่าใครเพิ่ม แก้ไข หรือเปิด–ปิดคำถามอะไรบ้าง โดยเริ่มแสดงล่าสุดของวันนี้ก่อน</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="showStaffTab('screeningQuestions')"><i class="bi bi-ui-checks-grid"></i> กลับไปหน้าคำถาม</button><button type="button" class="btn btn-soft btn-sm" onclick="loadScreeningQuestionHistory(1)"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div></div>
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="staff-filter-row import-log-filter screening-history-filter">
+                <div class="field-block mb-0"><label class="form-label">วันที่</label><input type="date" id="screeningHistoryDate" class="form-control"></div>
+                <div class="field-block mb-0"><label class="form-label">รายการที่ต้องการดู</label><select id="screeningHistoryAction" class="form-select"><option value="">ทั้งหมด</option><option value="insert">เพิ่มคำถาม</option><option value="update">แก้ไข / เปิด–ปิด</option><option value="delete">ลบคำถาม</option></select></div>
+                <button type="button" class="btn btn-search" onclick="loadScreeningQuestionHistory(1)"><i class="bi bi-search"></i> ดูประวัติ</button>
+              </div>
             </div>
+            <div class="card main-card staff-card p-4">
+              <div id="screeningQuestionHistoryResult" class="staff-result">กำลังโหลดประวัติ...</div>
+              <div id="screeningQuestionHistoryPager" class="mini-pager mt-3" style="display:none;">
+                <button type="button" class="btn btn-soft btn-sm" onclick="changeScreeningQuestionHistoryPage(-1)"><i class="bi bi-chevron-left"></i> ก่อนหน้า</button>
+                <span id="screeningQuestionHistoryPageText">1 / 1</span>
+                <button type="button" class="btn btn-soft btn-sm" onclick="changeScreeningQuestionHistoryPage(1)">ถัดไป <i class="bi bi-chevron-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div id="staffTab_manual" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>WORK GUIDE</span><h3>คู่มือใช้งานแบบภาษาคนทำงาน</h3><p>รวมขั้นตอนที่ใช้บ่อย พร้อมภาพประกอบจากหน้าจอจริง อ่านแบบ WI ฉบับย่อได้เลย</p></div><button type="button" class="btn btn-soft btn-sm" onclick="renderStaffManual(true)"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+            <div class="compact-notice mb-3"><i class="bi bi-journal-check"></i><span>คู่มือนี้ตั้งใจเขียนให้อ่านง่าย ไม่ใช้ภาษาระบบเกินจำเป็น เหมาะกับน้องที่เพิ่งเริ่มใช้แอพหรืออยากทวนขั้นตอนเร็ว ๆ</span></div>
+            <div id="staffManualContent"><div class="staff-result">กำลังเตรียมคู่มือ...</div></div>
           </div>
 
           <div id="staffTab_admin" class="staff-tab-page">
@@ -818,6 +842,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.8"></script>
+  <script src="app.js?v=15.9"></script>
 </body>
 </html>
