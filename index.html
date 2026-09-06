@@ -3,423 +3,417 @@
 <head>
   <meta charset="UTF-8">
   <title>ห้องบริจาคโลหิต CNMI</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#d92f35">
+  <meta name="color-scheme" content="light">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CNMI Donor">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link href="styles.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="styles.css?v=13" rel="stylesheet">
 </head>
-<body class="p-3">
-  <div class="container py-2" style="max-width: 560px;">
-    <div class="text-center mb-4">
-      <h3 id="orgTitle" class="fw-bold text-danger">CNMI Blood Donation</h3>
-      <p id="orgSubtitle" class="text-muted small">ห้องรับบริจาคโลหิต รามาธิบดีจักรีนฤบดินทร</p>
-    </div>
+<body class="p-3" data-page="home">
+  <div class="container py-2 public-shell">
+    <header class="brand-header mb-4">
+      <div class="brand-mark"><i class="bi bi-droplet-fill"></i></div>
+      <div>
+        <h3 id="orgTitle">CNMI Blood Donation</h3>
+        <p id="orgSubtitle">ห้องรับบริจาคโลหิต รามาธิบดีจักรีนฤบดินทร์</p>
+      </div>
+    </header>
 
     <div id="pageHome" class="app-page active">
-      <div class="card hero-card p-4 mb-4 text-center">
-        <p class="mb-1 opacity-75">ยินดีต้อนรับ</p>
-        <h4 class="fw-bold mb-2">ห้องบริจาคโลหิต CNMI</h4>
-        <p class="mb-0 small">ตรวจสอบข้อมูล คัดกรองเบื้องต้น และจองคิวในลิงก์เดียว</p>
+      <section class="welcome-panel mb-4">
+        <div class="welcome-eyebrow">CNMI DONOR SERVICE</div>
+        <h1 class="welcome-title">วันนี้ต้องการทำอะไร?</h1>
+        <p class="welcome-subtitle">เลือกสิ่งที่ต้องการ ระบบจะพาไปทีละขั้น</p>
+      </section>
+
+      <div class="action-stack">
+        <button type="button" class="home-menu-card primary-menu" onclick="showPage('check')">
+          <div class="menu-symbol"><i class="bi bi-droplet-half"></i></div>
+          <div class="menu-copy">
+            <div class="menu-title">เช็กว่าบริจาคได้หรือยัง</div>
+            <div class="menu-subtitle">ดูวันที่บริจาคครั้งถัดไป และประวัติของคุณ</div>
+          </div>
+          <i class="bi bi-chevron-right menu-arrow"></i>
+        </button>
+
+        <button type="button" class="home-menu-card" onclick="startScreening()">
+          <div class="menu-symbol"><i class="bi bi-calendar2-check"></i></div>
+          <div class="menu-copy">
+            <div class="menu-title">จองคิวบริจาคโลหิต</div>
+            <div class="menu-subtitle">ประเมินความพร้อม แล้วเลือกวันและเวลา</div>
+          </div>
+          <i class="bi bi-chevron-right menu-arrow"></i>
+        </button>
+
+        <button type="button" class="home-menu-card" onclick="showPage('info')">
+          <div class="menu-symbol"><i class="bi bi-geo-alt"></i></div>
+          <div class="menu-copy">
+            <div class="menu-title">เวลาเปิดทำการและติดต่อ</div>
+            <div class="menu-subtitle">เบอร์โทร สถานที่ และแผนที่</div>
+          </div>
+          <i class="bi bi-chevron-right menu-arrow"></i>
+        </button>
       </div>
 
-      <div class="quick-tip-card mb-3">
-        <div class="fw-bold mb-1">เริ่มจากเช็กก่อน จะง่ายที่สุด</div>
-        <div class="small text-muted">ถ้าจำ Donor ID ไม่ได้ ระบบช่วยค้นหาได้จากเลขบัตร / Passport / เลขเอกสาร วันเกิด และเบอร์โทร</div>
+      <div class="utility-row mt-3">
+        <button type="button" class="utility-link" onclick="showPage('manage')"><i class="bi bi-card-checklist"></i> ดู / ยกเลิกคิว</button>
+        <button type="button" class="utility-link" onclick="showPage('check'); switchMode('forgot');"><i class="bi bi-person-vcard"></i> จำ Donor ID ไม่ได้</button>
       </div>
 
-      <button type="button" class="home-menu-card primary-menu mb-3" onclick="showPage('check')">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">🩸</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">เช็กว่าบริจาคได้หรือยัง</div>
-            <div class="text-muted small">ดูจำนวนครั้ง วันที่บริจาคได้อีกครั้ง และประวัติล่าสุด</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
-
-      <button type="button" class="home-menu-card primary-menu mb-3" onclick="startScreening()">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">✅</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">จองคิวบริจาคโลหิต</div>
-            <div class="text-muted small">ตอบประเมินความพร้อมสั้น ๆ แล้วเลือกวัน-เวลา</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
-
-      <button type="button" class="home-menu-card mb-3" onclick="showPage('info')">
-        <div class="d-flex gap-3 align-items-center">
-          <div class="home-icon">☎️</div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">ติดต่อห้องบริจาคโลหิต</div>
-            <div class="text-muted small">เวลาเปิดทำการ เบอร์โทร และแผนที่</div>
-          </div>
-          <div class="text-danger fw-bold">›</div>
-        </div>
-      </button>
-
-      <div class="home-secondary-links mb-2">
-        <button type="button" onclick="showPage('manage')">ดู / ยกเลิกคิวที่จองไว้</button>
-        <button type="button" onclick="showPage('check'); switchMode('forgot');">จำ Donor ID ไม่ได้</button>
-      </div>
-
-      <button type="button" class="staff-link" onclick="showStaffGate()">เข้าสู่ระบบเจ้าหน้าที่</button>
+      <button type="button" class="staff-link" onclick="showStaffGate()"><i class="bi bi-shield-lock"></i> สำหรับเจ้าหน้าที่</button>
     </div>
-
     <div id="pageCheck" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
-        <h5 class="page-title flex-grow-1">ตรวจสอบข้อมูลผู้บริจาค</h5>
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')" aria-label="กลับหน้าหลัก"><i class="bi bi-arrow-left"></i></button>
+        <div>
+          <div class="page-kicker">ข้อมูลผู้บริจาค</div>
+          <h2 class="page-title">เช็กว่าบริจาคได้เมื่อไหร่</h2>
+          <p class="page-subtitle">กรอกข้อมูลเพื่อยืนยันตัวตน 3 รายการ</p>
+        </div>
       </div>
 
-      <div class="card main-card p-3 mb-4">
-        <div class="mode-tabs mb-3">
-          <button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')">มี Donor ID</button>
-          <button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')">ไม่มี / ลืม Donor ID</button>
+      <div class="card main-card p-3 p-md-4 mb-4">
+        <div class="mode-tabs mb-4">
+          <button type="button" id="tabCheck" class="mode-tab active" onclick="switchMode('check')"><i class="bi bi-person-check"></i><span>มี Donor ID</span></button>
+          <button type="button" id="tabForgot" class="mode-tab" onclick="switchMode('forgot')"><i class="bi bi-question-circle"></i><span>จำไม่ได้</span></button>
         </div>
 
         <div id="checkForm" class="form-section active">
-          <div class="safe-note mb-3">กรอก 3 อย่างนี้เพื่อดูจำนวนครั้ง ประวัติ และวันที่บริจาคครั้งถัดไป</div>
-          <button type="button" class="mini-help-btn mb-3" onclick="switchMode('forgot')">จำ Donor ID ไม่ได้? กดค้นหา Donor ID ก่อน</button>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เลขผู้บริจาค Donor ID</label>
-            <input type="text" id="donorIdInput" class="form-control text-center p-3" placeholder="กรอก Donor ID" autocomplete="off">
+          <div class="form-step-title"><span>1</span><div><b>ยืนยันข้อมูลของคุณ</b><small>ระบบใช้ข้อมูลนี้เพื่อค้นหาประวัติเท่านั้น</small></div></div>
+
+          <div class="field-block">
+            <label class="form-label">Donor ID</label>
+            <div class="input-with-icon"><i class="bi bi-person-vcard"></i><input type="text" id="donorIdInput" class="form-control" placeholder="เลขผู้บริจาค" autocomplete="off"></div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-            <input type="text" id="donorDobCheck" class="form-control text-center p-3" placeholder="เช่น 29/09/1992 หรือ 29/09/2535" inputmode="numeric" autocomplete="bday">
-            <div class="form-text small">พิมพ์วันเกิดเป็น วัน/เดือน/ปี ได้เลย รองรับ ค.ศ. และ พ.ศ.</div>
+          <div class="field-block">
+            <label class="form-label">วัน/เดือน/ปีเกิด</label>
+            <div class="input-with-icon"><i class="bi bi-cake2"></i><input type="text" id="donorDobCheck" class="form-control" placeholder="เช่น 29/09/1992" inputmode="numeric" autocomplete="bday"></div>
+            <div class="form-text">ใช้ได้ทั้ง ค.ศ. และ พ.ศ.</div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ หรือ 4 ตัวท้าย</label>
-            <input type="tel" id="phoneLast4Check" class="form-control text-center p-3" maxlength="10" placeholder="เช่น 0812347556 หรือ 7556" inputmode="numeric" autocomplete="tel">
+          <div class="field-block">
+            <label class="form-label">เบอร์โทรศัพท์</label>
+            <div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="phoneLast4Check" class="form-control" maxlength="10" placeholder="กรอกเต็ม หรือ 4 ตัวท้าย" inputmode="numeric" autocomplete="tel"></div>
           </div>
-          <div class="d-flex gap-2">
-            <button type="button" id="btnCheckSearch" class="btn btn-search flex-grow-1 p-3" onclick="runCheckSearch()">🔍 ตรวจสอบข้อมูล</button>
-            <button type="button" class="btn btn-clear-cnmi" onclick="clearSearch()">🔄</button>
-          </div>
+
+          <button type="button" id="btnCheckSearch" class="btn btn-search w-100" onclick="runCheckSearch()">ตรวจสอบข้อมูล <i class="bi bi-arrow-right"></i></button>
+          <button type="button" class="text-action mt-3" onclick="switchMode('forgot')">จำ Donor ID ไม่ได้? <b>ค้นหาให้ฉัน</b></button>
+          <button type="button" class="clear-action mt-2" onclick="clearSearch()"><i class="bi bi-arrow-counterclockwise"></i> ล้างข้อมูล</button>
         </div>
 
         <div id="forgotForm" class="form-section">
-          <div class="safe-note mb-3">กรณีจำ Donor ID ไม่ได้ ให้ใช้เลขบัตรประชาชน / Passport / เลขเอกสารที่เคยให้ไว้ เพื่อค้นหา Donor ID ก่อน</div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เลขบัตรประชาชน / Passport / เลขเอกสารที่เคยให้ไว้</label>
-            <input type="text" id="idDocForgot" class="form-control text-center p-3" placeholder="กรอกเลขเอกสาร" autocomplete="off">
+          <div class="form-step-title"><span>1</span><div><b>ค้นหา Donor ID</b><small>ใช้เลขเอกสารที่เคยแจ้งไว้กับห้องบริจาคโลหิต</small></div></div>
+          <div class="field-block">
+            <label class="form-label">เลขบัตร / Passport / เลขเอกสาร</label>
+            <div class="input-with-icon"><i class="bi bi-passport"></i><input type="text" id="idDocForgot" class="form-control" placeholder="กรอกเลขเอกสาร" autocomplete="off"></div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">วัน/เดือน/ปีเกิด</label>
-            <input type="text" id="donorDobForgot" class="form-control text-center p-3" placeholder="เช่น 29/09/1992 หรือ 29/09/2535" inputmode="numeric" autocomplete="bday">
-            <div class="form-text small">พิมพ์วันเกิดเป็น วัน/เดือน/ปี ได้เลย รองรับ ค.ศ. และ พ.ศ.</div>
+          <div class="field-block">
+            <label class="form-label">วัน/เดือน/ปีเกิด</label>
+            <div class="input-with-icon"><i class="bi bi-cake2"></i><input type="text" id="donorDobForgot" class="form-control" placeholder="เช่น 29/09/1992" inputmode="numeric" autocomplete="bday"></div>
+            <div class="form-text">ใช้ได้ทั้ง ค.ศ. และ พ.ศ.</div>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ หรือ 4 ตัวท้าย</label>
-            <input type="tel" id="phoneLast4Forgot" class="form-control text-center p-3" maxlength="10" placeholder="เช่น 0812347556 หรือ 7556" inputmode="numeric" autocomplete="tel">
+          <div class="field-block">
+            <label class="form-label">เบอร์โทรศัพท์</label>
+            <div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="phoneLast4Forgot" class="form-control" maxlength="10" placeholder="กรอกเต็ม หรือ 4 ตัวท้าย" inputmode="numeric" autocomplete="tel"></div>
           </div>
-          <div class="d-flex gap-2">
-            <button type="button" id="btnForgotSearch" class="btn btn-search flex-grow-1 p-3" onclick="runForgotSearch()">🔎 ค้นหา Donor ID</button>
-            <button type="button" class="btn btn-clear-cnmi" onclick="clearSearch()">🔄</button>
-          </div>
+          <button type="button" id="btnForgotSearch" class="btn btn-search w-100" onclick="runForgotSearch()">ค้นหา Donor ID <i class="bi bi-search"></i></button>
+          <button type="button" class="clear-action mt-3" onclick="clearSearch()"><i class="bi bi-arrow-counterclockwise"></i> ล้างข้อมูล</button>
         </div>
       </div>
 
-      <div id="notFoundCard" class="card main-card p-4 mt-2 text-center" style="display:none;border-top:5px solid #bdc3c7;">
-        <div class="mb-2"><span style="font-size:3rem;">🔍</span></div>
-        <h5 class="fw-bold mb-3">ไม่พบข้อมูล หรือข้อมูลยืนยันตัวตนไม่ถูกต้อง</h5>
-        <p class="text-muted small mb-3">กรุณาตรวจสอบข้อมูลอีกครั้ง หรือติดต่อเจ้าหน้าที่</p>
-        <a id="notFoundTel" href="tel:028396050" class="btn btn-outline-secondary w-100 mb-2">📞 โทรสอบถาม</a>
+      <div id="notFoundCard" class="card main-card status-card status-neutral mt-2" style="display:none;">
+        <div class="status-icon"><i class="bi bi-search"></i></div>
+        <h5>ยังไม่พบข้อมูล</h5>
+        <p>ตรวจสอบข้อมูลอีกครั้ง หรือติดต่อเจ้าหน้าที่</p>
+        <a id="notFoundTel" href="tel:028396050" class="btn btn-outline-secondary w-100">โทรสอบถาม</a>
       </div>
 
       <div id="checkResult" style="display:none">
-        <div id="checkHero" class="card hero-card p-4 mb-4 text-center">
-          <p class="mb-0 opacity-75">อีกกี่วัน มาบริจาคได้?</p>
-          <div id="resultDaysLeft" class="count-number"></div>
-          <p id="resultDaysLabel" class="mb-3 fw-bold">วัน</p>
-          <div class="hero-note"><span id="resultStatus"></span></div>
+        <div id="checkHero" class="result-hero mb-3">
+          <div class="result-hero-label">บริจาคได้อีกครั้งใน</div>
+          <div class="result-count-row"><span id="resultDaysLeft" class="count-number"></span><span id="resultDaysLabel" class="count-unit">วัน</span></div>
+          <div id="resultStatus" class="result-status"></div>
         </div>
-        <div class="card result-card p-4 mb-4">
-          <h5 id="displayName" class="fw-bold mb-2 text-center"></h5>
-          <p id="displayId" class="fw-bold text-center mb-1" style="font-size:1rem;color:#444;"></p>
-          <p id="displayDob" class="text-muted small text-center mb-3" style="font-size:.85rem;"></p>
-          <div class="text-center mb-3"><span id="displayBlood" class="blood-badge"></span></div>
-          <div class="d-flex justify-content-between small text-muted border-top pt-3 mt-3">
-            <span>บริจาคได้อีกครั้งตั้งแต่:</span>
-            <span id="displayNextDate" class="fw-bold text-dark"></span>
+
+        <div class="card result-card p-4 mb-3">
+          <div class="result-profile">
+            <div class="profile-mark"><i class="bi bi-person-heart"></i></div>
+            <div class="flex-grow-1">
+              <h5 id="displayName" class="mb-1"></h5>
+              <div id="displayId" class="result-meta"></div>
+              <div id="displayDob" class="result-meta"></div>
+            </div>
+            <span id="displayBlood" class="blood-badge"></span>
           </div>
+          <div class="result-next mt-3"><span>บริจาคได้อีกครั้งตั้งแต่</span><b id="displayNextDate"></b></div>
           <div class="result-actions d-grid gap-2 mt-3">
-            <button type="button" id="btnBookFromResult" class="btn btn-search p-3" onclick="goBookingFromResult()">จองคิวบริจาคโลหิต</button>
-            <button type="button" class="btn btn-outline-secondary p-3 fw-bold" onclick="toggleHistoryPanel()">ดู / ซ่อนประวัติการบริจาค</button>
+            <button type="button" id="btnBookFromResult" class="btn btn-search" onclick="goBookingFromResult()"><i class="bi bi-calendar2-plus"></i> จองคิว</button>
+            <button type="button" id="btnToggleHistory" class="btn btn-soft" onclick="toggleHistoryPanel()"><i class="bi bi-clock-history"></i> ดูประวัติการบริจาค</button>
           </div>
         </div>
-        <div id="historyPanel" style="display:none;">
-          <h6 class="fw-bold mb-3 px-2">💖 ประวัติและความภูมิใจ</h6>
-          <div class="table-history shadow-sm border mb-4"><table class="table mb-0"><tbody id="historyTableBody"></tbody></table></div>
+
+        <div id="historyPanel" class="history-panel" style="display:none;">
+          <div class="section-heading"><div><span class="section-number">2</span><b>ประวัติการบริจาค</b></div></div>
+          <div class="table-history"><table class="table mb-0"><tbody id="historyTableBody"></tbody></table></div>
         </div>
       </div>
 
       <div id="forgotResult" style="display:none">
-        <div class="card result-card p-4 mb-4 text-center" style="border-top:5px solid #d63031;">
-          <div class="mb-2"><span style="font-size:3rem;">🩸</span></div>
-          <p class="text-muted small mb-1">พบข้อมูลของท่าน</p>
-          <h5 class="fw-bold mb-3">เลขผู้บริจาค Donor ID</h5>
+        <div class="card result-card p-4 mb-4 text-center">
+          <div class="status-icon success"><i class="bi bi-check-lg"></i></div>
+          <div class="result-meta mb-1">พบ Donor ID ของคุณ</div>
           <div class="info-box mb-3"><div id="forgotDonorIdText" class="donor-id-big"></div></div>
-          <p class="text-muted small mb-3">กดปุ่มด้านล่างเพื่อเอาเลขนี้ไปตรวจสอบข้อมูลต่อได้เลย</p>
-          <button type="button" class="btn btn-search w-100 p-3" onclick="useForgotDonorIdForCheck()">ใช้ Donor ID นี้ตรวจสอบข้อมูลต่อ</button>
+          <button type="button" class="btn btn-search w-100" onclick="useForgotDonorIdForCheck()">ใช้เลขนี้ตรวจสอบข้อมูลต่อ <i class="bi bi-arrow-right"></i></button>
         </div>
       </div>
     </div>
-
     <div id="pageScreening" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">คัดกรองตนเองเบื้องต้น</h5></div>
-      <div class="safe-note mb-3">แบบประเมินนี้เป็นการคัดกรองเบื้องต้นเท่านั้น การพิจารณาสุดท้ายเป็นไปตามการซักประวัติและตรวจคัดกรองโดยเจ้าหน้าที่ ณ ห้องบริจาคโลหิต</div>
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
+        <div><div class="page-kicker">จองคิวบริจาคโลหิต</div><h2 class="page-title">ประเมินความพร้อม</h2><p class="page-subtitle">ตอบคำถามสั้น ๆ ก่อนเลือกวันและเวลา</p></div>
+      </div>
+
+      <div class="journey-steps mb-4">
+        <div class="journey-step active"><span>1</span><b>ประเมิน</b></div>
+        <div class="journey-line"></div>
+        <div class="journey-step"><span>2</span><b>เลือกคิว</b></div>
+        <div class="journey-line"></div>
+        <div class="journey-step"><span>3</span><b>ยืนยัน</b></div>
+      </div>
+
+      <div class="compact-notice mb-3"><i class="bi bi-info-circle"></i><span>ผลนี้เป็นการประเมินเบื้องต้น เจ้าหน้าที่จะคัดกรองอีกครั้งก่อนบริจาค</span></div>
+
       <div id="genderCard" class="question-card mb-3">
-        <h5 class="fw-bold mb-3">เพศของท่าน</h5>
+        <div class="form-step-title"><span>1</span><div><b>เลือกเพศ</b><small>เพื่อแสดงคำถามที่เหมาะสม</small></div></div>
         <div class="choice-grid mb-4">
-          <button type="button" id="genderMale" class="choice-btn" onclick="selectGender('ชาย')">👨 ชาย</button>
-          <button type="button" id="genderFemale" class="choice-btn danger-choice" onclick="selectGender('หญิง')">👩 หญิง</button>
+          <button type="button" id="genderMale" class="choice-btn" onclick="selectGender('ชาย')"><i class="bi bi-gender-male"></i><span>ชาย</span></button>
+          <button type="button" id="genderFemale" class="choice-btn danger-choice" onclick="selectGender('หญิง')"><i class="bi bi-gender-female"></i><span>หญิง</span></button>
         </div>
-        <button type="button" class="btn btn-search w-100 p-3" onclick="beginQuestions()">เริ่มทำแบบประเมิน ›</button>
+        <button type="button" class="btn btn-search w-100" onclick="beginQuestions()">เริ่มประเมิน <i class="bi bi-arrow-right"></i></button>
       </div>
+
       <div id="questionCard" class="question-card mb-3" style="display:none;">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="text-muted small" id="questionCounter"></span>
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetScreening()">เริ่มใหม่</button>
-        </div>
+        <div class="question-topline"><span id="questionCounter"></span><button type="button" class="text-action inline" onclick="resetScreening()">เริ่มใหม่</button></div>
         <div class="screening-progress mb-4"><div id="screeningProgressBar" class="screening-progress-bar"></div></div>
-        <h5 id="questionText" class="fw-bold mb-4" style="line-height:1.5;"></h5>
-        <div class="choice-grid mb-4">
-          <button type="button" id="answerYesBtn" class="choice-btn" onclick="answerQuestion('yes')">ใช่</button>
-          <button type="button" id="answerNoBtn" class="choice-btn" onclick="answerQuestion('no')">ไม่ใช่</button>
+        <h3 id="questionText" class="question-text"></h3>
+        <div class="choice-grid mb-3">
+          <button type="button" id="answerYesBtn" class="choice-btn" onclick="answerQuestion('yes')"><i class="bi bi-check-lg"></i><span>ใช่</span></button>
+          <button type="button" id="answerNoBtn" class="choice-btn" onclick="answerQuestion('no')"><i class="bi bi-x-lg"></i><span>ไม่ใช่</span></button>
         </div>
-        <button type="button" class="btn btn-outline-secondary w-100 p-3" onclick="previousQuestion()">‹ ย้อนกลับ</button>
+        <button type="button" class="btn btn-soft w-100" onclick="previousQuestion()"><i class="bi bi-arrow-left"></i> ย้อนกลับ</button>
       </div>
     </div>
-
     <div id="pageBooking" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">จองคิวบริจาคโลหิต</h5></div>
-      <div class="safe-note mb-3">ขั้นตอนจอง: ประเมินความพร้อม → กรอกข้อมูล → เลือกวันและเวลา → ยืนยันการจอง ระบบนี้เป็นการจองคิวเข้ารับบริการเท่านั้น ไม่ใช่การบันทึกว่าท่านได้บริจาคโลหิตแล้ว</div>
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
+        <div><div class="page-kicker">จองคิวบริจาคโลหิต</div><h2 class="page-title">เลือกวันและเวลา</h2><p class="page-subtitle">กรอกข้อมูลติดต่อ แล้วเลือกคิวที่สะดวก</p></div>
+      </div>
+
+      <div class="journey-steps mb-4">
+        <div class="journey-step done"><span><i class="bi bi-check-lg"></i></span><b>ประเมิน</b></div>
+        <div class="journey-line done"></div>
+        <div class="journey-step active"><span>2</span><b>เลือกคิว</b></div>
+        <div class="journey-line"></div>
+        <div class="journey-step"><span>3</span><b>ยืนยัน</b></div>
+      </div>
+
       <div id="bookingPrefillNote" class="prefill-note mb-3" style="display:none;"></div>
-      <div class="card main-card p-4 mb-4">
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อ-นามสกุล</label><input type="text" id="bookingName" class="form-control p-3" placeholder="กรอกชื่อ-นามสกุล"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">Donor ID ถ้ามี</label><input type="text" id="bookingDonorId" class="form-control p-3" placeholder="ถ้าไม่ทราบ เว้นว่างได้"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์</label><input type="tel" id="bookingPhone" class="form-control p-3" placeholder="เบอร์โทรศัพท์ที่ติดต่อได้" inputmode="numeric"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">วันที่ต้องการบริจาค</label><input type="date" id="bookingDate" class="form-control p-3" inputmode="none"></div>
-        <label class="form-label small fw-bold text-muted">เลือกช่วงเวลา</label>
-        <div id="bookingSlotGrid" class="slot-grid mb-4"><div class="text-muted small" style="grid-column:1/-1;">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่ว่าง</div></div>
-        <button type="button" id="btnConfirmBooking" class="btn btn-search w-100 p-3" onclick="submitBooking()">ยืนยันการจอง</button>
+
+      <div class="card main-card p-3 p-md-4 mb-4">
+        <div class="form-step-title"><span>1</span><div><b>ข้อมูลติดต่อ</b><small>ใช้สำหรับยืนยันการจองของคุณ</small></div></div>
+        <div class="field-block"><label class="form-label">ชื่อ-นามสกุล</label><div class="input-with-icon"><i class="bi bi-person"></i><input type="text" id="bookingName" class="form-control" placeholder="ชื่อ-นามสกุล"></div></div>
+        <div class="field-block"><label class="form-label">Donor ID <span class="optional">ถ้ามี</span></label><div class="input-with-icon"><i class="bi bi-person-vcard"></i><input type="text" id="bookingDonorId" class="form-control" placeholder="ไม่ทราบ เว้นว่างได้"></div></div>
+        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="bookingPhone" class="form-control" placeholder="เบอร์โทรที่ติดต่อได้" inputmode="numeric"></div></div>
+
+        <div class="section-divider"></div>
+        <div class="form-step-title"><span>2</span><div><b>วันและเวลา</b><small>ระบบจะแสดงเฉพาะช่วงเวลาที่เปิดจอง</small></div></div>
+        <div class="field-block"><label class="form-label">วันที่ต้องการบริจาค</label><div class="input-with-icon"><i class="bi bi-calendar3"></i><input type="date" id="bookingDate" class="form-control" inputmode="none"></div></div>
+        <label class="form-label">ช่วงเวลาที่ว่าง</label>
+        <div id="bookingSlotGrid" class="slot-grid mb-4"><div class="empty-state-inline">เลือกวันที่ก่อน แล้วช่วงเวลาที่ว่างจะแสดงตรงนี้</div></div>
+
+        <button type="button" id="btnConfirmBooking" class="btn btn-search w-100" onclick="submitBooking()">ยืนยันการจอง <i class="bi bi-arrow-right"></i></button>
       </div>
     </div>
-
     <div id="pageManage" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">ดู / ยกเลิกคิวที่จองไว้</h5></div>
-      <div class="card main-card p-4 mb-4">
-        <div class="safe-note mb-3">ใช้สำหรับตรวจสอบรายละเอียดนัดหมาย หรือยกเลิกคิวที่จองไว้ โดยใช้เลขที่จองและเบอร์โทรศัพท์ 4 ตัวท้าย</div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">เลขที่จอง Booking ID</label><input type="text" id="manageBookingId" class="form-control text-center p-3" placeholder="เช่น BK202609051030001"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">เบอร์โทรศัพท์ 4 ตัวท้าย</label><input type="tel" id="managePhoneLast4" class="form-control text-center p-3" maxlength="4" placeholder="เช่น 7556" inputmode="numeric"></div>
-        <div class="d-flex gap-2"><button type="button" id="btnFindBooking" class="btn btn-search flex-grow-1 p-3" onclick="findBookingUI()">🔍 ตรวจสอบนัดหมาย</button><button type="button" class="btn btn-clear-cnmi" onclick="clearManageBooking()">🔄</button></div>
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
+        <div><div class="page-kicker">นัดหมาย</div><h2 class="page-title">ดูหรือยกเลิกคิว</h2><p class="page-subtitle">ใช้ Booking ID และเบอร์โทร 4 ตัวท้าย</p></div>
       </div>
-      <div id="manageNotFoundCard" class="card main-card p-4 text-center" style="display:none;border-top:5px solid #bdc3c7;"><div class="mb-2"><span style="font-size:3rem;">🔍</span></div><h5 class="fw-bold mb-2">ไม่พบรายการจอง</h5><p class="text-muted small mb-0">กรุณาตรวจสอบ Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายอีกครั้ง</p></div>
-      <div id="manageResult" class="card result-card p-4 mb-4" style="display:none;border-top:5px solid #d63031;">
-        <h5 class="fw-bold text-center mb-3">รายละเอียดนัดหมาย</h5>
-        <div class="info-box mb-3"><div class="text-muted small">เลขที่จอง</div><div id="manageDisplayBookingId" class="fw-bold"></div></div>
-        <div class="info-box mb-3"><div class="text-muted small">ชื่อผู้จอง</div><div id="manageDisplayName" class="fw-bold"></div></div>
-        <div class="info-box mb-3"><div class="text-muted small">วันที่ / เวลา</div><div id="manageDisplayDateTime" class="fw-bold"></div></div>
-        <div class="info-box mb-3"><div class="text-muted small">สถานะ</div><div id="manageDisplayStatus" class="fw-bold"></div></div>
-        <button type="button" id="btnCancelBooking" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="confirmCancelBooking()">ยกเลิกนัดหมายนี้</button>
+      <div class="card main-card p-3 p-md-4 mb-4">
+        <div class="form-step-title"><span>1</span><div><b>ค้นหานัดหมาย</b><small>ข้อมูลอยู่ในหน้าสรุปหลังจองสำเร็จ</small></div></div>
+        <div class="field-block"><label class="form-label">Booking ID</label><div class="input-with-icon"><i class="bi bi-ticket-perforated"></i><input type="text" id="manageBookingId" class="form-control" placeholder="เช่น BK202609051030001"></div></div>
+        <div class="field-block"><label class="form-label">เบอร์โทร 4 ตัวท้าย</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="managePhoneLast4" class="form-control" maxlength="4" placeholder="เช่น 7556" inputmode="numeric"></div></div>
+        <button type="button" id="btnFindBooking" class="btn btn-search w-100" onclick="findBookingUI()">ตรวจสอบนัดหมาย <i class="bi bi-search"></i></button>
+        <button type="button" class="clear-action mt-3" onclick="clearManageBooking()"><i class="bi bi-arrow-counterclockwise"></i> ล้างข้อมูล</button>
+      </div>
+      <div id="manageNotFoundCard" class="card main-card status-card status-neutral" style="display:none;"><div class="status-icon"><i class="bi bi-search"></i></div><h5>ไม่พบรายการจอง</h5><p>ตรวจสอบ Booking ID และเบอร์โทร 4 ตัวท้ายอีกครั้ง</p></div>
+      <div id="manageResult" class="card result-card p-4 mb-4" style="display:none;">
+        <div class="section-heading mb-3"><div><span class="section-number"><i class="bi bi-check-lg"></i></span><b>รายละเอียดนัดหมาย</b></div></div>
+        <div class="booking-summary-list">
+          <div><span>เลขที่จอง</span><b id="manageDisplayBookingId"></b></div>
+          <div><span>ชื่อผู้จอง</span><b id="manageDisplayName"></b></div>
+          <div><span>วันที่ / เวลา</span><b id="manageDisplayDateTime"></b></div>
+          <div><span>สถานะ</span><b id="manageDisplayStatus"></b></div>
+        </div>
+        <button type="button" id="btnCancelBooking" class="btn btn-outline-danger w-100 mt-3" onclick="confirmCancelBooking()">ยกเลิกนัดหมายนี้</button>
       </div>
     </div>
-
     <div id="pageInfo" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">วันทำการ / ติดต่อ</h5></div>
-      <div class="card main-card p-4 mb-4">
-        <div class="contact-line"><div>🕘</div><div><div class="fw-bold text-danger">วันและเวลาทำการ</div><div>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</div><div class="text-muted small">กรุณาตรวจสอบวันหยุดพิเศษกับเจ้าหน้าที่อีกครั้ง</div></div></div>
-        <div class="contact-line"><div>📍</div><div><div class="fw-bold text-danger">สถานที่</div><div>ห้องบริจาคโลหิต โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์</div><div class="text-muted small">Bang Pla, Bang Phli District, Samut Prakan 10540</div></div></div>
-        <div class="contact-line"><div>☎️</div><div><div class="fw-bold text-danger">ติดต่อสอบถาม</div><a id="contactPhone" href="tel:028396050">02-839-6050</a></div></div>
-        <div class="pt-3"><a id="mapLink" class="btn btn-search w-100 p-3" target="_blank" rel="noopener">เปิดแผนที่ Google Maps</a></div>
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
+        <div><div class="page-kicker">ข้อมูลบริการ</div><h2 class="page-title">ติดต่อห้องบริจาคโลหิต</h2><p class="page-subtitle">เวลาเปิดทำการ สถานที่ และเบอร์โทร</p></div>
+      </div>
+      <div class="card main-card p-3 p-md-4 mb-4 contact-card">
+        <div class="contact-tile"><div class="contact-icon"><i class="bi bi-clock"></i></div><div><b>วันและเวลาทำการ</b><p>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</p><small>วันหยุดพิเศษ กรุณาติดต่อเจ้าหน้าที่อีกครั้ง</small></div></div>
+        <div class="contact-tile"><div class="contact-icon"><i class="bi bi-geo-alt"></i></div><div><b>สถานที่</b><p>ห้องบริจาคโลหิต โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์</p><small>Bang Pla, Bang Phli District, Samut Prakan 10540</small></div></div>
+        <div class="contact-tile"><div class="contact-icon"><i class="bi bi-telephone"></i></div><div><b>ติดต่อสอบถาม</b><p><a id="contactPhone" href="tel:028396050">02-839-6050</a></p></div></div>
+        <a id="mapLink" class="btn btn-search w-100 mt-2" target="_blank" rel="noopener"><i class="bi bi-map"></i> เปิด Google Maps</a>
       </div>
     </div>
-
     <div id="pageStaffLogin" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button><h5 class="page-title flex-grow-1">เข้าสู่ระบบเจ้าหน้าที่</h5></div>
-
-      <div class="card main-card p-4 mb-4">
-        <div class="safe-note mb-3">ส่วนนี้ใช้สำหรับเจ้าหน้าที่เท่านั้น บัญชีและรหัสผ่านชั่วคราวจะถูกสร้างโดยแอดมิน</div>
-        <div class="mb-3">
-          <label class="form-label small fw-bold text-muted">Email</label>
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
+        <div><div class="page-kicker">STAFF</div><h2 class="page-title">เข้าสู่ระบบเจ้าหน้าที่</h2><p class="page-subtitle">ใช้บัญชีที่แอดมินเปิดสิทธิ์ไว้</p></div>
+      </div>
+      <div class="card main-card staff-login-card p-3 p-md-4 mb-4">
+        <div class="field-block">
+          <label class="form-label">Email</label>
           <div class="input-group input-group-lg email-suffix-group">
-            <input type="text" id="staffEmail" class="form-control p-3" placeholder="เช่น username.sur" autocomplete="username" autocapitalize="none" spellcheck="false">
+            <input type="text" id="staffEmail" class="form-control" placeholder="username.sur" autocomplete="username" autocapitalize="none" spellcheck="false">
             <span class="input-group-text">@mahidol.ac.th</span>
           </div>
-          <div class="form-text small">กรอกเฉพาะชื่อหน้า @ ได้ เช่น username.sur</div>
         </div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">Password</label><input type="password" id="staffPassword" class="form-control p-3" placeholder="รหัสผ่าน หรือรหัสผ่านชั่วคราวที่แอดมินให้"></div>
-        <button type="button" id="btnStaffLogin" class="btn btn-search w-100 p-3" onclick="staffLogin()">เข้าสู่ระบบ</button>
-        <div class="safe-note mt-3">ถ้าเข้าครั้งแรกหรือเพิ่งให้แอดมินรีเซตรหัส ให้เข้าสู่ระบบด้วยรหัสชั่วคราว แล้วระบบจะให้เปลี่ยนรหัสผ่านเองทันที</div>
+        <div class="field-block"><label class="form-label">Password</label><div class="input-with-icon"><i class="bi bi-lock"></i><input type="password" id="staffPassword" class="form-control" placeholder="รหัสผ่าน"></div></div>
+        <button type="button" id="btnStaffLogin" class="btn btn-search w-100" onclick="staffLogin()">เข้าสู่ระบบ <i class="bi bi-box-arrow-in-right"></i></button>
+        <div class="compact-notice mt-3"><i class="bi bi-key"></i><span>ถ้าเป็นรหัสชั่วคราว ระบบจะให้ตั้งรหัสใหม่หลัง Login</span></div>
       </div>
     </div>
-
     <div id="pageStaffChangePassword" class="app-page">
-      <div class="d-flex align-items-center gap-2 mb-3"><button type="button" class="btn-back-home" onclick="staffLogout()">‹ ออกจากระบบ</button><h5 class="page-title flex-grow-1">เปลี่ยนรหัสผ่านก่อนใช้งาน</h5></div>
-      <div class="card main-card p-4 mb-4">
-        <div class="safe-note mb-3">บัญชีนี้กำลังใช้รหัสผ่านชั่วคราว กรุณาตั้งรหัสผ่านใหม่ของตนเองก่อนเข้าใช้งานหลังบ้าน</div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">Password ใหม่</label><input type="password" id="tempNewPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร"></div>
-        <div class="mb-3"><label class="form-label small fw-bold text-muted">ยืนยัน Password ใหม่</label><input type="password" id="tempNewPassword2" class="form-control p-3" placeholder="กรอกซ้ำอีกครั้ง"></div>
-        <button type="button" id="btnChangeTempPassword" class="btn btn-search w-100 p-3" onclick="changeTemporaryPassword()">บันทึกรหัสผ่านใหม่</button>
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="staffLogout()"><i class="bi bi-box-arrow-left"></i></button>
+        <div><div class="page-kicker">SECURITY</div><h2 class="page-title">ตั้งรหัสผ่านใหม่</h2><p class="page-subtitle">เปลี่ยนรหัสชั่วคราวก่อนเริ่มใช้งาน</p></div>
+      </div>
+      <div class="card main-card p-3 p-md-4 mb-4">
+        <div class="field-block"><label class="form-label">Password ใหม่</label><div class="input-with-icon"><i class="bi bi-lock"></i><input type="password" id="tempNewPassword" class="form-control" placeholder="อย่างน้อย 8 ตัวอักษร"></div></div>
+        <div class="field-block"><label class="form-label">ยืนยัน Password ใหม่</label><div class="input-with-icon"><i class="bi bi-shield-check"></i><input type="password" id="tempNewPassword2" class="form-control" placeholder="กรอกซ้ำอีกครั้ง"></div></div>
+        <button type="button" id="btnChangeTempPassword" class="btn btn-search w-100" onclick="changeTemporaryPassword()">บันทึกรหัสผ่านใหม่</button>
         <div id="changeTempPasswordResult" class="staff-result mt-3" style="display:none;"></div>
       </div>
     </div>
-
     <div id="pageStaff" class="app-page staff-wide">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button type="button" class="btn-back-home" onclick="showPage('home')">‹ หน้าหลัก</button>
-        <h5 class="page-title flex-grow-1">ระบบเจ้าหน้าที่</h5>
-        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="staffLogout()">ออกจากระบบ</button>
+      <div class="staff-topbar mb-3">
+        <div class="staff-topbar-title"><div class="staff-app-mark"><i class="bi bi-droplet-fill"></i></div><div><small>CNMI Blood Donation</small><h2>ระบบเจ้าหน้าที่</h2></div></div>
+        <div class="staff-topbar-actions"><button type="button" class="btn btn-soft btn-sm" onclick="showPage('home')"><i class="bi bi-house"></i> หน้าหลัก</button><button type="button" class="btn btn-soft btn-sm" onclick="staffLogout()"><i class="bi bi-box-arrow-right"></i> ออกจากระบบ</button></div>
       </div>
 
-      <div id="staffProfileBar" class="safe-note mb-3" style="display:none;"></div>
+      <div class="staff-layout">
+        <aside class="staff-sidebar">
+          <div id="staffProfileBar" class="staff-profile-pill" style="display:none;"></div>
+          <nav class="staff-nav-card">
+            <div class="staff-tabs">
+              <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')"><i class="bi bi-grid-1x2"></i><span>ภาพรวม</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')"><i class="bi bi-cloud-arrow-up"></i><span>นำเข้าผู้บริจาค</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="infectiousImport" onclick="showStaffTab('infectiousImport')"><i class="bi bi-shield-exclamation"></i><span>ผลติดเชื้อ</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="slots" onclick="showStaffTab('slots')"><i class="bi bi-calendar-plus"></i><span>รอบจอง</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>รายการจอง</span></button>
+              <button type="button" id="staffTabBtn_admin" class="staff-tab admin-only" data-staff-tab="admin" onclick="showStaffTab('admin')" style="display:none;"><i class="bi bi-people"></i><span>เจ้าหน้าที่</span></button>
+            </div>
+          </nav>
+        </aside>
 
-      <div class="card main-card p-3 mb-3">
-        <div class="staff-tabs">
-          <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')">ภาพรวมวันนี้</button>
-          <button type="button" class="staff-tab" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')">นำเข้าผู้บริจาค</button>
-          <button type="button" class="staff-tab" data-staff-tab="infectiousImport" onclick="showStaffTab('infectiousImport')">Infectious positive</button>
-          <button type="button" class="staff-tab" data-staff-tab="slots" onclick="showStaffTab('slots')">เปิดรอบจอง</button>
-          <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')">ดูรายการจอง</button>
-          <button type="button" id="staffTabBtn_admin" class="staff-tab admin-only" data-staff-tab="admin" onclick="showStaffTab('admin')" style="display:none;">จัดการเจ้าหน้าที่</button>
-        </div>
-      </div>
-
-      <div id="staffTab_overview" class="staff-tab-page active">
-        <div class="dashboard-grid mb-3">
-          <div class="dashboard-card"><div class="dashboard-label">จองวันนี้</div><div id="dashBookingsToday" class="dashboard-number">-</div><div class="dashboard-sub">รายการที่ยังไม่ยกเลิก</div></div>
-          <div class="dashboard-card"><div class="dashboard-label">รอบจองวันนี้</div><div id="dashSlotsToday" class="dashboard-number">-</div><div class="dashboard-sub">ช่วงเวลาที่เปิดไว้</div></div>
-          <div class="dashboard-card"><div class="dashboard-label">Infectious ติดตาม</div><div id="dashInfectious" class="dashboard-number">-</div><div class="dashboard-sub">แสดงหน้าเว็บเป็นติดต่อเจ้าหน้าที่</div></div>
-          <div class="dashboard-card"><div class="dashboard-label">รายการบริจาคทั้งหมด</div><div id="dashDonations" class="dashboard-number">-</div><div class="dashboard-sub">ในฐานข้อมูล Supabase</div></div>
-        </div>
-        <div class="card main-card p-4 mb-4">
-          <div class="d-flex align-items-center gap-2 mb-3">
-            <h5 class="fw-bold text-danger flex-grow-1 mb-0">📌 ภาพรวมระบบ</h5>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadStaffDashboard()">Refresh</button>
-          </div>
-          <div id="dashboardResult" class="staff-result">กำลังโหลดภาพรวม...</div>
-        </div>
-        <div class="card main-card p-4 mb-4">
-          <h6 class="fw-bold text-danger mb-3">ประวัติการนำเข้าล่าสุด</h6>
-          <div id="dashboardImportLogs" class="staff-result">กำลังโหลดประวัติ...</div>
-        </div>
-      </div>
-
-      <div id="staffTab_donorImport" class="staff-tab-page">
-        <div class="card main-card p-4 mb-4">
-          <h5 class="fw-bold text-danger">📥 นำเข้าข้อมูลผู้บริจาค</h5>
-          <p class="text-muted small">ขั้นที่ 1 ตรวจไฟล์ก่อน ระบบจะแสดงจำนวนที่พร้อมนำเข้าและรายการที่ถูกข้าม จากนั้นค่อยกดยืนยันนำเข้า Supabase</p>
-          <input type="file" id="donorImportFile" class="form-control mb-3" accept=".xlsx,.xls">
-          <div class="d-grid gap-2">
-            <button type="button" id="btnPreviewDonor" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="previewDonorFile()">ตรวจไฟล์ก่อนนำเข้า</button>
-            <button type="button" id="btnImportDonor" class="btn btn-search w-100 p-3" onclick="confirmImportDonorFile()" disabled>ยืนยันนำเข้า Supabase</button>
-          </div>
-          <div id="donorImportPreview" class="staff-result mt-3" style="display:none;"></div>
-          <div id="donorImportResult" class="staff-result mt-3" style="display:none;"></div>
-        </div>
-      </div>
-
-      <div id="staffTab_infectiousImport" class="staff-tab-page">
-        <div class="card main-card p-4 mb-4">
-          <h5 class="fw-bold text-danger">🚫 อัปเดต infectious positive</h5>
-          <p class="text-muted small">ระบบจะอัปเดตเฉพาะข้อความหน้าเว็บเป็น “กรุณาติดต่อเจ้าหน้าที่ห้องบริจาคโลหิต” และเก็บรายละเอียดไว้หลังบ้านเท่านั้น</p>
-          <input type="file" id="infectiousFile" class="form-control mb-3" accept=".xlsx,.xls">
-          <button type="button" id="btnImportInfectious" class="btn btn-search w-100 p-3" onclick="importInfectiousFile()">อัปเดตจากไฟล์ Excel</button>
-          <div class="or-line">หรือ</div>
-          <label class="form-label small fw-bold text-muted">วาง Unit No positive ทีละบรรทัด</label>
-          <textarea id="infectiousUnitList" class="form-control mb-3" rows="5" placeholder="CN6200066&#10;CN6300038"></textarea>
-          <button type="button" id="btnUpdateUnitList" class="btn btn-outline-danger w-100 p-3 fw-bold" onclick="updateInfectiousFromTextArea()">อัปเดตจากรายการ Unit No</button>
-          <div id="infectiousResult" class="staff-result mt-3" style="display:none;"></div>
-        </div>
-      </div>
-
-      <div id="staffTab_slots" class="staff-tab-page">
-        <div class="card main-card p-4 mb-4">
-          <h5 class="fw-bold text-danger">🗓️ เปิดรอบจองคิว</h5>
-          <div class="row g-2 mb-2">
-            <div class="col-6"><label class="form-label small fw-bold text-muted">วันที่</label><input type="date" id="slotDate" class="form-control p-3"></div>
-            <div class="col-6"><label class="form-label small fw-bold text-muted">เวลา</label><input type="time" id="slotTime" class="form-control p-3"></div>
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6"><label class="form-label small fw-bold text-muted">รับได้กี่คน</label><input type="number" id="slotMax" class="form-control p-3" value="10" min="0"></div>
-            <div class="col-6"><label class="form-label small fw-bold text-muted">สถานะ</label><select id="slotStatus" class="form-control p-3"><option>เปิด</option><option>ปิด</option></select></div>
-          </div>
-          <button type="button" id="btnSaveSlot" class="btn btn-search w-100 p-3" onclick="saveBookingSlot()">บันทึกรอบจอง</button>
-          <div id="slotResult" class="staff-result mt-3" style="display:none;"></div>
-        </div>
-      </div>
-
-      <div id="staffTab_bookings" class="staff-tab-page">
-        <div class="card main-card p-4 mb-4">
-          <h5 class="fw-bold text-danger">📋 รายการจอง</h5>
-          <div class="mb-3"><label class="form-label small fw-bold text-muted">เลือกวันที่</label><input type="date" id="bookingListDate" class="form-control p-3"></div>
-          <button type="button" class="btn btn-search w-100 p-3" onclick="loadStaffBookings()">โหลดรายการจอง</button>
-          <div id="staffBookingsResult" class="table-responsive mt-3"></div>
-        </div>
-      </div>
-
-
-      <div id="staffTab_admin" class="staff-tab-page">
-        <div class="card main-card p-4 mb-4" id="adminStaffFormCard">
-          <h5 class="fw-bold text-danger">👤 จัดการเจ้าหน้าที่</h5>
-          <p class="text-muted small mb-3">เฉพาะ admin เท่านั้น ใช้สร้างบัญชี ตั้งรหัสผ่านชั่วคราว รีเซตรหัสผ่าน และเปิด/ปิดสิทธิ์ ไม่ต้องส่งอีเมล reset</p>
-
-          <div id="adminStaffActionHelp" class="admin-action-help mb-3">
-            <div class="fw-bold">วิธีใช้เร็ว</div>
-            <div class="small">กดปุ่ม <b>สร้างบัญชี</b> หรือ <b>รีเซตรหัส</b> ที่ตารางด้านล่าง ระบบจะดึงข้อมูลขึ้นมาให้ แล้วใส่รหัสชั่วคราวหรือกดสุ่มรหัส จากนั้นกดปุ่มสีแดง</div>
+        <main class="staff-content">
+          <div id="staffTab_overview" class="staff-tab-page active">
+            <div class="staff-page-head"><div><span>ภาพรวม</span><h3>วันนี้ในห้องบริจาคโลหิต</h3></div><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffDashboard()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+            <div class="dashboard-grid mb-3">
+              <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-calendar-check"></i></div><div><div class="dashboard-label">จองวันนี้</div><div id="dashBookingsToday" class="dashboard-number">-</div><div class="dashboard-sub">รายการที่ยังไม่ยกเลิก</div></div></div>
+              <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-clock"></i></div><div><div class="dashboard-label">รอบจองวันนี้</div><div id="dashSlotsToday" class="dashboard-number">-</div><div class="dashboard-sub">ช่วงเวลาที่เปิดไว้</div></div></div>
+              <div class="dashboard-card"><div class="dash-icon warning"><i class="bi bi-exclamation-triangle"></i></div><div><div class="dashboard-label">ต้องติดตาม</div><div id="dashInfectious" class="dashboard-number">-</div><div class="dashboard-sub">Infectious positive</div></div></div>
+              <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-database"></i></div><div><div class="dashboard-label">รายการบริจาค</div><div id="dashDonations" class="dashboard-number">-</div><div class="dashboard-sub">ทั้งหมดใน Supabase</div></div></div>
+            </div>
+            <div class="staff-grid-2">
+              <div class="card main-card staff-card p-4"><div class="staff-section-head mb-3"><h5>สถานะระบบ</h5></div><div id="dashboardResult" class="staff-result compact">กำลังโหลดภาพรวม...</div></div>
+              <div class="card main-card staff-card p-4"><div class="staff-section-head mb-3"><h5>นำเข้าล่าสุด</h5></div><div id="dashboardImportLogs" class="staff-result compact">กำลังโหลดประวัติ...</div></div>
+            </div>
           </div>
 
-          <div class="row g-2 mb-2">
-            <div class="col-md-7">
-              <label class="form-label small fw-bold text-muted">Email เจ้าหน้าที่</label>
-              <div class="input-group input-group-lg email-suffix-group">
-                <input type="text" id="adminStaffEmail" class="form-control p-3" placeholder="เช่น username.sur" autocomplete="off" autocapitalize="none" spellcheck="false">
-                <span class="input-group-text">@mahidol.ac.th</span>
+          <div id="staffTab_donorImport" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>DONOR DATA</span><h3>นำเข้าข้อมูลผู้บริจาค</h3><p>เลือกไฟล์ → ตรวจสอบ → ยืนยันนำเข้า</p></div></div>
+            <div class="card main-card staff-card p-4">
+              <div class="upload-dropzone"><i class="bi bi-file-earmark-spreadsheet"></i><div><b>เลือกไฟล์ Excel</b><small>.xlsx หรือ .xls</small></div><input type="file" id="donorImportFile" class="form-control" accept=".xlsx,.xls"></div>
+              <div class="staff-action-row mt-3"><button type="button" id="btnPreviewDonor" class="btn btn-soft flex-grow-1" onclick="previewDonorFile()"><i class="bi bi-eye"></i> ตรวจไฟล์ก่อน</button><button type="button" id="btnImportDonor" class="btn btn-search flex-grow-1" onclick="confirmImportDonorFile()" disabled><i class="bi bi-cloud-arrow-up"></i> ยืนยันนำเข้า</button></div>
+              <div id="donorImportPreview" class="staff-result mt-3" style="display:none;"></div><div id="donorImportResult" class="staff-result mt-3" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div id="staffTab_infectiousImport" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>FOLLOW-UP</span><h3>อัปเดตผล Infectious positive</h3><p>หน้า Public จะแสดงเพียง “กรุณาติดต่อเจ้าหน้าที่”</p></div></div>
+            <div class="card main-card staff-card p-4">
+              <div class="upload-dropzone"><i class="bi bi-file-earmark-medical"></i><div><b>อัปเดตจาก Excel</b><small>เลือกไฟล์ผลตรวจที่เตรียมไว้</small></div><input type="file" id="infectiousFile" class="form-control" accept=".xlsx,.xls"></div>
+              <button type="button" id="btnImportInfectious" class="btn btn-search w-100 mt-3" onclick="importInfectiousFile()"><i class="bi bi-cloud-arrow-up"></i> อัปเดตจากไฟล์</button>
+              <div class="or-line"><span>หรือ</span></div>
+              <label class="form-label">วาง Unit No ทีละบรรทัด</label><textarea id="infectiousUnitList" class="form-control mb-3" rows="5" placeholder="CN6200066&#10;CN6300038"></textarea>
+              <button type="button" id="btnUpdateUnitList" class="btn btn-soft w-100" onclick="updateInfectiousFromTextArea()">อัปเดตจาก Unit No</button>
+              <div id="infectiousResult" class="staff-result mt-3" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div id="staffTab_slots" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>BOOKING</span><h3>เปิดรอบจองคิว</h3><p>กำหนดวัน เวลา จำนวนคิว และสถานะ</p></div></div>
+            <div class="card main-card staff-card p-4">
+              <div class="staff-form-grid">
+                <div class="field-block"><label class="form-label">วันที่</label><input type="date" id="slotDate" class="form-control"></div>
+                <div class="field-block"><label class="form-label">เวลา</label><input type="time" id="slotTime" class="form-control"></div>
+                <div class="field-block"><label class="form-label">จำนวนคน</label><input type="number" id="slotMax" class="form-control" value="10" min="0"></div>
+                <div class="field-block"><label class="form-label">สถานะ</label><select id="slotStatus" class="form-select"><option>เปิด</option><option>ปิด</option></select></div>
               </div>
-              <div class="form-text small">กรอกเฉพาะชื่อหน้า @ ได้ ระบบจะเติม @mahidol.ac.th ให้เอง</div>
+              <button type="button" id="btnSaveSlot" class="btn btn-search w-100" onclick="saveBookingSlot()"><i class="bi bi-check2"></i> บันทึกรอบจอง</button>
+              <div id="slotResult" class="staff-result mt-3" style="display:none;"></div>
             </div>
-            <div class="col-md-5"><label class="form-label small fw-bold text-muted">สิทธิ์</label><select id="adminStaffRole" class="form-control p-3"><option value="staff">staff</option><option value="admin">admin</option></select></div>
           </div>
-          <div class="mb-3"><label class="form-label small fw-bold text-muted">ชื่อที่แสดง</label><input type="text" id="adminStaffDisplayName" class="form-control p-3" placeholder="เช่น มาย / หนิง / ปาริฉัตร"></div>
-          <div class="row g-2 mb-3">
-            <div class="col-md-7">
-              <label class="form-label small fw-bold text-muted">รหัสผ่านชั่วคราว</label>
-              <div class="input-group input-group-lg temp-password-group">
-                <input type="text" id="adminTempPassword" class="form-control p-3" placeholder="อย่างน้อย 8 ตัวอักษร เช่น Cnmi@123456" autocomplete="new-password">
-                <button type="button" class="btn btn-outline-secondary fw-bold" onclick="adminGenerateTempPassword()">สุ่ม</button>
-                <button type="button" class="btn btn-outline-secondary fw-bold" onclick="adminCopyTempPassword()">คัดลอก</button>
+
+          <div id="staffTab_bookings" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>DAILY LIST</span><h3>รายการจอง</h3><p>เลือกวันที่เพื่อดูรายชื่อผู้จอง</p></div></div>
+            <div class="card main-card staff-card p-4">
+              <div class="staff-filter-row"><div class="field-block mb-0"><label class="form-label">วันที่</label><input type="date" id="bookingListDate" class="form-control"></div><button type="button" class="btn btn-search" onclick="loadStaffBookings()"><i class="bi bi-search"></i> โหลดรายการ</button></div>
+              <div id="staffBookingsResult" class="table-responsive mt-3"></div>
+            </div>
+          </div>
+
+          <div id="staffTab_admin" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>ADMIN</span><h3>จัดการเจ้าหน้าที่</h3><p>สร้างบัญชี รีเซตรหัส และเปิด/ปิดสิทธิ์</p></div></div>
+            <div class="card main-card staff-card p-4 mb-3" id="adminStaffFormCard">
+              <div class="staff-form-grid admin-grid">
+                <div class="field-block"><label class="form-label">Email เจ้าหน้าที่</label><div class="input-group email-suffix-group"><input type="text" id="adminStaffEmail" class="form-control" placeholder="username.sur" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="input-group-text">@mahidol.ac.th</span></div></div>
+                <div class="field-block"><label class="form-label">สิทธิ์</label><select id="adminStaffRole" class="form-select"><option value="staff">staff</option><option value="admin">admin</option></select></div>
+                <div class="field-block"><label class="form-label">ชื่อที่แสดง</label><input type="text" id="adminStaffDisplayName" class="form-control" placeholder="เช่น มาย / หนิง / ปาริฉัตร"></div>
+                <div class="field-block"><label class="form-label">สถานะ</label><select id="adminStaffActive" class="form-select"><option value="true">เปิดใช้</option><option value="false">ปิดสิทธิ์</option></select></div>
               </div>
-              <div class="form-text small">รหัสนี้ใช้ชั่วคราวเท่านั้น น้อง login แล้วระบบจะบังคับเปลี่ยนรหัสใหม่เอง</div>
+              <div class="field-block"><label class="form-label">รหัสผ่านชั่วคราว</label><div class="input-group temp-password-group"><input type="text" id="adminTempPassword" class="form-control" placeholder="อย่างน้อย 8 ตัวอักษร" autocomplete="new-password"><button type="button" class="btn btn-soft" onclick="adminGenerateTempPassword()">สุ่ม</button><button type="button" class="btn btn-soft" onclick="adminCopyTempPassword()">คัดลอก</button></div><div class="form-text">น้องจะถูกบังคับเปลี่ยนหลัง Login</div></div>
+              <div class="staff-action-row"><button type="button" id="btnAdminCreateStaff" class="btn btn-search flex-grow-1" data-normal-text="สร้าง/รีเซตบัญชี + ตั้งรหัสชั่วคราว" onclick="adminCreateOrResetStaff()">สร้าง / รีเซตรหัส</button><button type="button" id="btnAdminSaveStatus" class="btn btn-soft flex-grow-1" onclick="adminUpdateStaffStatusOnly()">บันทึกข้อมูล</button></div>
+              <div id="adminStaffResult" class="staff-result mt-3" style="display:none;"></div>
             </div>
-            <div class="col-md-5"><label class="form-label small fw-bold text-muted">สถานะ</label><select id="adminStaffActive" class="form-control p-3"><option value="true">เปิดใช้</option><option value="false">ปิดสิทธิ์</option></select></div>
+            <div class="card main-card staff-card p-4"><div class="staff-section-head mb-3"><h5>รายชื่อเจ้าหน้าที่</h5><button type="button" class="btn btn-soft btn-sm" onclick="adminLoadStaffAccessList()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div><div id="adminStaffList" class="table-responsive staff-result">กด Refresh เพื่อโหลดรายชื่อ</div></div>
           </div>
-
-          <div class="d-grid gap-2">
-            <button type="button" id="btnAdminCreateStaff" class="btn btn-search p-3" data-normal-text="สร้าง/รีเซตบัญชี + ตั้งรหัสชั่วคราว" onclick="adminCreateOrResetStaff()">สร้าง/รีเซตบัญชี + ตั้งรหัสชั่วคราว</button>
-            <button type="button" id="btnAdminSaveStatus" class="btn btn-outline-secondary p-3 fw-bold" onclick="adminUpdateStaffStatusOnly()">บันทึกชื่อ/สิทธิ์/สถานะอย่างเดียว</button>
-          </div>
-
-          <div id="adminStaffResult" class="staff-result mt-3" style="display:none;"></div>
-        </div>
-
-        <div class="card main-card p-4 mb-4">
-          <div class="d-flex align-items-center gap-2 mb-3">
-            <div class="flex-grow-1">
-              <h6 class="fw-bold text-danger mb-1">รายชื่อที่อนุญาตให้ใช้หลังบ้าน</h6>
-              <div class="small text-muted">กด <b>สร้างบัญชี</b> สำหรับคนที่ยังไม่มีบัญชี หรือกด <b>รีเซตรหัส</b> สำหรับคนที่ลืมรหัส</div>
-            </div>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="adminLoadStaffAccessList()">Refresh</button>
-          </div>
-          <div id="adminStaffList" class="table-responsive staff-result">กด Refresh เพื่อโหลดรายชื่อ</div>
-        </div>
+        </main>
       </div>
     </div>
   </div>
+
+  <nav id="mobilePublicNav" class="mobile-bottom-nav" aria-label="เมนูหลักบนมือถือ">
+    <button type="button" data-nav-page="home" onclick="showPage('home')"><i class="bi bi-house"></i><b>หน้าหลัก</b></button>
+    <button type="button" data-nav-page="check" onclick="showPage('check')"><i class="bi bi-droplet"></i><b>เช็ก</b></button>
+    <button type="button" data-nav-page="screening" onclick="startScreening()"><i class="bi bi-calendar2-check"></i><b>จองคิว</b></button>
+    <button type="button" data-nav-page="info" onclick="showPage('info')"><i class="bi bi-telephone"></i><b>ติดต่อ</b></button>
+  </nav>
 
   <div id="appModal" class="modal-screen">
     <div class="modal-box">
@@ -432,7 +426,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script src="config.js?v=13"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>

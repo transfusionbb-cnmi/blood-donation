@@ -67,11 +67,23 @@ function showPage(page) {
   Object.keys(pages).forEach(function(key){ const el = $(pages[key]); if (el) el.classList.remove("active"); });
   const target = $(pages[page] || "pageHome");
   if (target) target.classList.add("active");
+  document.body.setAttribute("data-page", page || "home");
+  updateMobileNav(page || "home");
   window.scrollTo(0,0);
 
   if (page === "staff" && currentStaffProfile) {
     setTimeout(loadStaffDashboard, 50);
   }
+}
+
+function updateMobileNav(page) {
+  document.querySelectorAll(".mobile-bottom-nav button").forEach(function(btn) {
+    const targetPage = btn.getAttribute("data-nav-page");
+    const active = targetPage === page || (targetPage === "screening" && page === "booking");
+    btn.classList.toggle("active", active);
+    if (active) btn.setAttribute("aria-current", "page");
+    else btn.removeAttribute("aria-current");
+  });
 }
 
 function escapeHtml(value) {
@@ -311,7 +323,12 @@ function renderDonorResult(res, fallbackDonorId) {
 function toggleHistoryPanel() {
   const panel = $("historyPanel");
   if (!panel) return;
-  panel.style.display = panel.style.display === "none" || panel.style.display === "" ? "block" : "none";
+  const willOpen = panel.style.display === "none" || panel.style.display === "";
+  panel.style.display = willOpen ? "block" : "none";
+  const btn = $("btnToggleHistory");
+  if (btn) btn.innerHTML = willOpen
+    ? '<i class="bi bi-chevron-up"></i> ซ่อนประวัติการบริจาค'
+    : '<i class="bi bi-clock-history"></i> ดูประวัติการบริจาค';
 }
 
 function goBookingFromResult() {
@@ -327,7 +344,7 @@ function goBookingFromResult() {
   }
   if ($("bookingPrefillNote")) {
     $("bookingPrefillNote").style.display = "block";
-    $("bookingPrefillNote").innerText = "ระบบใส่ชื่อและ Donor ID จากหน้าตรวจสอบให้แล้ว กรุณาเลือกวันที่และช่วงเวลาที่ต้องการบริจาค";
+    $("bookingPrefillNote").innerText = "ใส่ชื่อและ Donor ID ให้แล้ว เลือกวันและเวลาที่สะดวกได้เลย";
   }
   showPage("booking");
 }
@@ -846,7 +863,7 @@ function applyStaffProfileUI() {
   const bar = $("staffProfileBar");
   if (bar) {
     bar.style.display = "block";
-    bar.innerText = "เข้าสู่ระบบ: " + (profile.display_name || profile.email || "เจ้าหน้าที่") + " | สิทธิ์: " + (profile.role || "staff") + (profile.must_change_password ? " | ต้องเปลี่ยนรหัสผ่าน" : "");
+    bar.innerText = (profile.display_name || profile.email || "เจ้าหน้าที่") + " · " + (profile.role || "staff") + (profile.must_change_password ? " · ต้องเปลี่ยนรหัสผ่าน" : "");
   }
   const adminBtn = $("staffTabBtn_admin");
   if (adminBtn) adminBtn.style.display = isAdmin ? "block" : "none";
@@ -920,13 +937,13 @@ async function loadStaffDashboard() {
     if ($("dashDonations")) $("dashDonations").innerText = donationCount;
 
     if (box) {
-      box.className = "staff-result ok";
+      box.className = "staff-result ok compact";
       box.innerText =
-        "ข้อมูลวันที่ " + isoToDDMMYYYY(today) + "\n\n" +
-        "จองวันนี้ที่ยังไม่ยกเลิก: " + bookingsToday + " รายการ\n" +
-        "รอบจองที่เปิด/บันทึกไว้วันนี้: " + slotsToday + " ช่วงเวลา\n" +
-        "รายการที่ต้องติดต่อเจ้าหน้าที่: " + infectiousCount + " รายการ\n" +
-        "รายการบริจาคทั้งหมดในฐานข้อมูล: " + donationCount + " รายการ";
+        "วันที่ " + isoToDDMMYYYY(today) + "\n" +
+        "จองวันนี้: " + bookingsToday + " รายการ\n" +
+        "รอบจองวันนี้: " + slotsToday + " ช่วงเวลา\n" +
+        "ต้องติดต่อเจ้าหน้าที่: " + infectiousCount + " รายการ\n" +
+        "บริจาคทั้งหมด: " + donationCount + " รายการ";
     }
 
     const { data: logs, error: logError } = await sb.from("import_logs")
@@ -942,15 +959,15 @@ async function loadStaffDashboard() {
         logBox.innerText = "ยังไม่มีประวัติการนำเข้า";
       } else {
         logBox.className = "table-responsive";
-        logBox.innerHTML = '<table class="table table-sm preview-table"><thead><tr><th>วันที่</th><th>ประเภท</th><th>สำเร็จ</th><th>ข้าม</th><th>รายละเอียด</th></tr></thead><tbody>' +
+        logBox.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>วันที่</th><th>ประเภท</th><th>สำเร็จ</th><th>ข้าม</th><th>รายละเอียด</th></tr></thead><tbody>' +
           rows.map(function(r) {
             const dt = r.created_at ? new Date(r.created_at).toLocaleString("th-TH") : "-";
             return '<tr>' +
-              '<td>' + escapeHtml(dt) + '</td>' +
-              '<td>' + escapeHtml(r.import_type || '') + '</td>' +
-              '<td>' + escapeHtml(r.imported_count ?? 0) + '</td>' +
-              '<td>' + escapeHtml(r.skipped_count ?? 0) + '</td>' +
-              '<td>' + escapeHtml(r.message || '') + '</td>' +
+              '<td data-label="วันที่">' + escapeHtml(dt) + '</td>' +
+              '<td data-label="ประเภท">' + escapeHtml(r.import_type || '') + '</td>' +
+              '<td data-label="สำเร็จ">' + escapeHtml(r.imported_count ?? 0) + '</td>' +
+              '<td data-label="ข้าม">' + escapeHtml(r.skipped_count ?? 0) + '</td>' +
+              '<td data-label="รายละเอียด">' + escapeHtml(r.message || '') + '</td>' +
               '</tr>';
           }).join('') +
           '</tbody></table>';
@@ -1617,8 +1634,14 @@ async function loadStaffBookings() {
     box.innerHTML = '<div class="staff-result">ไม่พบรายการจองในวันนี้</div>';
     return;
   }
-  box.innerHTML = '<table class="table table-sm preview-table"><thead><tr><th>เวลา</th><th>ชื่อ</th><th>โทร</th><th>Donor ID</th><th>Status</th></tr></thead><tbody>' +
-    data.map(r => '<tr><td>' + escapeHtml(String(r.time_slot).slice(0,5)) + '</td><td>' + escapeHtml(r.full_name) + '</td><td>' + escapeHtml(r.phone) + '</td><td>' + escapeHtml(r.donor_id || '') + '</td><td>' + escapeHtml(r.status) + '</td></tr>').join("") +
+  box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>เวลา</th><th>ชื่อ</th><th>โทร</th><th>Donor ID</th><th>Status</th></tr></thead><tbody>' +
+    data.map(r => '<tr>' +
+      '<td data-label="เวลา">' + escapeHtml(String(r.time_slot).slice(0,5)) + '</td>' +
+      '<td data-label="ชื่อ">' + escapeHtml(r.full_name) + '</td>' +
+      '<td data-label="โทร">' + escapeHtml(r.phone) + '</td>' +
+      '<td data-label="Donor ID">' + escapeHtml(r.donor_id || '') + '</td>' +
+      '<td data-label="Status">' + escapeHtml(r.status) + '</td>' +
+      '</tr>').join("") +
     '</tbody></table>';
 }
 
@@ -1867,7 +1890,7 @@ async function adminLoadStaffAccessList() {
   }
 
   box.className = "table-responsive";
-  box.innerHTML = '<table class="table table-sm preview-table staff-access-table"><thead><tr><th>Email</th><th>ชื่อ</th><th>สิทธิ์</th><th>สถานะ</th><th>บัญชี</th><th>รหัส</th><th>ตั้ง/รีเซต</th><th>เปิด/ปิด</th></tr></thead><tbody>' +
+  box.innerHTML = '<table class="table table-sm preview-table staff-access-table"><thead><tr><th>Email</th><th>ชื่อ</th><th>สิทธิ์</th><th>สถานะ</th><th>บัญชี</th><th>รหัส</th><th>จัดการ</th><th>เปิด/ปิด</th></tr></thead><tbody>' +
     rows.map(function(r) {
       const email = escapeHtml(r.email || '');
       const name = escapeHtml(r.display_name || '');
@@ -1881,17 +1904,17 @@ async function adminLoadStaffAccessList() {
       const safeNameArg = JSON.stringify(r.display_name || '');
       const safeRoleArg = JSON.stringify(r.role || 'staff');
       return '<tr>' +
-        '<td>' + email + '</td>' +
-        '<td>' + name + '</td>' +
-        '<td>' + role + '</td>' +
-        '<td>' + activeText + '</td>' +
-        '<td>' + accountText + '</td>' +
-        '<td>' + passText + '</td>' +
-        '<td class="text-nowrap">' +
+        '<td data-label="Email">' + email + '</td>' +
+        '<td data-label="ชื่อ">' + name + '</td>' +
+        '<td data-label="สิทธิ์">' + role + '</td>' +
+        '<td data-label="สถานะ">' + activeText + '</td>' +
+        '<td data-label="บัญชี">' + accountText + '</td>' +
+        '<td data-label="รหัส">' + passText + '</td>' +
+        '<td data-label="จัดการ" class="text-nowrap">' +
           '<button type="button" class="btn btn-sm ' + passwordBtnClass + ' fw-bold me-1" onclick="adminPreparePasswordForm(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'true' : 'false') + ',' + (r.has_auth_user ? 'true' : 'false') + ')">' + passwordBtnText + '</button>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminFillStaffForm(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'true' : 'false') + ')">แก้ข้อมูล</button>' +
         '</td>' +
-        '<td class="text-nowrap">' +
+        '<td data-label="เปิด/ปิด" class="text-nowrap">' +
           '<button type="button" class="btn btn-sm ' + (r.is_active ? 'btn-outline-danger' : 'btn-outline-success') + '" onclick="adminSetActive(' + safeEmailArg + ',' + safeNameArg + ',' + safeRoleArg + ',' + (r.is_active ? 'false' : 'true') + ')">' + (r.is_active ? 'ปิดสิทธิ์' : 'เปิดใช้') + '</button>' +
         '</td>' +
         '</tr>';
@@ -1954,9 +1977,76 @@ function initInputs() {
   if (donorImportFile) donorImportFile.addEventListener("change", resetDonorImportState);
 }
 
+function initMobileViewportPolish() {
+  const ua = String(navigator.userAgent || "");
+  const isiOS = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+
+  document.body.classList.toggle("platform-ios", isiOS);
+  document.body.classList.toggle("platform-android", isAndroid);
+
+  const syncViewport = function() {
+    const vv = window.visualViewport;
+    const viewportHeight = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty("--app-viewport-height", viewportHeight + "px");
+
+    const keyboardDelta = vv ? Math.max(0, window.innerHeight - vv.height) : 0;
+    const keyboardOpen = window.innerWidth <= 700 && keyboardDelta > 140;
+    document.body.classList.toggle("keyboard-open", keyboardOpen);
+  };
+
+  syncViewport();
+  window.addEventListener("resize", syncViewport, { passive: true });
+  window.addEventListener("orientationchange", function() {
+    setTimeout(syncViewport, 120);
+  }, { passive: true });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncViewport, { passive: true });
+    window.visualViewport.addEventListener("scroll", syncViewport, { passive: true });
+  }
+
+  document.addEventListener("focusin", function(event) {
+    const el = event.target;
+    if (!el || !el.matches || !el.matches("input, textarea, select")) return;
+    document.body.classList.add("input-focused");
+    if (window.innerWidth <= 700) {
+      setTimeout(function() {
+        try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (err) {}
+      }, 220);
+    }
+  });
+
+  document.addEventListener("focusout", function() {
+    setTimeout(function() {
+      if (!document.activeElement || !document.activeElement.matches || !document.activeElement.matches("input, textarea, select")) {
+        document.body.classList.remove("input-focused");
+        syncViewport();
+      }
+    }, 80);
+  });
+}
+
+function initPwaShell() {
+  const standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+  const iosStandalone = window.navigator && window.navigator.standalone === true;
+  if (standalone || iosStandalone) document.body.classList.add("is-standalone");
+
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("service-worker.js?v=13").catch(function(err) {
+        console.warn("Service worker registration failed", err);
+      });
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
   initConfigText();
   initInputs();
+  initMobileViewportPolish();
+  initPwaShell();
+  updateMobileNav("home");
 
   const hashText = String(window.location.hash || "") + " " + String(window.location.search || "");
   if (pendingPasswordRecovery || hashText.includes("type=recovery")) {
