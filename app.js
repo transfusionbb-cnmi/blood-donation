@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.2 */
+/* CNMI Blood Donation Supabase Frontend v15.3 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -664,15 +664,19 @@ async function loadHomeRoomStatus() {
     const e = events.find(x => x.date === today);
     if (!e) {
       box.className = "home-room-status mb-3 status-open";
-      copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>เปิดทำการตามปกติ</b><span>วันที่ไม่มีประกาศพิเศษถือว่าเปิดทำการ</span>';
+      const hours = roomRegularHours(today);
+      copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>เปิดรับลงทะเบียนตามปกติ</b><span>' + escapeHtml(hours.full) + ' · พักเที่ยง ' + escapeHtml(hours.breakTime) + ' น.</span>';
       if (icon) icon.className = "bi bi-check-circle";
       return;
     }
     const meta = roomEventMeta(e.type);
     const closed = e.type === "closed" || e.type === "mobile_unit";
     box.className = "home-room-status mb-3 " + (closed ? "status-closed" : (e.type === "limited" ? "status-limited" : "status-open"));
-    const details = [e.title && e.title !== meta.label ? e.title : "", e.time, e.location].filter(Boolean).join(" · ");
-    copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>' + escapeHtml(meta.label) + '</b><span>' + escapeHtml(details || e.note || (closed ? "กรุณาดูรายละเอียดในปฏิทิน" : "เปิดให้บริการตามประกาศ")) + '</span>';
+    const eventHours = roomHoursForEvent(today, e);
+    const details = [e.title && e.title !== meta.label ? e.title : "", e.location, e.note].filter(Boolean).join(" · ");
+    const timing = !closed && eventHours.show ? (eventHours.full + (eventHours.breakTime ? " · พักเที่ยง " + eventHours.breakTime + " น." : "")) : (eventHours.show ? eventHours.full : "");
+    const statusLine = [timing, details].filter(Boolean).join(" · ") || (closed ? "กรุณาดูรายละเอียดในปฏิทิน" : "เปิดให้บริการตามประกาศ");
+    copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>' + escapeHtml(meta.label) + '</b><span>' + escapeHtml(statusLine) + '</span>';
     if (icon) icon.className = "bi " + meta.icon;
   } catch (err) {
     box.className = "home-room-status mb-3 status-neutral";
@@ -2871,8 +2875,40 @@ function showRoomCalendarPublic() {
   showPage("roomCalendar");
 }
 
+function roomRegularHours(dateIso) {
+  const parts = String(dateIso || "").split("-").map(Number);
+  const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0) : new Date();
+  const weekend = d.getDay() === 0 || d.getDay() === 6;
+  return weekend ? {
+    dayLabel:"เสาร์–อาทิตย์",
+    morning:"09:30–11:30",
+    afternoon:"13:00–16:30",
+    breakTime:"12:00–13:00",
+    compact:"09:30–11:30 · 13:00–16:30",
+    full:"09:30–11:30 น. และ 13:00–16:30 น."
+  } : {
+    dayLabel:"จันทร์–ศุกร์",
+    morning:"08:30–11:30",
+    afternoon:"13:00–15:30",
+    breakTime:"12:00–13:00",
+    compact:"08:30–11:30 · 13:00–15:30",
+    full:"08:30–11:30 น. และ 13:00–15:30 น."
+  };
+}
+
+function roomHoursForEvent(dateIso, event) {
+  const regular = roomRegularHours(dateIso);
+  if (!event) return { show:true, text:regular.compact, full:regular.full, breakTime:regular.breakTime, custom:false };
+  if (event.type === "closed" || event.type === "mobile_unit") {
+    return { show:!!event.time, text:event.time || "", full:event.time || "", breakTime:"", custom:!!event.time };
+  }
+  if (event.time) return { show:true, text:event.time, full:event.time, breakTime:"", custom:true };
+  return { show:true, text:regular.compact, full:regular.full, breakTime:regular.breakTime, custom:false };
+}
+
 function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
   const meta = event ? roomEventMeta(event.type) : null;
+  const hours = roomHoursForEvent(iso, event);
   let className = "room-day-cell";
   let label = "";
   let icon = "";
@@ -2882,7 +2918,7 @@ function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
     className += " " + meta.className;
     label = meta.label;
     icon = '<i class="bi ' + meta.icon + '"></i>';
-    detail = event.title || event.location || event.time || "";
+    detail = event.title || event.location || "";
   } else {
     className += " event-normal";
     label = "เปิด";
@@ -2890,7 +2926,8 @@ function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
     detail = publicMode ? "เปิดตามปกติ" : "ปกติ";
   }
 
-  const inner = '<div class="room-day-number">' + day + '</div><div class="room-day-state">' + icon + '<b>' + escapeHtml(label) + '</b></div>' + (detail ? '<small>' + escapeHtml(detail) + '</small>' : '');
+  const hoursHtml = hours.show ? '<small class="room-day-hours"><i class="bi bi-clock"></i> ' + escapeHtml(hours.text) + '</small>' : '';
+  const inner = '<div class="room-day-number">' + day + '</div><div class="room-day-state">' + icon + '<b>' + escapeHtml(label) + '</b></div>' + (detail ? '<small class="room-day-detail">' + escapeHtml(detail) + '</small>' : '') + hoursHtml;
   if (clickable) return '<button type="button" class="' + className + '" onclick="selectRoomAdminDate(\'' + iso + '\')">' + inner + '</button>';
   return '<div class="' + className + '">' + inner + '</div>';
 }
@@ -2973,7 +3010,7 @@ async function prepareRoomCalendarMonth() {
   const isStaff = await ensureStaff(true); if (!isStaff) return;
   const { data, error } = await sb.rpc("prepare_room_calendar_month", { p_month:month });
   if (error || !data || data.ok !== true) setStaffResult(box, "เตรียมเดือนไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
-  else setStaffResult(box, "เตรียมปฏิทิน " + thaiMonthLabel(month) + " แล้ว\nทุกวันตั้งต้นเป็นเปิด ให้เพิ่มเฉพาะวันที่ปิด รับจำกัด ออกหน่วย หรือมีกิจกรรมพิเศษ", true);
+  else setStaffResult(box, "เตรียมปฏิทิน " + thaiMonthLabel(month) + " แล้ว\nทุกวันตั้งต้นเป็นเปิดตามเวลาปกติของวันในสัปดาห์ ให้เพิ่มเฉพาะวันที่ปิด รับจำกัด ออกหน่วย มีกิจกรรม หรือใช้เวลาพิเศษ", true);
   await loadRoomCalendarAdmin();
 }
 
@@ -3051,7 +3088,12 @@ function buildRoomAnnouncement(month, events) {
   const lines = [];
   lines.push("📅 ตารางห้องบริจาคโลหิต ประจำเดือน " + thaiMonthLabel(month));
   lines.push("");
-  lines.push("วันที่ไม่มีประกาศพิเศษ: เปิดทำการตามปกติ");
+  lines.push("เวลารับลงทะเบียนปกติ");
+  lines.push("• จันทร์–ศุกร์ 08:30–11:30 น. และ 13:00–15:30 น.");
+  lines.push("• เสาร์–อาทิตย์ 09:30–11:30 น. และ 13:00–16:30 น.");
+  lines.push("• พักเที่ยง 12:00–13:00 น.");
+  lines.push("");
+  lines.push("วันที่ไม่มีประกาศพิเศษ: เปิดตามเวลาปกติด้านบน");
   if (!sorted.length) {
     lines.push("เดือนนี้ไม่มีประกาศเปลี่ยนแปลงเพิ่มเติม");
   } else {
@@ -3977,7 +4019,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.2").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.3").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

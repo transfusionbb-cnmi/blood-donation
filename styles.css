@@ -1522,3 +1522,39 @@ button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow
   .notification-item-top { align-items:flex-start; flex-direction:column; gap:2px; }
   .staff-notification-badge { margin-left:2px; }
 }
+
+
+/* v15.3 — standard donor-room registration hours */
+.room-hours-summary {
+  border:1px solid #e8dddd; border-radius:22px; background:linear-gradient(135deg,#fffafa 0%,#fff 100%);
+  box-shadow:var(--shadow-sm); padding:16px;
+}
+.room-hours-summary-title { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
+.room-hours-summary-title > i { width:38px; height:38px; display:grid; place-items:center; border-radius:13px; background:var(--cnmi-red-soft); color:var(--cnmi-red); }
+.room-hours-summary-title > div { display:grid; gap:1px; }
+.room-hours-summary-title b { font-size:.9rem; }
+.room-hours-summary-title small { color:var(--cnmi-muted); font-size:.7rem; }
+.room-hours-summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.room-hours-card { display:grid; gap:2px; padding:12px 13px; border:1px solid var(--cnmi-line); background:#fff; border-radius:16px; }
+.room-hours-card > span { color:var(--cnmi-red); font-size:.68rem; font-weight:800; }
+.room-hours-card > b { font-size:.8rem; line-height:1.35; }
+.room-hours-card > small { margin-top:2px; color:var(--cnmi-muted); font-size:.66rem; }
+.room-day-hours { display:flex !important; align-items:flex-start; gap:3px; color:#56666e !important; font-weight:700; line-height:1.22 !important; }
+.room-day-hours i { margin-top:1px; flex:0 0 auto; }
+.room-day-detail { color:#7a858b; }
+.contact-hours-lines { display:grid; gap:5px; margin:4px 0 5px; }
+.contact-hours-lines p { display:flex; flex-wrap:wrap; gap:4px 10px; margin:0; }
+.contact-hours-lines strong { min-width:92px; color:var(--cnmi-text); }
+.contact-hours-lines span { color:#596970; }
+.staff-default-hours { display:grid; grid-template-columns:auto 1fr; gap:10px; padding:12px 13px; border:1px solid #e8dddd; border-radius:15px; background:#fffafa; }
+.staff-default-hours > i { width:34px; height:34px; display:grid; place-items:center; border-radius:11px; background:var(--cnmi-red-soft); color:var(--cnmi-red); }
+.staff-default-hours > div { display:grid; gap:2px; }
+.staff-default-hours b { font-size:.78rem; }
+.staff-default-hours span { color:#5f6d74; font-size:.7rem; line-height:1.45; }
+.staff-default-hours small { color:var(--cnmi-muted); font-size:.65rem; line-height:1.4; }
+@media (max-width: 767px) {
+  .room-hours-summary-grid { grid-template-columns:1fr; }
+  .room-day-hours { font-size:.43rem !important; }
+  .contact-hours-lines p { display:grid; gap:1px; }
+  .contact-hours-lines strong { min-width:0; }
+}

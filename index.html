@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.2" rel="stylesheet">
+  <link href="styles.css?v=15.3" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -73,8 +73,8 @@
         <button type="button" class="home-menu-card" onclick="showPage('info')">
           <div class="menu-symbol"><i class="bi bi-geo-alt"></i></div>
           <div class="menu-copy">
-            <div class="menu-title">เวลาเปิดทำการและติดต่อ</div>
-            <div class="menu-subtitle">เบอร์โทร สถานที่ และแผนที่</div>
+            <div class="menu-title">เวลารับลงทะเบียนและติดต่อ</div>
+            <div class="menu-subtitle">เวลารับลงทะเบียน เบอร์โทร สถานที่ และแผนที่</div>
           </div>
           <i class="bi bi-chevron-right menu-arrow"></i>
         </button>
@@ -426,6 +426,13 @@
         <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
         <div><div class="page-kicker">ปฏิทินห้องบริจาคโลหิต</div><h2 class="page-title">เดือนนี้ห้องเปิดวันไหน?</h2><p class="page-subtitle">รวมวันปิดทำการ รับจำนวนจำกัด ออกหน่วย และกิจกรรมพิเศษ</p></div>
       </div>
+      <div class="room-hours-summary mb-3" aria-label="เวลารับลงทะเบียนปกติ">
+        <div class="room-hours-summary-title"><i class="bi bi-clock"></i><div><b>เวลารับลงทะเบียนปกติ</b><small>หากวันใดมีประกาศพิเศษ ให้ยึดสถานะและเวลาของวันนั้น</small></div></div>
+        <div class="room-hours-summary-grid">
+          <div class="room-hours-card"><span>จันทร์–ศุกร์</span><b>08:30–11:30 น.</b><b>13:00–15:30 น.</b><small>พักเที่ยง 12:00–13:00 น.</small></div>
+          <div class="room-hours-card"><span>เสาร์–อาทิตย์</span><b>09:30–11:30 น.</b><b>13:00–16:30 น.</b><small>พักเที่ยง 12:00–13:00 น.</small></div>
+        </div>
+      </div>
       <div class="card main-card p-3 p-md-4 mb-3 public-room-toolbar">
         <div class="public-calendar-head">
           <div><b>เลือกเดือน</b><small>ปฏิทินจะแสดงเมื่อเจ้าหน้าที่เผยแพร่แล้ว</small></div>
@@ -437,16 +444,16 @@
         <div id="publicRoomCalendar" class="room-calendar-grid public-room-grid"></div>
       </div>
       <div id="publicRoomHighlights" class="room-highlight-list mb-4"></div>
-      <div class="compact-notice mb-4"><i class="bi bi-clock"></i><span>วันที่ไม่มีประกาศพิเศษถือว่าเปิดทำการตามปกติ หากมีวันปิด ออกหน่วย หรือกิจกรรมพิเศษให้ยึดตามปฏิทินด้านบน</span></div>
+      <div class="compact-notice mb-4"><i class="bi bi-clock"></i><span>วันที่ไม่มีประกาศพิเศษถือว่าเปิดตามปกติ โดยใช้เวลารับลงทะเบียนตามวันในสัปดาห์ด้านบน หากมีวันปิด ออกหน่วย รับจำนวนจำกัด หรือเวลาเฉพาะวัน ให้ยึดตามปฏิทิน</span></div>
     </div>
 
     <div id="pageInfo" class="app-page">
       <div class="page-head mb-3">
         <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
-        <div><div class="page-kicker">ข้อมูลบริการ</div><h2 class="page-title">ติดต่อห้องบริจาคโลหิต</h2><p class="page-subtitle">เวลาเปิดทำการ สถานที่ และเบอร์โทร</p></div>
+        <div><div class="page-kicker">ข้อมูลบริการ</div><h2 class="page-title">ติดต่อห้องบริจาคโลหิต</h2><p class="page-subtitle">เวลารับลงทะเบียน สถานที่ และเบอร์โทร</p></div>
       </div>
       <div class="card main-card p-3 p-md-4 mb-4 contact-card">
-        <div class="contact-tile"><div class="contact-icon"><i class="bi bi-clock"></i></div><div><b>วันและเวลาทำการ</b><p>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</p><small>วันหยุดพิเศษและกิจกรรม กรุณาดูปฏิทินห้องบริจาคโลหิต</small></div></div>
+        <div class="contact-tile contact-hours-tile"><div class="contact-icon"><i class="bi bi-clock"></i></div><div><b>เวลารับลงทะเบียน</b><div class="contact-hours-lines"><p><strong>จันทร์–ศุกร์</strong><span>08:30–11:30 น. · 13:00–15:30 น.</span></p><p><strong>เสาร์–อาทิตย์</strong><span>09:30–11:30 น. · 13:00–16:30 น.</span></p></div><small>พักเที่ยง 12:00–13:00 น. · วันหยุด/ออกหน่วย/กิจกรรมพิเศษ กรุณาตรวจสอบปฏิทินก่อนมา</small></div></div>
         <div class="contact-tile"><div class="contact-icon"><i class="bi bi-geo-alt"></i></div><div><b>สถานที่</b><p>ห้องบริจาคโลหิต โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์</p><small>Bang Pla, Bang Phli District, Samut Prakan 10540</small></div></div>
         <div class="contact-tile"><div class="contact-icon"><i class="bi bi-telephone"></i></div><div><b>ติดต่อสอบถาม</b><p><a id="contactPhone" href="tel:028396050">02-839-6050</a></p></div></div>
         <div class="contact-action-grid mt-2"><button type="button" class="btn btn-soft" onclick="showRoomCalendarPublic()"><i class="bi bi-calendar-event"></i> ดูปฏิทินเปิด–ปิด</button><a id="mapLink" class="btn btn-search" target="_blank" rel="noopener"><i class="bi bi-map"></i> เปิด Google Maps</a></div>
@@ -696,6 +703,7 @@
 
             <div class="card main-card staff-card p-4 mb-3">
               <div class="staff-section-head mb-3"><div><h5>เพิ่มสถานะ / กิจกรรมในวันนั้น</h5><small>ทุกวันตั้งต้นเป็น “เปิด” ไม่ต้องกรอกวันปกติ ให้บันทึกเฉพาะวันที่ปิด รับจำกัด ออกหน่วย หรือมีกิจกรรมพิเศษ</small></div></div>
+              <div class="staff-default-hours mb-3"><i class="bi bi-clock"></i><div><b>เวลาปกติที่ระบบแสดงให้อัตโนมัติ</b><span>จันทร์–ศุกร์ 08:30–11:30 และ 13:00–15:30 น. · เสาร์–อาทิตย์ 09:30–11:30 และ 13:00–16:30 น. · พักเที่ยง 12:00–13:00 น.</span><small>ถ้าวันพิเศษใช้เวลาไม่เหมือนปกติ ให้กรอกช่อง “เวลา” ระบบจะแสดงเวลานั้นแทน</small></div></div>
               <div class="staff-form-grid room-event-grid">
                 <div class="field-block"><label class="form-label">วันที่</label><input type="date" id="roomEventDate" class="form-control"></div>
                 <div class="field-block"><label class="form-label">ประเภท</label><select id="roomEventType" class="form-select" onchange="applyRoomEventTypeDefaults()"><option value="closed">ปิดทำการ</option><option value="limited">เปิดรับจำนวนจำกัด</option><option value="mobile_unit">ออกหน่วยนอกสถานที่</option><option value="activity">กิจกรรม / หมายเหตุพิเศษ</option><option value="open">เปิดทำการ / หมายเหตุเพิ่มเติม</option></select></div>
@@ -775,7 +783,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="config.js?v=15.2"></script>
-  <script src="app.js?v=15.2"></script>
+  <script src="config.js?v=15.3"></script>
+  <script src="app.js?v=15.3"></script>
 </body>
 </html>
