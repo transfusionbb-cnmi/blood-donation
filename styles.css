@@ -1794,3 +1794,29 @@ button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow
   .manual-section-card .manual-shot img{max-height:none}
   .staff-nav-group-items{grid-template-columns:1fr!important}
 }
+/* v15.11 — single-open accordion + all-menu launcher + screening workspace */
+.staff-menu-all-btn{width:100%;min-height:42px;border:1px solid #f1d9dc;background:#fff7f7;color:#b93945;border-radius:14px;display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:.8rem;font-weight:850;text-align:left;box-shadow:0 4px 12px rgba(200,61,73,.04)}
+.staff-menu-all-btn span{flex:1}.staff-menu-all-btn>i:last-child{font-size:.7rem;color:#c98990}
+.staff-menu-all-btn:hover{background:#fff1f2}
+.staff-menu-launcher{position:fixed;inset:0;z-index:5000;background:rgba(33,42,48,.48);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:18px}
+.staff-menu-launcher.show{display:flex}
+body.staff-menu-open{overflow:hidden}
+.staff-menu-launcher-card{width:min(920px,96vw);max-height:min(760px,90vh);overflow:auto;background:#fff;border-radius:26px;box-shadow:0 30px 80px rgba(22,31,37,.28);padding:22px;border:1px solid #edf0f2}
+.staff-menu-launcher-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.staff-menu-launcher-head span{display:block;color:#cc3e49;font-size:.74rem;font-weight:850;letter-spacing:.08em;margin-bottom:3px}
+.staff-menu-launcher-head h3{margin:0 0 4px;font-size:1.35rem;font-weight:900}.staff-menu-launcher-head p{margin:0;color:#75828a}
+.staff-menu-launcher-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.staff-menu-launcher-grid section{border:1px solid #e8edef;border-radius:18px;background:#fbfcfc;padding:14px;display:grid;gap:7px;align-content:start}
+.staff-menu-launcher-grid h4{margin:0 0 5px;font-size:.9rem;font-weight:850;display:flex;align-items:center;gap:8px;color:#35434b}
+.staff-menu-launcher-grid h4 i{color:#c83d49}.staff-menu-launcher-grid button{width:100%;border:0;border-radius:12px;background:#fff;padding:10px 11px;text-align:left;color:#53616a;font-size:.82rem;font-weight:700;border:1px solid #edf0f2}
+.staff-menu-launcher-grid button:hover{background:#fff4f5;color:#b53844;border-color:#f2dadd}
+.screening-workspace-tabs{display:grid;grid-template-columns:1fr 1fr minmax(150px,.65fr);gap:8px;padding:7px;border:1px solid #e8edef;border-radius:18px;background:#f8fafb;position:sticky;top:8px;z-index:12;box-shadow:0 8px 22px rgba(28,39,49,.04)}
+.screening-workspace-tab{min-height:48px;border:1px solid transparent;border-radius:13px;background:transparent;color:#66747c;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px}
+.screening-workspace-tab:hover{background:#fff}.screening-workspace-tab.active{background:#fff;color:#c53c48;border-color:#f1d9dc;box-shadow:0 5px 14px rgba(200,61,73,.06)}
+.screening-workspace-tab.history{background:#fff;border-color:#e8edef;color:#55636b}.screening-workspace-panel{display:none}.screening-workspace-panel.active{display:block}
+#screeningQuestionListPanel .screening-admin-item{padding:14px;gap:13px;margin-bottom:10px}
+#screeningQuestionListPanel .screening-admin-question{font-size:.98rem;margin-bottom:6px}
+#screeningQuestionListPanel .screening-admin-fail{padding:8px 10px}
+#screeningQuestionFormPanel .staff-card{max-width:980px;margin-left:auto;margin-right:auto}
+@media(max-width:900px){.staff-menu-launcher-grid{grid-template-columns:1fr 1fr}.screening-workspace-tabs{position:static}}
+@media(max-width:640px){.staff-menu-all-btn{flex:0 0 auto;width:auto;white-space:nowrap}.staff-menu-launcher{align-items:flex-end;padding:0}.staff-menu-launcher-card{width:100%;max-height:88vh;border-radius:24px 24px 0 0;padding:16px}.staff-menu-launcher-grid{grid-template-columns:1fr}.staff-menu-launcher-head{position:sticky;top:-16px;background:#fff;padding-top:16px;z-index:2}.screening-workspace-tabs{grid-template-columns:1fr 1fr}.screening-workspace-tab.history{grid-column:1/-1}.screening-admin-actions{display:grid;grid-template-columns:1fr 1fr}.screening-admin-actions .btn{width:100%}}

@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.10 */
+/* CNMI Blood Donation Supabase Frontend v15.11 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -1643,6 +1643,9 @@ function applyStaffProfileUI() {
   if (adminBtn) adminBtn.style.display = isAdminView() ? "block" : "none";
   const adminGroup = document.querySelector('.staff-nav-group[data-nav-group="admin"]');
   if (adminGroup) adminGroup.style.display = isAdminView() ? "block" : "none";
+  document.querySelectorAll('#staffMenuLauncher .admin-only').forEach(function(el){
+    el.style.display = isAdminView() ? "block" : "none";
+  });
 
   const switchBtn = $("staffRoleSwitchBtn");
   if (switchBtn) {
@@ -1698,7 +1701,31 @@ function toggleStaffNavGroup(groupId, forceOpen) {
   const group = document.querySelector('.staff-nav-group[data-nav-group="' + groupId + '"]');
   if (!group) return;
   const nextOpen = typeof forceOpen === "boolean" ? forceOpen : !group.classList.contains("open");
-  group.classList.toggle("open", nextOpen);
+  document.querySelectorAll('.staff-nav-group').forEach(function(item){
+    item.classList.toggle("open", nextOpen && item === group);
+  });
+}
+
+function openStaffMenuLauncher() {
+  const overlay = $("staffMenuLauncher");
+  if (!overlay) return;
+  applyStaffProfileUI();
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("staff-menu-open");
+}
+
+function closeStaffMenuLauncher() {
+  const overlay = $("staffMenuLauncher");
+  if (!overlay) return;
+  overlay.classList.remove("show");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("staff-menu-open");
+}
+
+function goStaffMenu(tab) {
+  closeStaffMenuLauncher();
+  showStaffTab(tab);
 }
 
 function openStaffNavGroupForTab(tab) {
@@ -1735,10 +1762,33 @@ function showStaffTab(tab, options) {
   if (tab === "groups") loadStaffGroupRequests();
   if (tab === "mobileUnits") loadStaffMobileUnitRequests();
   if (tab === "roomCalendar") loadRoomCalendarAdmin();
-  if (tab === "screeningQuestions") loadScreeningQuestionsAdmin();
+  if (tab === "screeningQuestions") { showScreeningQuestionPane("list"); loadScreeningQuestionsAdmin(); }
   if (tab === "screeningQuestionHistory") loadScreeningQuestionHistory(1);
   if (tab === "manual") renderStaffManual();
   if (tab === "admin") adminLoadStaffAccessList();
+}
+
+function showScreeningQuestionPane(pane) {
+  const target = pane === "form" ? "form" : "list";
+  const listPanel = $("screeningQuestionListPanel");
+  const formPanel = $("screeningQuestionFormPanel");
+  const listBtn = $("screeningPaneListBtn");
+  const formBtn = $("screeningPaneFormBtn");
+  if (listPanel) listPanel.classList.toggle("active", target === "list");
+  if (formPanel) formPanel.classList.toggle("active", target === "form");
+  if (listBtn) listBtn.classList.toggle("active", target === "list");
+  if (formBtn) formBtn.classList.toggle("active", target === "form");
+  if (target === "list") {
+    const page = $("staffTab_screeningQuestions");
+    if (page) page.scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+}
+
+function startNewScreeningQuestion() {
+  resetScreeningQuestionForm();
+  showScreeningQuestionPane("form");
+  const text = $("screeningQuestionText");
+  if (text) setTimeout(function(){ text.focus(); }, 120);
 }
 
 function resetScreeningQuestionForm() {
@@ -1753,6 +1803,7 @@ function resetScreeningQuestionForm() {
   if ($("screeningQuestionActive")) $("screeningQuestionActive").value = "true";
   if ($("screeningQuestionFail")) $("screeningQuestionFail").value = "";
   if ($("screeningQuestionFormTitle")) $("screeningQuestionFormTitle").innerText = "เพิ่มคำถามใหม่";
+  if ($("screeningPaneFormBtn")) $("screeningPaneFormBtn").innerHTML = '<i class="bi bi-plus-circle"></i><span>เพิ่มคำถาม</span>';
   if ($("screeningQuestionSaveBtn")) $("screeningQuestionSaveBtn").innerHTML = '<i class="bi bi-plus-circle"></i> เพิ่มคำถาม';
   if ($("screeningQuestionFormResult")) $("screeningQuestionFormResult").style.display = "none";
 }
@@ -1919,7 +1970,9 @@ function editScreeningQuestion(id) {
   $("screeningQuestionActive").value = String(row.is_active !== false);
   $("screeningQuestionFail").value = row.fail_message || "";
   $("screeningQuestionFormTitle").innerText = "แก้ไขคำถาม";
+  if ($("screeningPaneFormBtn")) $("screeningPaneFormBtn").innerHTML = '<i class="bi bi-pencil-square"></i><span>แก้ไขคำถาม</span>';
   $("screeningQuestionSaveBtn").innerHTML = '<i class="bi bi-check2-circle"></i> บันทึกการแก้ไข';
+  showScreeningQuestionPane("form");
   const form = $("screeningQuestionFormCard");
   if (form) form.scrollIntoView({ behavior:"smooth", block:"start" });
 }
@@ -1955,6 +2008,7 @@ async function saveScreeningQuestion() {
   screeningQuestionsLoadedAt = 0;
   await loadScreeningQuestionsAdmin();
   resetScreeningQuestionForm();
+  showScreeningQuestionPane("list");
 }
 
 async function toggleScreeningQuestionActive(id, nextActive) {
@@ -4771,3 +4825,8 @@ document.addEventListener("DOMContentLoaded", async function() {
 
 window.addEventListener("hashchange", function() { handleHashRoute(); });
 window.addEventListener("popstate", function() { handleHashRoute(); });
+
+
+document.addEventListener("keydown", function(event){
+  if (event.key === "Escape") closeStaffMenuLauncher();
+});
