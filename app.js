@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.1 */
+/* CNMI Blood Donation Supabase Frontend v15.2 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -24,6 +24,116 @@ let importLogHistoryTotalPages = 1;
 let currentGroupAdminDays = [];
 let currentRoomAdminEvents = [];
 let currentPublicRoomEvents = [];
+let pendingStaffRouteTab = "overview";
+let suppressRouteSync = false;
+
+const PAGE_ROUTE_MAP = {
+  home: "#/home",
+  check: "#/check",
+  donationChoice: "#/donate",
+  screening: "#/platelet/screening",
+  booking: "#/platelet/booking",
+  bookingSuccess: "#/platelet/success",
+  groupBooking: "#/group-booking",
+  mobileUnitRequest: "#/mobile-unit",
+  manage: "#/manage",
+  roomCalendar: "#/calendar",
+  info: "#/contact",
+  staffLogin: "#/staff/login",
+  staffChangePassword: "#/staff/password",
+  staff: "#/staff/overview"
+};
+
+const STAFF_TAB_ROUTE_MAP = {
+  overview: "overview",
+  donorImport: "donor-import",
+  infectiousImport: "infectious-import",
+  importLogs: "import-logs",
+  notifications: "notifications",
+  slots: "platelet-calendar",
+  bookings: "platelet-bookings",
+  groupSlots: "group-calendar",
+  groups: "group-requests",
+  mobileUnits: "mobile-unit-requests",
+  roomCalendar: "room-calendar",
+  admin: "admin"
+};
+
+function getPublicBaseUrl() {
+  const configured = String(CONFIG.APP_URL || "").trim().replace(/\/$/, "");
+  return configured || (window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "").replace(/\/$/, ""));
+}
+
+function routeUrl(page) {
+  return getPublicBaseUrl() + (PAGE_ROUTE_MAP[page] || "#/home");
+}
+
+function syncPageRoute(page, replace) {
+  if (suppressRouteSync) return;
+  let hash = PAGE_ROUTE_MAP[page] || "#/home";
+  if (page === "staff") {
+    const active = document.querySelector('.staff-tab.active');
+    const tab = active?.dataset?.staffTab || pendingStaffRouteTab || "overview";
+    hash = "#/staff/" + (STAFF_TAB_ROUTE_MAP[tab] || "overview");
+  }
+  if (window.location.hash === hash) return;
+  const fn = replace ? "replaceState" : "pushState";
+  try { history[fn]({ cnmiRoute: hash }, "", hash); }
+  catch (err) { window.location.hash = hash; }
+}
+
+function tabFromRoutePart(part) {
+  const clean = String(part || "").replace(/^\/+|\/+$/g, "");
+  const match = Object.entries(STAFF_TAB_ROUTE_MAP).find(([, route]) => route === clean);
+  return match ? match[0] : "overview";
+}
+
+function parseHashRoute() {
+  const hash = String(window.location.hash || "");
+  const path = hash.split("?")[0].replace(/^#\/?/, "").replace(/^\/+|\/+$/g, "");
+  if (!path) return { page:"home" };
+  const map = {
+    home:"home", check:"check", donate:"donationChoice", "group-booking":"groupBooking",
+    "mobile-unit":"mobileUnitRequest", manage:"manage", calendar:"roomCalendar", contact:"info"
+  };
+  if (map[path]) return { page:map[path] };
+  if (path === "platelet/screening") return { page:"screening" };
+  if (path === "platelet/booking") return { page:"booking" };
+  if (path === "platelet/success") return { page:"bookingSuccess" };
+  if (path === "staff" || path.startsWith("staff/")) {
+    const part = path.split("/")[1] || "overview";
+    if (part === "login") return { page:"staffLogin", staff:true };
+    if (part === "password") return { page:"staffChangePassword", staff:true };
+    return { page:"staff", staff:true, tab:tabFromRoutePart(part) };
+  }
+  // backward compatibility from older versions
+  if (hash === "#staff") return { page:"staff", staff:true, tab:"overview" };
+  if (hash.startsWith("#manage")) return { page:"manage" };
+  return { page:"home" };
+}
+
+async function handleHashRoute() {
+  const qrToken = extractQrToken(String(window.location.hash || "") + "&" + String(window.location.search || ""));
+  if (qrToken) {
+    suppressRouteSync = true;
+    showPage("manage");
+    suppressRouteSync = false;
+    await loadBookingFromQrToken(qrToken);
+    return;
+  }
+  const route = parseHashRoute();
+  if (route.staff) {
+    pendingStaffRouteTab = route.tab || "overview";
+    if (route.page === "staffLogin") { suppressRouteSync = true; showPage("staffLogin"); suppressRouteSync = false; return; }
+    if (route.page === "staffChangePassword") { suppressRouteSync = true; showPage("staffChangePassword"); suppressRouteSync = false; return; }
+    await showStaffGate();
+    if (currentStaffProfile) showStaffTab(pendingStaffRouteTab, { skipRoute:true });
+    return;
+  }
+  suppressRouteSync = true;
+  showPage(route.page || "home");
+  suppressRouteSync = false;
+}
 
 sb.auth.onAuthStateChange(async function(event, session) {
   if (event === "PASSWORD_RECOVERY") {
@@ -70,7 +180,8 @@ function closeModal() { $("appModal").classList.remove("show"); }
 function modalPrimaryClick() { closeModal(); if (modalPrimaryCallback) { const cb = modalPrimaryCallback; modalPrimaryCallback = null; cb(); } }
 function modalSecondaryClick() { closeModal(); if (modalSecondaryCallback) { const cb = modalSecondaryCallback; modalSecondaryCallback = null; cb(); } }
 
-function showPage(page) {
+function showPage(page, options) {
+  options = options || {};
   const pages = {
     home:"pageHome", check:"pageCheck", donationChoice:"pageDonationChoice", groupBooking:"pageGroupBooking",
     mobileUnitRequest:"pageMobileUnitRequest",
@@ -84,7 +195,9 @@ function showPage(page) {
   document.body.setAttribute("data-page", page || "home");
   updateMobileNav(page || "home");
   window.scrollTo(0,0);
+  if (!options.skipRoute) syncPageRoute(page || "home", !!options.replaceRoute);
 
+  if (page === "home") setTimeout(loadHomeRoomStatus, 30);
   if (page === "staff" && currentStaffProfile) {
     setTimeout(loadStaffDashboard, 50);
   }
@@ -492,6 +605,81 @@ function useForgotDonorIdForCheck() {
   });
 }
 
+function normalizeContactEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isValidOptionalEmail(value) {
+  const email = normalizeContactEmail(value);
+  if (!email) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+function buildMailtoHref(email, subject, body) {
+  const target = normalizeContactEmail(email);
+  if (!target) return "";
+  return "mailto:" + encodeURIComponent(target) +
+    "?subject=" + encodeURIComponent(subject || "CNMI Blood Donation") +
+    "&body=" + encodeURIComponent(body || "");
+}
+
+function openReplyEmail(email, subject, body) {
+  const href = buildMailtoHref(email, subject, body);
+  if (!href) {
+    showModal({ title:"ไม่มีอีเมล", message:"รายการนี้ไม่ได้ระบุอีเมลสำหรับติดต่อกลับ", iconText:"!" });
+    return;
+  }
+  window.location.href = href;
+}
+
+async function triggerExternalNotification(sourceType, sourceId, eventType) {
+  if (!sourceType || !sourceId) return;
+  try {
+    const { error } = await sb.functions.invoke("notify-donor-request", {
+      body: { sourceType:String(sourceType), sourceId:String(sourceId), eventType:String(eventType || "new") }
+    });
+    if (error) console.warn("CNMI notification function:", error.message || error);
+  } catch (err) {
+    // Notification must never block a successfully saved booking/request.
+    console.warn("CNMI notification function unavailable:", err);
+  }
+}
+
+async function loadHomeRoomStatus() {
+  const box = $("homeRoomStatus");
+  if (!box) return;
+  const copy = box.querySelector(".home-room-status-copy");
+  const icon = box.querySelector(".home-room-status-icon i");
+  if (!copy) return;
+  const today = todayISO();
+  try {
+    const { data, error } = await sb.rpc("get_room_calendar", { p_month:today.slice(0,7) });
+    if (error || !data || data.ok !== true || !data.published) {
+      box.className = "home-room-status mb-3 status-neutral";
+      copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>กรุณาตรวจสอบปฏิทิน</b><span>ตารางเดือนนี้ยังไม่ได้เผยแพร่ หรือกำลังปรับข้อมูล</span>';
+      if (icon) icon.className = "bi bi-calendar2";
+      return;
+    }
+    const events = Array.isArray(data.events) ? data.events : [];
+    const e = events.find(x => x.date === today);
+    if (!e) {
+      box.className = "home-room-status mb-3 status-open";
+      copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>เปิดทำการตามปกติ</b><span>วันที่ไม่มีประกาศพิเศษถือว่าเปิดทำการ</span>';
+      if (icon) icon.className = "bi bi-check-circle";
+      return;
+    }
+    const meta = roomEventMeta(e.type);
+    const closed = e.type === "closed" || e.type === "mobile_unit";
+    box.className = "home-room-status mb-3 " + (closed ? "status-closed" : (e.type === "limited" ? "status-limited" : "status-open"));
+    const details = [e.title && e.title !== meta.label ? e.title : "", e.time, e.location].filter(Boolean).join(" · ");
+    copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>' + escapeHtml(meta.label) + '</b><span>' + escapeHtml(details || e.note || (closed ? "กรุณาดูรายละเอียดในปฏิทิน" : "เปิดให้บริการตามประกาศ")) + '</span>';
+    if (icon) icon.className = "bi " + meta.icon;
+  } catch (err) {
+    box.className = "home-room-status mb-3 status-neutral";
+    copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>ตรวจสอบไม่ได้ชั่วคราว</b><span>กดดูปฏิทินหรือติดต่อเจ้าหน้าที่</span>';
+  }
+}
+
 function showDonationChoice() {
   showPage("donationChoice");
 }
@@ -883,11 +1071,16 @@ async function submitBooking() {
   const name = $("bookingName").value.trim();
   const donorId = $("bookingDonorId").value.trim();
   const phone = onlyDigits($("bookingPhone").value);
+  const email = normalizeContactEmail($("bookingEmail")?.value || "");
   const bookingDate = $("bookingDate").value;
   const btn = $("btnConfirmBooking");
 
   if (!name || phone.length < 9 || !bookingDate || !selectedSlot) {
     showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกชื่อ เบอร์โทร วันที่ และเลือกช่วงเวลาให้ครบครับ", iconText:"!" });
+    return;
+  }
+  if (!isValidOptionalEmail(email)) {
+    showModal({ title:"ตรวจสอบอีเมล", message:"รูปแบบอีเมลไม่ถูกต้อง หากไม่ต้องการใช้อีเมลสามารถเว้นว่างได้", iconText:"!" });
     return;
   }
 
@@ -896,6 +1089,7 @@ async function submitBooking() {
     p_name: name,
     p_donor_id: donorId,
     p_phone: phone,
+    p_email: email,
     p_booking_date: bookingDate,
     p_time_slot: selectedSlot,
     p_donation_type: "Platelet"
@@ -909,9 +1103,11 @@ async function submitBooking() {
   }
 
   renderBookingSuccess(data, name);
+  triggerExternalNotification("platelet", data.bookingId || data.bookingCode, "new");
   $("bookingName").value = "";
   $("bookingDonorId").value = "";
   $("bookingPhone").value = "";
+  if ($("bookingEmail")) $("bookingEmail").value = "";
   selectedSlot = "";
   if ($("bookingPrefillNote")) $("bookingPrefillNote").style.display = "none";
   lastDonorContext = null;
@@ -924,11 +1120,16 @@ async function submitGroupBookingRequest() {
   const estimatedPeople = Number($("groupCount").value || 0);
   const coordinator = $("groupCoordinator").value.trim();
   const phone = onlyDigits($("groupPhone").value);
+  const email = normalizeContactEmail($("groupEmail")?.value || "");
   const note = $("groupNote").value.trim();
   const btn = $("btnSubmitGroupRequest");
 
   if (!groupName || !requestedDate || estimatedPeople <= 10 || !coordinator || phone.length < 9) {
     showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกชื่อกลุ่ม วันที่ จำนวนมากกว่า 10 คน ชื่อผู้ประสานงาน และเบอร์โทรให้ครบ", iconText:"!" });
+    return;
+  }
+  if (!isValidOptionalEmail(email)) {
+    showModal({ title:"ตรวจสอบอีเมล", message:"รูปแบบอีเมลไม่ถูกต้อง หากไม่ต้องการใช้อีเมลสามารถเว้นว่างได้", iconText:"!" });
     return;
   }
   showBusy(btn, true, "ส่งคำขอนัดหมาย", "กำลังส่งคำขอ...");
@@ -938,6 +1139,7 @@ async function submitGroupBookingRequest() {
     p_estimated_people: estimatedPeople,
     p_coordinator_name: coordinator,
     p_phone: phone,
+    p_email: email,
     p_note: note
   });
   showBusy(btn, false, "ส่งคำขอนัดหมาย", "กำลังส่งคำขอ...");
@@ -947,13 +1149,14 @@ async function submitGroupBookingRequest() {
     return;
   }
 
+  triggerExternalNotification("group", data.requestId, "new");
   showModal({
     title:"ส่งคำขอเรียบร้อยแล้ว",
     message:"เลขที่คำขอ: " + data.requestId + "\nวันที่ต้องการ: " + isoToThaiDate(data.requestedDate, true) + "\nจำนวนประมาณ " + estimatedPeople + " คน\n\nเจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันนัดหมาย",
     iconText:"✓", type:"success",
     onPrimary:function(){ showPage("home"); }
   });
-  ["groupName","groupCount","groupCoordinator","groupPhone","groupNote"].forEach(id => { if ($(id)) $(id).value = ""; });
+  ["groupName","groupCount","groupCoordinator","groupPhone","groupEmail","groupNote"].forEach(id => { if ($(id)) $(id).value = ""; });
   if ($("groupDate")) $("groupDate").value = "";
   if ($("groupSelectedDate")) {
     $("groupSelectedDate").classList.remove("selected");
@@ -969,6 +1172,7 @@ async function submitMobileUnitRequest() {
   const estimatedPeople = Number($("mobileUnitCount")?.value || 0);
   const coordinator = $("mobileUnitCoordinator")?.value.trim() || "";
   const phone = onlyDigits($("mobileUnitPhone")?.value || "");
+  const email = normalizeContactEmail($("mobileUnitEmail")?.value || "");
   const locationText = $("mobileUnitLocation")?.value.trim() || "";
   const note = $("mobileUnitNote")?.value.trim() || "";
   const btn = $("btnSubmitMobileUnitRequest");
@@ -981,6 +1185,10 @@ async function submitMobileUnitRequest() {
     });
     return;
   }
+  if (!isValidOptionalEmail(email)) {
+    showModal({ title:"ตรวจสอบอีเมล", message:"รูปแบบอีเมลไม่ถูกต้อง หากไม่ต้องการใช้อีเมลสามารถเว้นว่างได้", iconText:"!" });
+    return;
+  }
 
   showBusy(btn, true, "ส่งคำขอให้ติดต่อกลับ", "กำลังส่งคำขอ...");
   const { data, error } = await sb.rpc("create_mobile_unit_request", {
@@ -989,6 +1197,7 @@ async function submitMobileUnitRequest() {
     p_preferred_date: preferredDate,
     p_coordinator_name: coordinator,
     p_phone: phone,
+    p_email: email,
     p_location_text: locationText,
     p_note: note
   });
@@ -1003,6 +1212,8 @@ async function submitMobileUnitRequest() {
     return;
   }
 
+  triggerExternalNotification("mobile", data.requestId, "new");
+
   showModal({
     title:"ส่งคำขอเรียบร้อยแล้ว",
     message:"เลขที่คำขอ: " + data.requestId +
@@ -1014,7 +1225,7 @@ async function submitMobileUnitRequest() {
     onPrimary:function(){ showPage("home"); }
   });
 
-  ["mobileUnitOrg","mobileUnitCount","mobileUnitCoordinator","mobileUnitPhone","mobileUnitLocation","mobileUnitNote"].forEach(id => {
+  ["mobileUnitOrg","mobileUnitCount","mobileUnitCoordinator","mobileUnitPhone","mobileUnitEmail","mobileUnitLocation","mobileUnitNote"].forEach(id => {
     if ($(id)) $(id).value = "";
   });
   if ($("mobileUnitDate")) $("mobileUnitDate").value = "";
@@ -1292,7 +1503,8 @@ function routeStaffAfterAuth() {
     showPage("staffChangePassword");
     return;
   }
-  showPage("staff");
+  showPage("staff", { skipRoute:true });
+  showStaffTab(pendingStaffRouteTab || "overview");
 }
 
 async function changeTemporaryPassword() {
@@ -1400,7 +1612,8 @@ async function staffLogout() {
   showPage("home");
 }
 
-function showStaffTab(tab) {
+function showStaffTab(tab, options) {
+  options = options || {};
   if (tab === "admin" && !isAdminView()) {
     showModal({ title:"ไม่มีสิทธิ์ Admin ในมุมมองนี้", message:"หากเป็น Admin กรุณากด “กลับ Admin” ก่อน", iconText:"!" });
     return;
@@ -1409,8 +1622,14 @@ function showStaffTab(tab) {
   document.querySelectorAll(".staff-tab-page").forEach(page => page.classList.remove("active"));
   const target = $("staffTab_" + tab);
   if (target) target.classList.add("active");
+  pendingStaffRouteTab = tab || "overview";
+  if (!options.skipRoute && !suppressRouteSync) {
+    const route = "#/staff/" + (STAFF_TAB_ROUTE_MAP[tab] || "overview");
+    if (window.location.hash !== route) history.pushState({ cnmiRoute:route }, "", route);
+  }
   if (tab === "overview") loadStaffDashboard();
   if (tab === "importLogs") loadImportLogHistory(1);
+  if (tab === "notifications") loadStaffNotifications();
   if (tab === "slots") loadPlateletMonthAdmin();
   if (tab === "bookings") loadStaffBookings();
   if (tab === "groupSlots") loadGroupBookingMonthAdmin();
@@ -1543,6 +1762,13 @@ async function loadStaffDashboard() {
     const bookingsToday = await getExactCount(
       sb.from("bookings").select("id", { count:"exact", head:true }).eq("booking_date", today).eq("donation_type", "Platelet").neq("status", "ยกเลิก")
     );
+    const tomorrow = addDaysISO(today, 1);
+    const bookingsTomorrow = await getExactCount(
+      sb.from("bookings").select("id", { count:"exact", head:true }).eq("booking_date", tomorrow).eq("donation_type", "Platelet").neq("status", "ยกเลิก")
+    );
+    const newRequests = await getExactCount(
+      sb.from("staff_notifications").select("id", { count:"exact", head:true }).eq("is_read", false)
+    );
     const slotsToday = await getExactCount(
       sb.from("booking_slots").select("id", { count:"exact", head:true }).eq("booking_date", today)
     );
@@ -1554,6 +1780,9 @@ async function loadStaffDashboard() {
     );
 
     if ($("dashBookingsToday")) $("dashBookingsToday").innerText = bookingsToday;
+    if ($("dashBookingsTomorrow")) $("dashBookingsTomorrow").innerText = bookingsTomorrow;
+    if ($("dashNewRequests")) $("dashNewRequests").innerText = newRequests;
+    updateStaffNotificationBadge(newRequests);
     if ($("dashSlotsToday")) $("dashSlotsToday").innerText = slotsToday;
     if ($("dashInfectious")) $("dashInfectious").innerText = infectiousCount;
     if ($("dashDonations")) $("dashDonations").innerText = donationCount;
@@ -1563,6 +1792,8 @@ async function loadStaffDashboard() {
       box.innerText =
         "วันที่ " + isoToDDMMYYYY(today) + "\n" +
         "คิวเกล็ดเลือดวันนี้: " + bookingsToday + " รายการ\n" +
+        "คิวเกล็ดเลือดพรุ่งนี้: " + bookingsTomorrow + " รายการ\n" +
+        "รายการใหม่ที่ยังไม่ได้อ่าน: " + newRequests + " รายการ\n" +
         "รอบเกล็ดเลือดวันนี้: " + slotsToday + " ช่วงเวลา\n" +
         "ต้องติดต่อเจ้าหน้าที่: " + infectiousCount + " รายการ\n" +
         "บริจาคทั้งหมด: " + donationCount + " รายการ";
@@ -2387,7 +2618,7 @@ async function loadStaffBookings() {
 
   box.innerHTML = '<div class="staff-result">กำลังโหลด...</div>';
   const { data, error } = await sb.from("bookings")
-    .select("booking_id,public_code,full_name,phone,donor_id,booking_date,time_slot,donation_type,status,note")
+    .select("booking_id,public_code,full_name,phone,email,donor_id,booking_date,time_slot,donation_type,status,note")
     .eq("booking_date", date)
     .eq("donation_type", "Platelet")
     .order("time_slot", { ascending:true });
@@ -2399,7 +2630,7 @@ async function loadStaffBookings() {
     box.innerHTML = '<div class="staff-result">ไม่พบรายการจองเกล็ดเลือดในวันนี้</div>';
     return;
   }
-  box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>เวลา</th><th>เลขนัด</th><th>ชื่อ</th><th>โทร</th><th>Donor ID</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>' +
+  box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>เวลา</th><th>เลขนัด</th><th>ชื่อ</th><th>โทร / อีเมล</th><th>Donor ID</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>' +
     data.map(r => {
       const safeId = String(r.booking_id || "").replace(/'/g, "\\'");
       const statusClass = r.status === 'ต้องติดต่อ' ? 'booking-status-contact' : (r.status === 'ยกเลิก' ? 'booking-status-cancel' : 'booking-status-ok');
@@ -2410,7 +2641,7 @@ async function loadStaffBookings() {
         '<td data-label="เวลา">' + escapeHtml(String(r.time_slot).slice(0,5)) + '</td>' +
         '<td data-label="เลขนัด">' + escapeHtml(r.public_code || r.booking_id || '') + '</td>' +
         '<td data-label="ชื่อ">' + escapeHtml(r.full_name) + '</td>' +
-        '<td data-label="โทร"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a></td>' +
+        '<td data-label="ติดต่อ"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a>' + (r.email ? '<br><a class="mail-link-btn" href="' + escapeHtml(buildMailtoHref(r.email, 'CNMI Blood Donation — นัดบริจาคเกล็ดเลือด', 'เรียน ' + (r.full_name || '') + '\n\nเกี่ยวกับนัดบริจาคเกล็ดเลือด เลขนัด ' + (r.public_code || r.booking_id || '') + '\nวันที่ ' + isoToThaiDate(r.booking_date, true) + ' เวลา ' + String(r.time_slot).slice(0,5) + ' น.\n\nห้องบริจาคโลหิต CNMI')) + '"><i class="bi bi-envelope"></i> ' + escapeHtml(r.email) + '</a>' : '') + '</td>' +
         '<td data-label="Donor ID">' + escapeHtml(r.donor_id || '') + '</td>' +
         '<td data-label="สถานะ"><span class="booking-status-pill ' + statusClass + '">' + escapeHtml(r.status) + '</span></td>' +
         '<td data-label="จัดการ">' + actions + '</td>' +
@@ -2836,6 +3067,7 @@ function buildRoomAnnouncement(month, events) {
     });
   }
   lines.push("");
+  lines.push("ดูปฏิทินล่าสุด: " + routeUrl("roomCalendar"));
   lines.push("สอบถามเพิ่มเติม โทร. " + (CONFIG.PHONE_TEXT || "02-839-6050") + " ในวันและเวลาทำการครับ");
   return lines.join("\n");
 }
@@ -3052,7 +3284,7 @@ async function downloadRoomCalendarPoster() {
       });
       if (special.length > 3) {
         ctx.fillStyle = "#7a858b";
-        ctx.fillText("ดูรายละเอียดเพิ่มเติมที่ donor.cnmiblood.com", 62, y);
+        ctx.fillText("ดูรายละเอียดเพิ่มเติมที่ donor.cnmiblood.com/#/calendar", 62, y);
         y += 30;
       }
     }
@@ -3062,7 +3294,7 @@ async function downloadRoomCalendarPoster() {
     ctx.fillText("วันที่ไม่มีสถานะพิเศษถือว่าเปิดทำการตามปกติ", 62, 1288);
     ctx.fillStyle = "#c94149";
     ctx.font = '800 22px "Noto Sans Thai", sans-serif';
-    ctx.fillText("สอบถาม " + (CONFIG.PHONE_TEXT || "02-839-6050") + "  •  donor.cnmiblood.com", 62, 1322);
+    ctx.fillText("สอบถาม " + (CONFIG.PHONE_TEXT || "02-839-6050") + "  •  donor.cnmiblood.com/#/calendar", 62, 1322);
 
     const link = document.createElement("a");
     link.download = "CNMI-Donor-Calendar-" + month + ".png";
@@ -3086,7 +3318,7 @@ async function loadStaffMobileUnitRequests() {
 
   box.innerHTML = '<div class="staff-result">กำลังโหลดคำขอออกหน่วย...</div>';
   const { data, error } = await sb.from("mobile_unit_requests")
-    .select("request_id,organization_name,estimated_people,preferred_date,coordinator_name,phone,location_text,note,status,created_at")
+    .select("request_id,organization_name,estimated_people,preferred_date,coordinator_name,phone,email,location_text,note,status,created_at")
     .gte("preferred_date", from)
     .order("preferred_date", { ascending:true })
     .order("created_at", { ascending:true })
@@ -3102,7 +3334,7 @@ async function loadStaffMobileUnitRequests() {
     return;
   }
 
-  let html = '<table class="table preview-table align-middle"><thead><tr><th>วันที่ต้องการ</th><th>หน่วยงาน</th><th>จำนวน</th><th>สถานที่</th><th>ผู้ประสานงาน</th><th>โทร</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>';
+  let html = '<table class="table preview-table align-middle"><thead><tr><th>วันที่ต้องการ</th><th>หน่วยงาน</th><th>จำนวน</th><th>สถานที่</th><th>ผู้ประสานงาน</th><th>ติดต่อ</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>';
   data.forEach(r => {
     const idArg = JSON.stringify(r.request_id || "");
     const phone = String(r.phone || "");
@@ -3113,7 +3345,7 @@ async function loadStaffMobileUnitRequests() {
       '<td data-label="จำนวน">' + escapeHtml(String(r.estimated_people || 0)) + ' คน</td>' +
       '<td data-label="สถานที่">' + escapeHtml(r.location_text || "") + '</td>' +
       '<td data-label="ผู้ประสานงาน">' + escapeHtml(r.coordinator_name || "") + '</td>' +
-      '<td data-label="โทร"><a href="tel:' + escapeHtml(phone) + '">' + escapeHtml(phone) + '</a></td>' +
+      '<td data-label="ติดต่อ"><a href="tel:' + escapeHtml(phone) + '">' + escapeHtml(phone) + '</a>' + (r.email ? '<br><a class="mail-link-btn" href="' + escapeHtml(buildMailtoHref(r.email, 'CNMI Blood Donation — ประสานงานออกหน่วย', 'เรียน ' + (r.coordinator_name || '') + '\n\nเกี่ยวกับคำขอออกหน่วยของ ' + (r.organization_name || '') + '\nวันที่ที่ต้องการ ' + isoToThaiDate(r.preferred_date, true) + '\n\nห้องบริจาคโลหิต CNMI')) + '"><i class="bi bi-envelope"></i> ' + escapeHtml(r.email) + '</a>' : '') + '</td>' +
       '<td data-label="สถานะ"><span class="booking-status-pill">' + escapeHtml(r.status || "") + '</span></td>' +
       '<td data-label="จัดการ"><div class="table-action-stack">' +
         "<button type=\"button\" class=\"btn btn-soft btn-sm\" onclick='staffSetMobileUnitRequestStatus(" + idArg + ",\"กำลังประสาน\")'>กำลังประสาน</button>" +
@@ -3146,20 +3378,20 @@ async function loadStaffGroupRequests() {
   if ($("groupListFrom") && !$("groupListFrom").value) $("groupListFrom").value = from;
   box.innerHTML = '<div class="staff-result">กำลังโหลด...</div>';
   const { data, error } = await sb.from("group_booking_requests")
-    .select("request_id,group_name,coordinator_name,phone,requested_date,estimated_people,status,note,created_at")
+    .select("request_id,group_name,coordinator_name,phone,email,requested_date,estimated_people,status,note,created_at")
     .gte("requested_date", from)
     .order("requested_date", { ascending:true })
     .order("created_at", { ascending:true });
   if (error) { box.innerHTML = '<div class="staff-result fail">โหลดไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>'; return; }
   if (!data || data.length === 0) { box.innerHTML = '<div class="staff-result">ยังไม่มีคำขอหมู่คณะตั้งแต่วันที่เลือก</div>'; return; }
-  box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>วันที่</th><th>กลุ่ม</th><th>จำนวน</th><th>ผู้ประสาน</th><th>โทร</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>' + data.map(r => {
+  box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>วันที่</th><th>กลุ่ม</th><th>จำนวน</th><th>ผู้ประสาน</th><th>ติดต่อ</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>' + data.map(r => {
     const safeId=String(r.request_id || "").replace(/'/g, "\\'");
     return '<tr>' +
       '<td data-label="วันที่">' + escapeHtml(isoToDDMMYYYY(r.requested_date)) + '</td>' +
       '<td data-label="กลุ่ม"><b>' + escapeHtml(r.group_name) + '</b>' + (r.note ? '<br><small>' + escapeHtml(r.note) + '</small>' : '') + '</td>' +
       '<td data-label="จำนวน">' + escapeHtml(r.estimated_people) + ' คน</td>' +
       '<td data-label="ผู้ประสาน">' + escapeHtml(r.coordinator_name) + '</td>' +
-      '<td data-label="โทร"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a></td>' +
+      '<td data-label="ติดต่อ"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a>' + (r.email ? '<br><a class="mail-link-btn" href="' + escapeHtml(buildMailtoHref(r.email, 'CNMI Blood Donation — นัดบริจาคเป็นหมู่คณะ', 'เรียน ' + (r.coordinator_name || '') + '\n\nเกี่ยวกับคำขอบริจาคเป็นหมู่คณะของ ' + (r.group_name || '') + '\nวันที่ที่ต้องการ ' + isoToThaiDate(r.requested_date, true) + '\n\nห้องบริจาคโลหิต CNMI')) + '"><i class="bi bi-envelope"></i> ' + escapeHtml(r.email) + '</a>' : '') + '</td>' +
       '<td data-label="สถานะ">' + escapeHtml(r.status) + '</td>' +
       '<td data-label="จัดการ"><select class="form-select form-select-sm" onchange="staffSetGroupRequestStatus(\'' + safeId + '\',this.value)"><option value="">เปลี่ยนสถานะ</option><option value="รอติดต่อ">รอติดต่อ</option><option value="ยืนยันแล้ว">ยืนยันแล้ว</option><option value="ต้องติดต่อ">ต้องติดต่อ</option><option value="ไม่รับ">ไม่รับ</option><option value="ยกเลิก">ยกเลิก</option></select></td>' +
       '</tr>';
@@ -3172,6 +3404,89 @@ async function staffSetGroupRequestStatus(requestId, status) {
   const { data, error } = await sb.rpc("staff_set_group_request_status", { p_request_id:requestId, p_status:status });
   if (error || !data || data.ok !== true) showModal({ title:"บันทึกไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
   await loadStaffGroupRequests();
+}
+
+function updateStaffNotificationBadge(count) {
+  const badge = $("staffNotificationBadge");
+  if (!badge) return;
+  const n = Number(count || 0);
+  badge.innerText = n > 99 ? "99+" : String(n);
+  badge.style.display = n > 0 ? "inline-flex" : "none";
+}
+
+function notificationTypeMeta(type) {
+  const map = {
+    platelet:{ label:"คิวเกล็ดเลือด", icon:"bi-droplet-half", cls:"type-platelet" },
+    group:{ label:"หมู่คณะเลือดแดง", icon:"bi-people", cls:"type-group" },
+    mobile:{ label:"ออกหน่วยนอกสถานที่", icon:"bi-truck", cls:"type-mobile" },
+    calendar:{ label:"ปฏิทินห้อง", icon:"bi-calendar-event", cls:"type-calendar" }
+  };
+  return map[type] || { label:"แจ้งเตือน", icon:"bi-bell", cls:"type-default" };
+}
+
+async function refreshStaffNotificationBadge() {
+  if (!currentStaffProfile) return;
+  try {
+    const count = await getExactCount(sb.from("staff_notifications").select("id", { count:"exact", head:true }).eq("is_read", false));
+    updateStaffNotificationBadge(count);
+  } catch (err) {}
+}
+
+function openNotificationTarget(type, sourceId) {
+  if (type === "platelet") {
+    if ($("bookingListDate")) $("bookingListDate").value = todayISO();
+    showStaffTab("bookings");
+  } else if (type === "group") showStaffTab("groups");
+  else if (type === "mobile") showStaffTab("mobileUnits");
+  else if (type === "calendar") showStaffTab("roomCalendar");
+}
+
+async function markStaffNotificationRead(id, openType, sourceId) {
+  const ok = await ensureStaff(false); if (!ok) return;
+  await sb.rpc("mark_staff_notification_read", { p_notification_id:id });
+  await refreshStaffNotificationBadge();
+  if (openType) openNotificationTarget(openType, sourceId || "");
+  else loadStaffNotifications();
+}
+
+async function markAllStaffNotificationsRead() {
+  const ok = await ensureStaff(true); if (!ok) return;
+  const { data, error } = await sb.rpc("mark_all_staff_notifications_read");
+  if (error || !data || data.ok !== true) {
+    showModal({ title:"บันทึกไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
+    return;
+  }
+  await loadStaffNotifications();
+  await refreshStaffNotificationBadge();
+}
+
+async function loadStaffNotifications() {
+  const box = $("staffNotificationsResult"); if (!box) return;
+  const ok = await ensureStaff(false); if (!ok) return;
+  const filter = $("notificationFilter")?.value || "unread";
+  box.innerHTML = '<div class="staff-result">กำลังโหลดแจ้งเตือน...</div>';
+  let query = sb.from("staff_notifications")
+    .select("id,source_type,source_id,event_type,title,message,target_date,is_read,created_at")
+    .order("created_at", { ascending:false })
+    .limit(100);
+  if (filter === "unread") query = query.eq("is_read", false);
+  else if (["platelet","group","mobile"].includes(filter)) query = query.eq("source_type", filter);
+  const { data, error } = await query;
+  if (error) { box.innerHTML = '<div class="staff-result fail">โหลดแจ้งเตือนไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>'; return; }
+  const rows = Array.isArray(data) ? data : [];
+  if (!rows.length) { box.innerHTML = '<div class="notification-empty"><i class="bi bi-check2-circle"></i><b>ไม่มีรายการในตัวกรองนี้</b><span>รายการใหม่จากทั้ง 3 บริการจะมาแสดงตรงนี้</span></div>'; await refreshStaffNotificationBadge(); return; }
+  box.innerHTML = rows.map(r => {
+    const meta = notificationTypeMeta(r.source_type);
+    const idArg = JSON.stringify(r.id || "");
+    const typeArg = JSON.stringify(r.source_type || "");
+    const sourceArg = JSON.stringify(r.source_id || "");
+    return '<article class="notification-item ' + meta.cls + (r.is_read ? ' is-read' : ' is-unread') + '">' +
+      '<div class="notification-item-icon"><i class="bi ' + meta.icon + '"></i></div>' +
+      '<div class="notification-item-copy"><div class="notification-item-top"><span>' + escapeHtml(meta.label) + '</span><time>' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</time></div><b>' + escapeHtml(r.title || meta.label) + '</b><p>' + escapeHtml(r.message || '') + '</p>' + (r.target_date ? '<small><i class="bi bi-calendar3"></i> ' + escapeHtml(isoToThaiDate(r.target_date, true)) + '</small>' : '') + '</div>' +
+      '<div class="notification-item-actions">' + (!r.is_read ? '<button type="button" class="btn btn-soft btn-sm" onclick=\'markStaffNotificationRead(' + idArg + ')\'>อ่านแล้ว</button>' : '') + '<button type="button" class="btn btn-search btn-sm" onclick=\'markStaffNotificationRead(' + idArg + ',' + typeArg + ',' + sourceArg + ')\'>เปิดรายการ</button></div>' +
+    '</article>';
+  }).join('');
+  await refreshStaffNotificationBadge();
 }
 
 async function getSessionAccessToken() {
@@ -3491,6 +3806,10 @@ function initInputs() {
     bookingDate.max = getNextMonthEndISO();
     bookingDate.addEventListener("change", loadBookingSlots);
   }
+  ["bookingEmail","groupEmail","mobileUnitEmail"].forEach(id => {
+    const input = $(id);
+    if (input) input.addEventListener("input", () => { input.value = String(input.value || "").replace(/\s/g, "").toLowerCase(); });
+  });
   const groupPhone = $("groupPhone"); if (groupPhone) groupPhone.addEventListener("input", () => groupPhone.value = onlyDigits(groupPhone.value).slice(0,10));
   const mobileUnitPhone = $("mobileUnitPhone"); if (mobileUnitPhone) mobileUnitPhone.addEventListener("input", () => mobileUnitPhone.value = onlyDigits(mobileUnitPhone.value).slice(0,10));
   const mobileUnitDate = $("mobileUnitDate"); if (mobileUnitDate) { mobileUnitDate.min = addDaysISO(today, 1); }
@@ -3658,7 +3977,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.1").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.2").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
@@ -3674,16 +3993,15 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   const hashText = String(window.location.hash || "") + " " + String(window.location.search || "");
   if (pendingPasswordRecovery || hashText.includes("type=recovery")) {
-    showPage("staffChangePassword");
+    showPage("staffChangePassword", { replaceRoute:true });
     return;
   }
 
-  const qrTokenFromUrl = extractQrToken(String(window.location.hash || "") + "&" + String(window.location.search || ""));
-  if (qrTokenFromUrl) {
-    showPage("manage");
-    await loadBookingFromQrToken(qrTokenFromUrl);
-    return;
+  if (!window.location.hash) {
+    history.replaceState({ cnmiRoute:"#/home" }, "", "#/home");
   }
-
-  if (location.hash === "#staff") showStaffGate();
+  await handleHashRoute();
 });
+
+window.addEventListener("hashchange", function() { handleHashRoute(); });
+window.addEventListener("popstate", function() { handleHashRoute(); });

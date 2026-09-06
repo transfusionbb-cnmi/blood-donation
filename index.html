@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.1" rel="stylesheet">
+  <link href="styles.css?v=15.2" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -35,6 +35,12 @@
         <h1 class="welcome-title">วันนี้ต้องการทำอะไร?</h1>
         <p class="welcome-subtitle">เลือกสิ่งที่ต้องการ ระบบจะพาไปทีละขั้น</p>
       </section>
+
+      <div id="homeRoomStatus" class="home-room-status mb-3" role="status" aria-live="polite">
+        <div class="home-room-status-icon"><i class="bi bi-calendar2-check"></i></div>
+        <div class="home-room-status-copy"><small>สถานะห้องบริจาควันนี้</small><b>กำลังตรวจสอบ...</b><span>ดูรายละเอียดจากปฏิทินเปิด–ปิดห้อง</span></div>
+        <button type="button" class="btn btn-sm btn-soft" onclick="showPage('roomCalendar')">ดูปฏิทิน</button>
+      </div>
 
       <div class="action-stack">
         <button type="button" class="home-menu-card primary-menu" onclick="showPage('check')">
@@ -257,7 +263,8 @@
         <div class="section-divider"></div>
         <div class="form-step-title"><span>2</span><div><b>ผู้ประสานงาน</b><small>เจ้าหน้าที่จะใช้ข้อมูลนี้ติดต่อกลับ</small></div></div>
         <div class="field-block"><label class="form-label">ชื่อผู้ประสานงาน</label><div class="input-with-icon"><i class="bi bi-person"></i><input type="text" id="groupCoordinator" class="form-control" placeholder="ชื่อ-นามสกุล"></div></div>
-        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="groupPhone" class="form-control" inputmode="numeric" placeholder="เบอร์โทรที่ติดต่อได้"></div></div>
+        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="groupPhone" class="form-control" inputmode="numeric" placeholder="เบอร์โทรที่ติดต่อได้" autocomplete="tel"></div></div>
+        <div class="field-block"><label class="form-label">อีเมล <span class="optional">ถ้ามี</span></label><div class="input-with-icon"><i class="bi bi-envelope"></i><input type="email" id="groupEmail" class="form-control" placeholder="สำหรับรับการติดต่อกลับ" autocomplete="email" autocapitalize="none" spellcheck="false"></div></div>
         <div class="field-block"><label class="form-label">หมายเหตุ <span class="optional">ถ้ามี</span></label><textarea id="groupNote" class="form-control" rows="3" placeholder="รายละเอียดเพิ่มเติม เช่น ช่วงเวลาที่สะดวก"></textarea></div>
         <button type="button" id="btnSubmitGroupRequest" class="btn btn-search w-100" onclick="submitGroupBookingRequest()">ส่งคำขอนัดหมาย <i class="bi bi-send"></i></button>
       </div>
@@ -282,7 +289,8 @@
         <div class="section-divider"></div>
         <div class="form-step-title"><span>2</span><div><b>ผู้ประสานงาน</b><small>เจ้าหน้าที่จะใช้ข้อมูลนี้ติดต่อกลับ</small></div></div>
         <div class="field-block"><label class="form-label">ชื่อผู้ประสานงาน</label><div class="input-with-icon"><i class="bi bi-person"></i><input type="text" id="mobileUnitCoordinator" class="form-control" placeholder="ชื่อ-นามสกุล"></div></div>
-        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="mobileUnitPhone" class="form-control" inputmode="numeric" placeholder="เบอร์โทรที่ติดต่อได้"></div></div>
+        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="mobileUnitPhone" class="form-control" inputmode="numeric" placeholder="เบอร์โทรที่ติดต่อได้" autocomplete="tel"></div></div>
+        <div class="field-block"><label class="form-label">อีเมล <span class="optional">ถ้ามี</span></label><div class="input-with-icon"><i class="bi bi-envelope"></i><input type="email" id="mobileUnitEmail" class="form-control" placeholder="สำหรับรับการติดต่อกลับ" autocomplete="email" autocapitalize="none" spellcheck="false"></div></div>
         <div class="field-block"><label class="form-label">รายละเอียดเพิ่มเติม <span class="optional">ถ้ามี</span></label><textarea id="mobileUnitNote" class="form-control" rows="3" placeholder="เช่น ช่วงเวลาที่สะดวก จำนวนที่คาดการณ์ หรือข้อมูลการประสานงานเพิ่มเติม"></textarea></div>
         <button type="button" id="btnSubmitMobileUnitRequest" class="btn btn-search w-100" onclick="submitMobileUnitRequest()">ส่งคำขอให้ติดต่อกลับ <i class="bi bi-send"></i></button>
       </div>
@@ -344,7 +352,8 @@
         <div class="form-step-title"><span>1</span><div><b>ข้อมูลติดต่อ</b><small>ใช้สำหรับยืนยันการจองของคุณ</small></div></div>
         <div class="field-block"><label class="form-label">ชื่อ-นามสกุล</label><div class="input-with-icon"><i class="bi bi-person"></i><input type="text" id="bookingName" class="form-control" placeholder="ชื่อ-นามสกุล"></div></div>
         <div class="field-block"><label class="form-label">Donor ID <span class="optional">ถ้ามี</span></label><div class="input-with-icon"><i class="bi bi-person-vcard"></i><input type="text" id="bookingDonorId" class="form-control" placeholder="ไม่ทราบ เว้นว่างได้"></div></div>
-        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="bookingPhone" class="form-control" placeholder="เบอร์โทรที่ติดต่อได้" inputmode="numeric"></div></div>
+        <div class="field-block"><label class="form-label">เบอร์โทรศัพท์</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="bookingPhone" class="form-control" placeholder="เบอร์โทรที่ติดต่อได้" inputmode="numeric" autocomplete="tel"></div></div>
+        <div class="field-block"><label class="form-label">อีเมล <span class="optional">ถ้ามี</span></label><div class="input-with-icon"><i class="bi bi-envelope"></i><input type="email" id="bookingEmail" class="form-control" placeholder="สำหรับรับการติดต่อกลับ" autocomplete="email" autocapitalize="none" spellcheck="false"></div><div class="form-text">ไม่บังคับ · หากกรอก เจ้าหน้าที่สามารถตอบกลับทางอีเมลได้</div></div>
 
         <div class="section-divider"></div>
         <div class="form-step-title"><span>2</span><div><b>วันและเวลา</b><small>ระบบจะแสดงเฉพาะช่วงเวลาที่เปิดจอง</small></div></div>
@@ -492,6 +501,7 @@
               <button type="button" class="staff-tab" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')"><i class="bi bi-cloud-arrow-up"></i><span>นำเข้าผู้บริจาค</span></button>
               <button type="button" class="staff-tab" data-staff-tab="infectiousImport" onclick="showStaffTab('infectiousImport')"><i class="bi bi-shield-exclamation"></i><span>ผลติดเชื้อ</span></button>
               <button type="button" class="staff-tab" data-staff-tab="importLogs" onclick="showStaffTab('importLogs')"><i class="bi bi-clock-history"></i><span>ประวัตินำเข้า</span></button>
+              <button type="button" class="staff-tab notification-tab" data-staff-tab="notifications" onclick="showStaffTab('notifications')"><i class="bi bi-bell"></i><span>แจ้งเตือน</span><b id="staffNotificationBadge" class="staff-notification-badge" style="display:none;">0</b></button>
               <button type="button" class="staff-tab" data-staff-tab="slots" onclick="showStaffTab('slots')"><i class="bi bi-calendar3"></i><span>ตารางเกล็ดเลือด</span></button>
               <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>คิวเกล็ดเลือด</span></button>
               <button type="button" class="staff-tab" data-staff-tab="groupSlots" onclick="showStaffTab('groupSlots')"><i class="bi bi-calendar2-week"></i><span>ตารางหมู่คณะ</span></button>
@@ -508,6 +518,8 @@
             <div class="staff-page-head"><div><span>ภาพรวม</span><h3>วันนี้ในห้องบริจาคโลหิต</h3></div><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffDashboard()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
             <div class="dashboard-grid mb-3">
               <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-calendar-check"></i></div><div><div class="dashboard-label">คิวเกล็ดเลือดวันนี้</div><div id="dashBookingsToday" class="dashboard-number">-</div><div class="dashboard-sub">รายการที่ยังไม่ยกเลิก</div></div></div>
+              <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-calendar2-plus"></i></div><div><div class="dashboard-label">คิวเกล็ดเลือดพรุ่งนี้</div><div id="dashBookingsTomorrow" class="dashboard-number">-</div><div class="dashboard-sub">เตรียมกำลังคนล่วงหน้า</div></div></div>
+              <div class="dashboard-card"><div class="dash-icon notice"><i class="bi bi-bell"></i></div><div><div class="dashboard-label">รายการใหม่</div><div id="dashNewRequests" class="dashboard-number">-</div><div class="dashboard-sub">ยังไม่ได้เปิดอ่าน</div></div></div>
               <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-clock"></i></div><div><div class="dashboard-label">รอบเกล็ดเลือดวันนี้</div><div id="dashSlotsToday" class="dashboard-number">-</div><div class="dashboard-sub">09:00 / 13:00 น.</div></div></div>
               <div class="dashboard-card"><div class="dash-icon warning"><i class="bi bi-exclamation-triangle"></i></div><div><div class="dashboard-label">ต้องติดตาม</div><div id="dashInfectious" class="dashboard-number">-</div><div class="dashboard-sub">ผลติดเชื้อที่ต้องติดตาม</div></div></div>
               <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-database"></i></div><div><div class="dashboard-label">รายการบริจาค</div><div id="dashDonations" class="dashboard-number">-</div><div class="dashboard-sub">จำนวนรายการทั้งหมดในระบบ</div></div></div>
@@ -563,6 +575,17 @@
                 <span id="importLogHistoryPageText">1 / 1</span>
                 <button type="button" class="btn btn-soft btn-sm" onclick="changeImportLogHistoryPage(1)">ถัดไป <i class="bi bi-chevron-right"></i></button>
               </div>
+            </div>
+          </div>
+
+          <div id="staffTab_notifications" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>NOTIFICATION CENTER</span><h3>รายการใหม่และสิ่งที่ต้องตอบ</h3><p>รวมคิวเกล็ดเลือด คำขอหมู่คณะ และคำขอออกหน่วยไว้ในที่เดียว</p></div></div>
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="notification-toolbar">
+                <div class="field-block mb-0"><label class="form-label">แสดง</label><select id="notificationFilter" class="form-select" onchange="loadStaffNotifications()"><option value="unread">ยังไม่ได้อ่าน</option><option value="all">ทั้งหมด</option><option value="platelet">คิวเกล็ดเลือด</option><option value="group">หมู่คณะเลือดแดง</option><option value="mobile">ออกหน่วยนอกสถานที่</option></select></div>
+                <div class="notification-actions"><button type="button" class="btn btn-soft" onclick="loadStaffNotifications()"><i class="bi bi-arrow-clockwise"></i> Refresh</button><button type="button" class="btn btn-outline-secondary" onclick="markAllStaffNotificationsRead()"><i class="bi bi-check2-all"></i> อ่านทั้งหมดแล้ว</button></div>
+              </div>
+              <div id="staffNotificationsResult" class="notification-center-list mt-3"><div class="staff-result">กำลังโหลด...</div></div>
             </div>
           </div>
 
@@ -700,6 +723,10 @@
 
           <div id="staffTab_admin" class="staff-tab-page">
             <div class="staff-page-head"><div><span>ADMIN</span><h3>จัดการเจ้าหน้าที่</h3><p>สร้างบัญชี รีเซตรหัส และเปิด/ปิดสิทธิ์</p></div></div>
+            <div class="card main-card staff-card p-4 mb-3 notification-setup-card">
+              <div class="staff-section-head mb-2"><div><h5>แจ้งเตือน Email + Google Chat</h5><small>เมื่อมีคิว/คำขอใหม่ ระบบจะเรียก Edge Function อัตโนมัติ หากตั้งค่า Secret ครบ</small></div><span class="status-pill neutral"><i class="bi bi-shield-check"></i> ไม่เก็บ Webhook ในหน้าเว็บ</span></div>
+              <div class="notification-config-hint">ตั้งค่า <code>RESEND_API_KEY</code>, <code>NOTIFY_EMAIL_TO</code>, <code>NOTIFY_EMAIL_FROM</code> และ <code>GOOGLE_CHAT_WEBHOOK_URL</code> ใน Supabase Edge Function Secrets ตามคู่มือใน ZIP</div>
+            </div>
             <div class="card main-card staff-card p-4 mb-3" id="adminStaffFormCard">
               <div class="staff-form-grid admin-grid">
                 <div class="field-block"><label class="form-label">Email เจ้าหน้าที่</label><div class="input-group email-suffix-group"><input type="text" id="adminStaffEmail" class="form-control" placeholder="username.sur" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="input-group-text">@mahidol.ac.th</span></div></div>
@@ -748,7 +775,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="config.js?v=15.1"></script>
-  <script src="app.js?v=15.1"></script>
+  <script src="config.js?v=15.2"></script>
+  <script src="app.js?v=15.2"></script>
 </body>
 </html>
