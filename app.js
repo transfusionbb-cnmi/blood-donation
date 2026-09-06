@@ -2569,11 +2569,51 @@ function selectPlateletAdminDate(value) {
   const el = $("plateletCloseDate"); if (el) el.focus({ preventScroll:true });
 }
 
-function calendarSlotHtml(slot, used) {
+function calendarSlotHtml(slot, used, bookingDate) {
   if (!slot) return '<div class="platelet-slot-mini missing"><b>-</b><span>ยังไม่เตรียม</span></div>';
   const time = String(slot.time_slot || "").slice(0,5);
   const closed = slot.status === "ปิด";
-  return '<div class="platelet-slot-mini ' + (closed ? 'closed' : '') + '"><b>' + escapeHtml(time) + '</b><span>' + (closed ? 'งดรับ' : escapeHtml(String(used || 0)) + '/' + escapeHtml(String(slot.max_queue || 2))) + '</span></div>';
+  const count = Number(used || 0);
+  const hasBooking = count > 0;
+  const content = '<b>' + escapeHtml(time) + '</b><span>' + (closed ? (hasBooking ? escapeHtml(String(count)) + ' คิว · งดรับ' : 'งดรับ') : escapeHtml(String(count)) + '/' + escapeHtml(String(slot.max_queue || 2))) + '</span>';
+  if (!hasBooking) return '<div class="platelet-slot-mini ' + (closed ? 'closed' : '') + '">' + content + '</div>';
+  return '<button type="button" class="platelet-slot-mini has-booking ' + (closed ? 'closed' : '') + '" title="ดูรายละเอียดผู้จอง" onclick="event.stopPropagation(); showPlateletSlotDetails(\'' + bookingDate + '\',\'' + time + '\')">' + content + '</button>';
+}
+
+async function showPlateletSlotDetails(bookingDate, timeSlot) {
+  const isStaff = await ensureStaff(false); if (!isStaff) return;
+  const { data, error } = await sb.from("bookings")
+    .select("booking_id,public_code,full_name,phone,email,donor_id,booking_date,time_slot,status,note,created_at")
+    .eq("booking_date", bookingDate)
+    .eq("time_slot", timeSlot)
+    .eq("donation_type", "Platelet")
+    .neq("status", "ยกเลิก")
+    .order("created_at", { ascending:true });
+  if (error) {
+    showModal({ title:"โหลดรายละเอียดไม่สำเร็จ", message:error.message || "กรุณาลองใหม่", iconText:"!" });
+    return;
+  }
+  const rows = Array.isArray(data) ? data : [];
+  const heading = isoToThaiDate(bookingDate, true) + " · " + timeSlot + " น.";
+  const message = rows.length ? rows.map((r, i) => [
+    (i + 1) + ". " + (r.full_name || "-"),
+    "เลขนัด " + (r.public_code || r.booking_id || "-"),
+    "โทร " + (r.phone || "-") + (r.email ? " · " + r.email : ""),
+    "Donor ID " + (r.donor_id || "-"),
+    "สถานะ " + (r.status || "-"),
+    r.note ? "หมายเหตุ " + r.note : ""
+  ].filter(Boolean).join("\n")).join("\n\n") : "ยังไม่มีผู้จองในรอบนี้";
+  showModal({
+    title:"คิวเกล็ดเลือด " + heading,
+    message,
+    iconText:String(rows.length || "0"),
+    primaryText:"ดูรายการของวันนี้",
+    secondaryText:"ปิด",
+    onPrimary:() => {
+      if ($("bookingListDate")) $("bookingListDate").value = bookingDate;
+      showStaffTab("bookings");
+    }
+  });
 }
 
 async function loadPlateletMonthAdmin() {
@@ -2623,10 +2663,10 @@ async function loadPlateletMonthAdmin() {
     } else {
       const sm = slotMap[iso] || {};
       const bothClosed = sm['09:00']?.status === 'ปิด' && sm['13:00']?.status === 'ปิด';
-      html += '<button type="button" class="platelet-day-cell weekday ' + (bothClosed ? 'day-closed' : '') + '" onclick="selectPlateletAdminDate(\''+iso+'\')">' +
+      html += '<div class="platelet-day-cell weekday ' + (bothClosed ? 'day-closed' : '') + '" role="button" tabindex="0" onclick="selectPlateletAdminDate(\''+iso+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();selectPlateletAdminDate(\''+iso+'\')}">' +
         '<div class="platelet-day-number">'+day+'</div>' +
-        '<div class="platelet-mini-grid">' + calendarSlotHtml(sm['09:00'], usedMap[iso+'|09:00']) + calendarSlotHtml(sm['13:00'], usedMap[iso+'|13:00']) + '</div>' +
-        '</button>';
+        '<div class="platelet-mini-grid">' + calendarSlotHtml(sm['09:00'], usedMap[iso+'|09:00'], iso) + calendarSlotHtml(sm['13:00'], usedMap[iso+'|13:00'], iso) + '</div>' +
+        '</div>';
     }
   }
   html += '</div>';
@@ -3513,21 +3553,100 @@ async function refreshStaffNotificationBadge() {
   } catch (err) {}
 }
 
-function openNotificationTarget(type, sourceId) {
+async function openNotificationTarget(type, sourceId) {
   if (type === "platelet") {
-    if ($("bookingListDate")) $("bookingListDate").value = todayISO();
+    let bookingDate = todayISO();
+    if (sourceId) {
+      try {
+        const { data } = await sb.from("bookings").select("booking_date").eq("booking_id", sourceId).maybeSingle();
+        if (data?.booking_date) bookingDate = data.booking_date;
+      } catch (_) {}
+    }
+    if ($("bookingListDate")) $("bookingListDate").value = bookingDate;
     showStaffTab("bookings");
   } else if (type === "group") showStaffTab("groups");
   else if (type === "mobile") showStaffTab("mobileUnits");
   else if (type === "calendar") showStaffTab("roomCalendar");
 }
 
-async function markStaffNotificationRead(id, openType, sourceId) {
+async function markStaffNotificationRead(id) {
   const ok = await ensureStaff(false); if (!ok) return;
   await sb.rpc("mark_staff_notification_read", { p_notification_id:id });
   await refreshStaffNotificationBadge();
-  if (openType) openNotificationTarget(openType, sourceId || "");
-  else loadStaffNotifications();
+  await loadStaffNotifications();
+}
+
+async function viewStaffNotificationDetails(type, sourceId) {
+  const ok = await ensureStaff(false); if (!ok) return;
+  let title = "รายละเอียดรายการ";
+  let lines = [];
+  try {
+    if (type === "platelet") {
+      const { data, error } = await sb.from("bookings")
+        .select("booking_id,public_code,full_name,phone,email,donor_id,booking_date,time_slot,status,note")
+        .eq("booking_id", sourceId).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("ไม่พบรายการจองนี้");
+      title = "รายละเอียดคิวบริจาคเกล็ดเลือด";
+      lines = [
+        "ชื่อ: " + (data.full_name || "-"),
+        "วันที่: " + isoToThaiDate(data.booking_date, true),
+        "เวลา: " + String(data.time_slot || "").slice(0,5) + " น.",
+        "เลขนัด: " + (data.public_code || data.booking_id || "-"),
+        "โทร: " + (data.phone || "-"),
+        "อีเมล: " + (data.email || "-"),
+        "Donor ID: " + (data.donor_id || "-"),
+        "สถานะ: " + (data.status || "-"),
+        data.note ? "หมายเหตุ: " + data.note : ""
+      ].filter(Boolean);
+    } else if (type === "group") {
+      const { data, error } = await sb.from("group_booking_requests")
+        .select("request_id,group_name,coordinator_name,phone,email,requested_date,estimated_people,status,note")
+        .eq("request_id", sourceId).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("ไม่พบคำขอนี้");
+      title = "รายละเอียดคำขอหมู่คณะเลือดแดง";
+      lines = [
+        "หน่วยงาน/กลุ่ม: " + (data.group_name || "-"),
+        "วันที่ต้องการ: " + isoToThaiDate(data.requested_date, true),
+        "จำนวนโดยประมาณ: " + (data.estimated_people || 0) + " คน",
+        "ผู้ประสานงาน: " + (data.coordinator_name || "-"),
+        "โทร: " + (data.phone || "-"),
+        "อีเมล: " + (data.email || "-"),
+        "สถานะ: " + (data.status || "-"),
+        data.note ? "หมายเหตุ: " + data.note : ""
+      ].filter(Boolean);
+    } else if (type === "mobile") {
+      const { data, error } = await sb.from("mobile_unit_requests")
+        .select("request_id,organization_name,coordinator_name,phone,email,preferred_date,estimated_people,location_text,status,note")
+        .eq("request_id", sourceId).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("ไม่พบคำขอนี้");
+      title = "รายละเอียดคำขอออกหน่วยนอกสถานที่";
+      lines = [
+        "หน่วยงาน/ชุมชน: " + (data.organization_name || "-"),
+        "วันที่ต้องการ: " + isoToThaiDate(data.preferred_date, true),
+        "จำนวนโดยประมาณ: " + (data.estimated_people || 0) + " คน",
+        "สถานที่: " + (data.location_text || "-"),
+        "ผู้ประสานงาน: " + (data.coordinator_name || "-"),
+        "โทร: " + (data.phone || "-"),
+        "อีเมล: " + (data.email || "-"),
+        "สถานะ: " + (data.status || "-"),
+        data.note ? "หมายเหตุ: " + data.note : ""
+      ].filter(Boolean);
+    }
+  } catch (err) {
+    showModal({ title:"เปิดรายละเอียดไม่สำเร็จ", message:err?.message || String(err), iconText:"!" });
+    return;
+  }
+  showModal({
+    title,
+    message: lines.join("\n"),
+    iconText:"i",
+    primaryText:"ไปหน้าจัดการ",
+    secondaryText:"ปิด",
+    onPrimary:() => openNotificationTarget(type, sourceId)
+  });
 }
 
 async function markAllStaffNotificationsRead() {
@@ -3564,7 +3683,7 @@ async function loadStaffNotifications() {
     return '<article class="notification-item ' + meta.cls + (r.is_read ? ' is-read' : ' is-unread') + '">' +
       '<div class="notification-item-icon"><i class="bi ' + meta.icon + '"></i></div>' +
       '<div class="notification-item-copy"><div class="notification-item-top"><span>' + escapeHtml(meta.label) + '</span><time>' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</time></div><b>' + escapeHtml(r.title || meta.label) + '</b><p>' + escapeHtml(r.message || '') + '</p>' + (r.target_date ? '<small><i class="bi bi-calendar3"></i> ' + escapeHtml(isoToThaiDate(r.target_date, true)) + '</small>' : '') + '</div>' +
-      '<div class="notification-item-actions">' + (!r.is_read ? '<button type="button" class="btn btn-soft btn-sm" onclick=\'markStaffNotificationRead(' + idArg + ')\'>อ่านแล้ว</button>' : '') + '<button type="button" class="btn btn-search btn-sm" onclick=\'markStaffNotificationRead(' + idArg + ',' + typeArg + ',' + sourceArg + ')\'>เปิดรายการ</button></div>' +
+      '<div class="notification-item-actions">' + (!r.is_read ? '<button type="button" class="btn btn-soft btn-sm" onclick=\'markStaffNotificationRead(' + idArg + ')\'>อ่านแล้ว</button>' : '') + '<button type="button" class="btn btn-search btn-sm" onclick=\'viewStaffNotificationDetails(' + typeArg + ',' + sourceArg + ')\'>ดูรายละเอียด</button></div>' +
     '</article>';
   }).join('');
   await refreshStaffNotificationBadge();

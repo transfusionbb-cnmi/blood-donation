@@ -1660,3 +1660,9 @@ button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow
   .room-day-hours > i { font-size:.58rem; }
   .room-day-hours-lines > span { font-size:.49rem; white-space:normal; }
 }
+
+/* v15.6 — booking drill-down and clearer notification actions */
+.platelet-slot-mini.has-booking{width:100%;border:1px solid rgba(36,109,78,.18);cursor:pointer;font:inherit;text-align:left;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+.platelet-slot-mini.has-booking:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(28,86,61,.10);border-color:rgba(36,109,78,.36)}
+.platelet-slot-mini.has-booking.closed{border-color:rgba(156,42,47,.18)}
+.notification-item-actions .btn-search{min-width:112px}
