@@ -56,6 +56,7 @@ const STAFF_TAB_ROUTE_MAP = {
   groups: "group-requests",
   mobileUnits: "mobile-unit-requests",
   roomCalendar: "room-calendar",
+  screeningQuestions: "screening-questions",
   admin: "admin"
 };
 
@@ -142,7 +143,7 @@ sb.auth.onAuthStateChange(async function(event, session) {
   }
 });
 
-const screeningQuestions = [
+const defaultScreeningQuestions = [
   { text:"ท่านนอนหลับพักผ่อนเพียงพอหรือไม่ อย่างน้อยประมาณ 5 ชั่วโมง", passAnswer:"yes", failMessage:"ท่านควรพักผ่อนให้เพียงพอก่อนบริจาคโลหิต" },
   { text:"ภายใน 4 ชั่วโมงที่ผ่านมา ท่านได้รับประทานอาหารมาแล้วหรือไม่", passAnswer:"yes", failMessage:"แนะนำให้รับประทานอาหารก่อนมาบริจาคโลหิต และหลีกเลี่ยงอาหารไขมันสูง" },
   { text:"ขณะนี้ท่านรู้สึกสบายดี ไม่มีไข้ ไอ เจ็บคอ หรืออาการเจ็บป่วยชัดเจน ใช่หรือไม่", passAnswer:"yes", failMessage:"หากมีอาการไม่สบาย แนะนำให้พักผ่อนก่อน และติดต่อเจ้าหน้าที่หากต้องการสอบถามเพิ่มเติม" },
@@ -150,6 +151,9 @@ const screeningQuestions = [
   { text:"ในช่วง 7 วันที่ผ่านมา ท่านถอนฟัน ผ่าฟันคุด หรือทำหัตถการทางทันตกรรมหรือไม่", passAnswer:"no", failMessage:"กรุณาติดต่อเจ้าหน้าที่เพื่อประเมินระยะเวลาที่เหมาะสมก่อนบริจาคโลหิต" },
   { text:"สำหรับผู้หญิง: ท่านกำลังตั้งครรภ์ หลังคลอด หรืออยู่ระหว่างให้นมบุตรหรือไม่", passAnswer:"no", gender:"หญิง", failMessage:"กรุณาติดต่อเจ้าหน้าที่ก่อนจองคิว เพื่อประเมินความพร้อมในการบริจาคโลหิต" }
 ];
+let screeningQuestions = defaultScreeningQuestions.map(function(q){ return Object.assign({}, q); });
+let currentScreeningAdminRows = [];
+let screeningQuestionsLoadedAt = 0;
 
 function $(id) { return document.getElementById(id); }
 
@@ -200,6 +204,9 @@ function showPage(page, options) {
   if (page === "home") setTimeout(loadHomeRoomStatus, 30);
   if (page === "staff" && currentStaffProfile) {
     setTimeout(loadStaffDashboard, 50);
+  }
+  if (page === "screening") {
+    setTimeout(loadPublicScreeningQuestions, 20);
   }
   if (page === "groupBooking") {
     setTimeout(loadGroupPublicCalendar, 40);
@@ -705,7 +712,42 @@ async function loadHomeRoomStatus() {
 function showDonationChoice() {
   showPage("donationChoice");
 }
-function startPlateletScreening() { showPage("screening"); resetScreening(); }
+async function startPlateletScreening() {
+  showPage("screening");
+  await loadPublicScreeningQuestions();
+  resetScreening();
+}
+async function loadPublicScreeningQuestions(force) {
+  if (!force && screeningQuestionsLoadedAt && (Date.now() - screeningQuestionsLoadedAt) < 60000) return screeningQuestions;
+  try {
+    const { data, error } = await sb.from("screening_questions")
+      .select("id,question_text,pass_answer,fail_message,gender,sort_order")
+      .eq("is_active", true)
+      .order("sort_order", { ascending:true })
+      .order("created_at", { ascending:true });
+    if (error) throw error;
+    if (Array.isArray(data) && data.length) {
+      screeningQuestions = data.map(function(row){
+        return {
+          id: row.id,
+          text: row.question_text,
+          passAnswer: row.pass_answer,
+          failMessage: row.fail_message,
+          gender: row.gender || undefined,
+          sortOrder: row.sort_order
+        };
+      });
+      screeningQuestionsLoadedAt = Date.now();
+      return screeningQuestions;
+    }
+  } catch (err) {
+    console.warn("screening questions fallback", err);
+  }
+  screeningQuestions = defaultScreeningQuestions.map(function(q){ return Object.assign({}, q); });
+  screeningQuestionsLoadedAt = Date.now();
+  return screeningQuestions;
+}
+
 function startScreening() { startPlateletScreening(); }
 function resetScreening() {
   selectedGender = "";
@@ -1660,7 +1702,145 @@ function showStaffTab(tab, options) {
   if (tab === "groups") loadStaffGroupRequests();
   if (tab === "mobileUnits") loadStaffMobileUnitRequests();
   if (tab === "roomCalendar") loadRoomCalendarAdmin();
+  if (tab === "screeningQuestions") loadScreeningQuestionsAdmin();
   if (tab === "admin") adminLoadStaffAccessList();
+}
+
+function resetScreeningQuestionForm() {
+  if ($("screeningQuestionId")) $("screeningQuestionId").value = "";
+  if ($("screeningQuestionText")) $("screeningQuestionText").value = "";
+  if ($("screeningQuestionPass")) $("screeningQuestionPass").value = "yes";
+  if ($("screeningQuestionGender")) $("screeningQuestionGender").value = "";
+  if ($("screeningQuestionOrder")) {
+    const maxOrder = currentScreeningAdminRows.reduce(function(max, row){ return Math.max(max, Number(row.sort_order || 0)); }, 0);
+    $("screeningQuestionOrder").value = maxOrder + 10;
+  }
+  if ($("screeningQuestionActive")) $("screeningQuestionActive").value = "true";
+  if ($("screeningQuestionFail")) $("screeningQuestionFail").value = "";
+  if ($("screeningQuestionFormTitle")) $("screeningQuestionFormTitle").innerText = "เพิ่มคำถามใหม่";
+  if ($("screeningQuestionSaveBtn")) $("screeningQuestionSaveBtn").innerHTML = '<i class="bi bi-plus-circle"></i> เพิ่มคำถาม';
+  if ($("screeningQuestionFormResult")) $("screeningQuestionFormResult").style.display = "none";
+}
+
+function screeningGenderLabel(value) {
+  if (value === "ชาย") return "เฉพาะผู้ชาย";
+  if (value === "หญิง") return "เฉพาะผู้หญิง";
+  return "ทุกคน";
+}
+
+function screeningAnswerLabel(value) { return value === "no" ? "ไม่ใช่" : "ใช่"; }
+
+async function loadScreeningQuestionsAdmin() {
+  const box = $("screeningQuestionsAdminList");
+  if (!box) return;
+  box.innerHTML = '<div class="staff-result">กำลังโหลดคำถาม...</div>';
+  const { data, error } = await sb.from("screening_questions").select("*").order("sort_order", { ascending:true }).order("created_at", { ascending:true });
+  if (error) {
+    box.innerHTML = '<div class="staff-result error">โหลดคำถามไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>';
+    return;
+  }
+  currentScreeningAdminRows = data || [];
+  if (!currentScreeningAdminRows.length) {
+    box.innerHTML = '<div class="staff-result">ยังไม่มีคำถาม กรุณากด “เพิ่มคำถาม” ด้านบน</div>';
+    resetScreeningQuestionForm();
+    loadScreeningQuestionAudit();
+    return;
+  }
+  const rows = currentScreeningAdminRows.map(function(row, index){
+    const active = row.is_active !== false;
+    return '<div class="screening-admin-item ' + (active ? '' : 'is-inactive') + '">' +
+      '<div class="screening-admin-order">' + escapeHtml(row.sort_order) + '</div>' +
+      '<div class="screening-admin-main"><div class="screening-admin-title"><b>ข้อ ' + (index + 1) + '</b><span class="status-pill ' + (active ? 'success' : 'neutral') + '">' + (active ? 'เปิดใช้' : 'ปิดใช้') + '</span></div>' +
+      '<div class="screening-admin-question">' + escapeHtml(row.question_text) + '</div>' +
+      '<div class="screening-admin-meta"><span><i class="bi bi-check2-circle"></i> คำตอบที่ผ่าน: <b>' + screeningAnswerLabel(row.pass_answer) + '</b></span><span><i class="bi bi-person"></i> ' + screeningGenderLabel(row.gender) + '</span></div>' +
+      '<div class="screening-admin-fail"><small>ข้อความเมื่อไม่ผ่าน</small><span>' + escapeHtml(row.fail_message) + '</span></div></div>' +
+      '<div class="screening-admin-actions"><button type="button" class="btn btn-soft btn-sm" onclick="editScreeningQuestion(\'' + row.id + '\')"><i class="bi bi-pencil"></i> แก้ไข</button>' +
+      '<button type="button" class="btn ' + (active ? 'btn-outline-danger' : 'btn-outline-success') + ' btn-sm" onclick="toggleScreeningQuestionActive(\'' + row.id + '\',' + (!active) + ')"><i class="bi ' + (active ? 'bi-pause-circle' : 'bi-play-circle') + '"></i> ' + (active ? 'ปิดใช้' : 'เปิดใช้') + '</button></div></div>';
+  }).join("");
+  box.innerHTML = rows;
+  if (!$("screeningQuestionId").value) resetScreeningQuestionForm();
+  loadScreeningQuestionAudit();
+}
+
+function editScreeningQuestion(id) {
+  const row = currentScreeningAdminRows.find(function(item){ return item.id === id; });
+  if (!row) return;
+  $("screeningQuestionId").value = row.id;
+  $("screeningQuestionText").value = row.question_text || "";
+  $("screeningQuestionPass").value = row.pass_answer || "yes";
+  $("screeningQuestionGender").value = row.gender || "";
+  $("screeningQuestionOrder").value = row.sort_order || 10;
+  $("screeningQuestionActive").value = String(row.is_active !== false);
+  $("screeningQuestionFail").value = row.fail_message || "";
+  $("screeningQuestionFormTitle").innerText = "แก้ไขคำถาม";
+  $("screeningQuestionSaveBtn").innerHTML = '<i class="bi bi-check2-circle"></i> บันทึกการแก้ไข';
+  const form = $("screeningQuestionFormCard");
+  if (form) form.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+async function saveScreeningQuestion() {
+  const id = String($("screeningQuestionId").value || "").trim();
+  const question = String($("screeningQuestionText").value || "").trim();
+  const failMessage = String($("screeningQuestionFail").value || "").trim();
+  const passAnswer = $("screeningQuestionPass").value;
+  const gender = $("screeningQuestionGender").value || null;
+  const sortOrder = Number($("screeningQuestionOrder").value || 0);
+  const isActive = $("screeningQuestionActive").value === "true";
+  const box = $("screeningQuestionFormResult");
+  const btn = $("screeningQuestionSaveBtn");
+  if (!question) { setStaffResult(box, "กรุณากรอกคำถาม", false); return; }
+  if (!failMessage) { setStaffResult(box, "กรุณากรอกข้อความแนะนำเมื่อคำตอบไม่ผ่าน", false); return; }
+  if (!Number.isFinite(sortOrder) || sortOrder < 0) { setStaffResult(box, "ลำดับต้องเป็นตัวเลข 0 ขึ้นไป", false); return; }
+  showBusy(btn, true, id ? "บันทึกการแก้ไข" : "เพิ่มคำถาม", "กำลังบันทึก...");
+  const payload = {
+    question_text: question,
+    pass_answer: passAnswer,
+    fail_message: failMessage,
+    gender: gender,
+    sort_order: Math.round(sortOrder),
+    is_active: isActive
+  };
+  let result;
+  if (id) result = await sb.from("screening_questions").update(payload).eq("id", id).select("id").single();
+  else result = await sb.from("screening_questions").insert(payload).select("id").single();
+  showBusy(btn, false, id ? "บันทึกการแก้ไข" : "เพิ่มคำถาม", "กำลังบันทึก...");
+  if (result.error) { setStaffResult(box, "บันทึกไม่สำเร็จ\n" + result.error.message, false); return; }
+  setStaffResult(box, id ? "บันทึกการแก้ไขแล้ว" : "เพิ่มคำถามแล้ว", true);
+  screeningQuestionsLoadedAt = 0;
+  await loadScreeningQuestionsAdmin();
+  resetScreeningQuestionForm();
+}
+
+async function toggleScreeningQuestionActive(id, nextActive) {
+  const row = currentScreeningAdminRows.find(function(item){ return item.id === id; });
+  if (!row) return;
+  showModal({
+    title: nextActive ? "เปิดใช้คำถามนี้?" : "ปิดใช้คำถามนี้?",
+    message: nextActive ? "คำถามนี้จะกลับไปแสดงในแบบคัดกรองเบื้องต้น" : "คำถามจะไม่แสดงกับผู้บริจาค แต่ข้อมูลและประวัติการแก้ไขยังคงอยู่",
+    iconText: nextActive ? "✓" : "!",
+    secondaryText:"ยกเลิก",
+    primaryText: nextActive ? "เปิดใช้" : "ปิดใช้",
+    onPrimary: async function(){
+      const { error } = await sb.from("screening_questions").update({ is_active: !!nextActive }).eq("id", id);
+      if (error) { showModal({ title:"ทำรายการไม่สำเร็จ", message:error.message, iconText:"!" }); return; }
+      screeningQuestionsLoadedAt = 0;
+      await loadScreeningQuestionsAdmin();
+    }
+  });
+}
+
+async function loadScreeningQuestionAudit() {
+  const box = $("screeningQuestionAuditResult");
+  if (!box) return;
+  const { data, error } = await sb.rpc("screening_question_audit_feed", { p_limit: 30 });
+  if (error) { box.innerHTML = '<div class="staff-result error">โหลดประวัติไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>'; return; }
+  if (!data || !data.length) { box.innerHTML = '<div class="staff-result">ยังไม่มีประวัติการแก้ไข</div>'; return; }
+  box.innerHTML = '<div class="screening-audit-list">' + data.map(function(row){
+    const actionMap = { insert:"เพิ่ม", update:"แก้ไข", delete:"ลบ" };
+    const snapshot = row.new_data || row.old_data || {};
+    return '<div class="screening-audit-row"><div><b>' + escapeHtml(actionMap[row.action] || row.action) + '</b> · ' + escapeHtml(snapshot.question_text || "คำถาม") + '</div>' +
+      '<small>' + escapeHtml(row.actor_name || "เจ้าหน้าที่") + ' · ' + escapeHtml(formatBangkokLogTime(row.created_at, true)) + '</small></div>';
+  }).join("") + '</div>';
 }
 
 async function getExactCount(builder) {

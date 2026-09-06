@@ -1683,3 +1683,21 @@ button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow
   .booking-audit-item small{white-space:normal}
   .booking-row-actions .btn{width:100%;margin-right:0!important}
 }
+
+
+/* v15.8 - Screening question manager */
+.screening-question-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
+.screening-admin-item{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:16px;align-items:start;border:1px solid #e7ebee;border-radius:18px;padding:16px;margin-bottom:12px;background:#fff;box-shadow:0 8px 22px rgba(28,39,49,.035)}
+.screening-admin-item.is-inactive{background:#f7f8f9;opacity:.72}
+.screening-admin-order{width:42px;height:42px;border-radius:14px;background:#fff1f2;color:#c83d49;display:flex;align-items:center;justify-content:center;font-weight:800;border:1px solid #ffd8dc}
+.screening-admin-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.screening-admin-question{font-size:1.02rem;font-weight:700;color:#28343d;line-height:1.55;margin-bottom:8px}
+.screening-admin-meta{display:flex;gap:18px;flex-wrap:wrap;color:#63717b;font-size:.9rem;margin-bottom:9px}
+.screening-admin-fail{display:flex;flex-direction:column;gap:2px;background:#fafbfc;border-radius:12px;padding:10px 12px;color:#53616a}
+.screening-admin-fail small{color:#8a959d;font-weight:700}
+.screening-admin-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.screening-audit-list{display:flex;flex-direction:column;gap:8px}
+.screening-audit-row{padding:11px 13px;border:1px solid #edf0f2;border-radius:13px;background:#fbfcfc;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.screening-audit-row small{color:#7c8991;text-align:right}
+@media(max-width:900px){.screening-question-grid{grid-template-columns:1fr 1fr}.screening-admin-item{grid-template-columns:44px minmax(0,1fr)}.screening-admin-actions{grid-column:1/-1;justify-content:stretch}.screening-admin-actions .btn{flex:1}.screening-audit-row{align-items:flex-start;flex-direction:column}.screening-audit-row small{text-align:left}}
+@media(max-width:560px){.screening-question-grid{grid-template-columns:1fr}.screening-admin-item{padding:13px;gap:10px}.screening-admin-question{font-size:.96rem}}
