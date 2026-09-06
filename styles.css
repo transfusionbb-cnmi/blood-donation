@@ -1167,3 +1167,22 @@ button.platelet-day-cell:hover { border-color: #cfd6da; box-shadow: var(--shadow
   .qr-scanner-overlay { padding:0; align-items:flex-end; }
   .qr-scanner-sheet { width:100%; border-radius:26px 26px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom)); }
 }
+
+
+/* ===== v14.2 Read booking QR from saved image ===== */
+.qr-lookup-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.btn-qr-image { min-height:76px; border:1px solid #dfe4e7; background:#fff; color:#37434a; display:flex; align-items:center; justify-content:center; gap:14px; border-radius:18px; box-shadow:none; }
+.btn-qr-image:hover, .btn-qr-image:focus { border-color:#cbd3d7; background:#f8fafb; color:#20282d; }
+.btn-qr-image > i { font-size:1.55rem; color:#6f7f88; }
+.btn-qr-image span { display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; text-align:left; }
+.btn-qr-image b { font-size:1rem; }
+.btn-qr-image small { margin-top:5px; color:#7d898f; font-size:.74rem; font-weight:500; }
+.qr-image-status { margin:-2px 0 15px; padding:10px 12px; border-radius:12px; background:#f4f6f7; color:#56616a; display:flex; align-items:center; gap:8px; font-size:.78rem; }
+.qr-image-status.success { background:#eaf8f0; color:#216b4b; }
+.qr-image-status.error { background:#fff1f1; color:#b52a31; }
+.qr-image-status.loading { background:#f4f6f7; color:#56616a; }
+.qr-image-reader { position:fixed; left:-10000px; top:-10000px; width:320px; height:320px; overflow:hidden; opacity:.01; pointer-events:none; }
+
+@media (max-width:700px) {
+  .qr-lookup-actions { grid-template-columns:1fr; }
+}

@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v14.1 */
+/* CNMI Blood Donation Supabase Frontend v14.2 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -15,6 +15,7 @@ let lastDonorContext = null;
 let pendingDonorImport = null;
 let lastBookingResult = null;
 let activeQrScanner = null;
+let imageQrScanner = null;
 
 sb.auth.onAuthStateChange(async function(event, session) {
   if (event === "PASSWORD_RECOVERY") {
@@ -727,6 +728,81 @@ async function loadBookingFromQrToken(qrToken) {
   $("manageResult").style.display = "block";
   showPage("manage");
   return true;
+}
+
+function chooseQrImage() {
+  const input = $("qrImageFile");
+  if (!input) return;
+  input.value = "";
+  input.click();
+}
+
+function setQrImageStatus(message, state) {
+  const box = $("qrImageStatus");
+  if (!box) return;
+  if (!message) {
+    box.style.display = "none";
+    box.className = "qr-image-status";
+    box.innerText = "";
+    return;
+  }
+  box.style.display = "flex";
+  box.className = "qr-image-status" + (state ? " " + state : "");
+  box.innerHTML = '<i class="bi ' + (state === "success" ? "bi-check-circle" : state === "error" ? "bi-exclamation-circle" : "bi-image") + '"></i><span>' + escapeHtml(message) + '</span>';
+}
+
+async function handleQrImageSelection(event) {
+  const input = event && event.target ? event.target : $("qrImageFile");
+  const file = input && input.files && input.files[0] ? input.files[0] : null;
+  if (!file) return;
+
+  if (!file.type || !file.type.startsWith("image/")) {
+    setQrImageStatus("กรุณาเลือกรูปภาพที่มี QR Code", "error");
+    return;
+  }
+
+  setQrImageStatus("กำลังอ่าน QR Code จากรูป...", "loading");
+
+  // หากเปิดกล้องค้างอยู่ ให้ปิดก่อนอ่านรูป เพื่อไม่ให้กล้องแย่ง resource บนมือถือ
+  if (activeQrScanner) {
+    await closeQrScanner();
+  }
+
+  if (!window.Html5Qrcode) {
+    setQrImageStatus("อุปกรณ์นี้ยังอ่าน QR จากรูปไม่ได้ กรุณากรอกเลขนัดหมายแทน", "error");
+    return;
+  }
+
+  try {
+    if (imageQrScanner) {
+      try { await imageQrScanner.clear(); } catch (e) {}
+      imageQrScanner = null;
+    }
+
+    imageQrScanner = new Html5Qrcode("qrImageReader");
+    const decodedText = await imageQrScanner.scanFile(file, false);
+    const token = extractQrToken(decodedText);
+
+    try { await imageQrScanner.clear(); } catch (e) {}
+    imageQrScanner = null;
+
+    if (!token) {
+      setQrImageStatus("พบ QR Code แต่ไม่ใช่นัดหมายของ CNMI", "error");
+      return;
+    }
+
+    setQrImageStatus("อ่าน QR Code สำเร็จ กำลังเปิดนัดหมาย...", "success");
+    const found = await loadBookingFromQrToken(token);
+    if (!found) setQrImageStatus("ไม่พบนัดหมายจาก QR Code นี้", "error");
+  } catch (err) {
+    if (imageQrScanner) {
+      try { await imageQrScanner.clear(); } catch (e) {}
+      imageQrScanner = null;
+    }
+    setQrImageStatus("อ่าน QR Code จากรูปไม่สำเร็จ ลองเลือกรูปที่เห็น QR ชัดและไม่เบลอ", "error");
+  } finally {
+    if (input) input.value = "";
+  }
 }
 
 async function openQrScanner() {
@@ -2526,7 +2602,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=14.1").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=14.2").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
