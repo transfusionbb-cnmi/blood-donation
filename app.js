@@ -97,42 +97,57 @@ function cleanLookupText(value) { return String(value || "").replace(/[^A-Za-z0-
 function pad2(n) { return String(n).padStart(2, "0"); }
 function todayISO() { return new Date().toISOString().split("T")[0]; }
 
-function normalizePublicDobInput(value) {
-  let text = String(value || "").trim();
-  if (!text) return "";
+function isValidCalendarDate_(year, month, day) {
+  const dt = new Date(Date.UTC(year, month - 1, day));
+  return dt.getUTCFullYear() === year && dt.getUTCMonth() === month - 1 && dt.getUTCDate() === day;
+}
 
-  // ถ้าเป็น input date เดิมหรือ browser คืนค่า yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+function splitPublicDobParts_(value) {
+  const text = String(value || "").trim();
+  if (!text) return null;
 
-  text = text.replace(/[.\-]/g, "/").replace(/\s+/g, "");
-  const parts = text.split("/");
-  if (parts.length !== 3) return "";
-
-  let d = parseInt(parts[0], 10);
-  let m = parseInt(parts[1], 10);
-  let yRaw = String(parts[2] || "").trim();
-  let y = parseInt(yRaw, 10);
-
-  if (!d || !m || Number.isNaN(y)) return "";
-
-  // รองรับ พ.ศ.
-  if (y > 2400) y = y - 543;
-
-  // รองรับปี ค.ศ. 2 หลัก เช่น 35 = 2535/1992? สำหรับวันเกิดให้เดาเป็น 1900/2000 ตามปีปัจจุบัน
-  if (/^\d{1,2}$/.test(yRaw)) {
-    const currentYY = Number(new Date().getFullYear().toString().slice(-2));
-    y = y <= currentYY ? 2000 + y : 1900 + y;
+  // รองรับค่ารูปแบบ ISO ที่อาจมาจาก browser/โค้ดเดิม
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const isoParts = text.split("-");
+    return { d: isoParts[2], m: isoParts[1], y: isoParts[0] };
   }
 
-  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > new Date().getFullYear()) return "";
+  // กรอก 8 หลักติดกันได้ หรือจะมี / - . คั่นก็ได้
+  const digits = onlyDigits(text);
+  if (digits.length !== 8) return null;
+  return { d: digits.slice(0, 2), m: digits.slice(2, 4), y: digits.slice(4, 8) };
+}
+
+function normalizePublicDobInput(value) {
+  const parts = splitPublicDobParts_(value);
+  if (!parts) return "";
+
+  const d = parseInt(parts.d, 10);
+  const m = parseInt(parts.m, 10);
+  const enteredYear = parseInt(parts.y, 10);
+  if (!d || !m || Number.isNaN(enteredYear)) return "";
+
+  // ปี 24xx–26xx ให้ตีความเป็น พ.ศ.; ปี 19xx–20xx เป็น ค.ศ.
+  let y = enteredYear > 2400 ? enteredYear - 543 : enteredYear;
+  const currentYear = new Date().getFullYear();
+
+  if (y < 1900 || y > currentYear) return "";
+  if (!isValidCalendarDate_(y, m, d)) return "";
+
   return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
+function formatDobInputWhileTyping(value) {
+  const digits = onlyDigits(value).slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
 function formatDobInputOnBlur(input) {
   if (!input) return;
-  const iso = normalizePublicDobInput(input.value);
-  if (!iso) return;
-  input.value = isoToDDMMYYYY(iso);
+  // คงปีที่ผู้ใช้กรอกไว้ (พ.ศ. หรือ ค.ศ.) แต่จัด / ให้เป็นรูปแบบเดียวกัน
+  input.value = formatDobInputWhileTyping(input.value);
 }
 
 function last4FromInput(value) {
@@ -236,8 +251,12 @@ async function runCheckSearch() {
   const phoneLast4 = last4FromInput($("phoneLast4Check").value);
   const btn = $("btnCheckSearch");
 
-  if (!donorId || !dob || phoneLast4.length !== 4) {
-    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Donor ID วันเกิดเป็น วัน/เดือน/ปี และเบอร์โทรศัพท์หรือ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+  if (!donorId || phoneLast4.length !== 4) {
+    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Donor ID และเบอร์โทรศัพท์หรือ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+    return;
+  }
+  if (!dob) {
+    showModal({ title:"ตรวจสอบวันเกิด", message:"กรุณากรอกวันเกิดให้ครบ 8 หลัก และตรวจสอบว่าเป็นวันที่จริง ระบบรองรับทั้ง พ.ศ. และ ค.ศ.", iconText:"!" });
     return;
   }
 
@@ -356,8 +375,12 @@ async function runForgotSearch() {
   const phoneLast4 = last4FromInput($("phoneLast4Forgot").value);
   const btn = $("btnForgotSearch");
 
-  if (!idDoc || !dob || phoneLast4.length !== 4) {
-    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกเลขเอกสาร วันเกิดเป็น วัน/เดือน/ปี และเบอร์โทรศัพท์หรือ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+  if (!idDoc || phoneLast4.length !== 4) {
+    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกเลขเอกสาร และเบอร์โทรศัพท์หรือ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+    return;
+  }
+  if (!dob) {
+    showModal({ title:"ตรวจสอบวันเกิด", message:"กรุณากรอกวันเกิดให้ครบ 8 หลัก และตรวจสอบว่าเป็นวันที่จริง ระบบรองรับทั้ง พ.ศ. และ ค.ศ.", iconText:"!" });
     return;
   }
 
@@ -1938,7 +1961,7 @@ function initInputs() {
     if (!input) return;
     input.addEventListener("blur", () => formatDobInputOnBlur(input));
     input.addEventListener("input", () => {
-      input.value = String(input.value || "").replace(/[^0-9/.-]/g, "").slice(0, 10);
+      input.value = formatDobInputWhileTyping(input.value);
     });
   });
 
@@ -2034,7 +2057,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=13.1").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=13.2").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
