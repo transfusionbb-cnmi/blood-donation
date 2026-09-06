@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=14.0" rel="stylesheet">
+  <link href="styles.css?v=14.1" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -297,23 +297,50 @@
         <button type="button" id="btnConfirmBooking" class="btn btn-search w-100" onclick="submitBooking()">ยืนยันการจอง <i class="bi bi-arrow-right"></i></button>
       </div>
     </div>
+    <div id="pageBookingSuccess" class="app-page">
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-x-lg"></i></button>
+        <div><div class="page-kicker">จองคิวสำเร็จ</div><h2 class="page-title">เก็บ QR นี้ไว้ใช้วันนัด</h2><p class="page-subtitle">สแกนเพื่อเปิดรายละเอียดนัดหมายได้ทันที</p></div>
+      </div>
+      <div class="card main-card booking-success-card p-3 p-md-4 mb-4">
+        <div class="booking-success-icon"><i class="bi bi-check-lg"></i></div>
+        <div class="booking-code-label">เลขนัดหมาย</div>
+        <div id="successBookingCode" class="booking-code-value">-</div>
+        <div id="bookingQrCode" class="booking-qr-box" aria-label="QR Code นัดหมาย"></div>
+        <div class="booking-qr-help"><i class="bi bi-phone"></i> ใช้กล้องโทรศัพท์หรือเมนู “สแกน QR Code” ในเว็บนี้ได้</div>
+        <div class="booking-summary-list success-summary">
+          <div><span>ชื่อผู้จอง</span><b id="successBookingName">-</b></div>
+          <div><span>วันที่</span><b id="successBookingDate">-</b></div>
+          <div><span>เวลา</span><b id="successBookingTime">-</b></div>
+          <div><span>ประเภท</span><b>บริจาคเกล็ดเลือด</b></div>
+        </div>
+        <div class="booking-success-actions">
+          <button type="button" class="btn btn-soft" onclick="copyBookingCode()"><i class="bi bi-copy"></i> คัดลอกเลขนัดหมาย</button>
+          <button type="button" class="btn btn-soft" onclick="downloadBookingQr()"><i class="bi bi-download"></i> บันทึก QR</button>
+          <button type="button" class="btn btn-search" onclick="shareBooking()"><i class="bi bi-share"></i> แชร์นัดหมาย</button>
+        </div>
+        <button type="button" class="clear-action mt-3" onclick="showPage('home')"><i class="bi bi-house"></i> กลับหน้าหลัก</button>
+      </div>
+    </div>
     <div id="pageManage" class="app-page">
       <div class="page-head mb-3">
         <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
-        <div><div class="page-kicker">นัดหมายเกล็ดเลือด</div><h2 class="page-title">ดูหรือยกเลิกคิว</h2><p class="page-subtitle">ใช้ Booking ID และเบอร์โทร 4 ตัวท้าย</p></div>
+        <div><div class="page-kicker">นัดหมายเกล็ดเลือด</div><h2 class="page-title">ดูหรือยกเลิกคิว</h2><p class="page-subtitle">สแกน QR ได้ทันที หรือใช้เลขนัดหมาย + เบอร์โทร 4 ตัวท้าย</p></div>
       </div>
       <div class="card main-card p-3 p-md-4 mb-4">
-        <div class="form-step-title"><span>1</span><div><b>ค้นหานัดหมาย</b><small>ข้อมูลอยู่ในหน้าสรุปหลังจองสำเร็จ</small></div></div>
-        <div class="field-block"><label class="form-label">Booking ID</label><div class="input-with-icon"><i class="bi bi-ticket-perforated"></i><input type="text" id="manageBookingId" class="form-control" placeholder="เช่น BK202609051030001"></div></div>
-        <div class="field-block"><label class="form-label">เบอร์โทร 4 ตัวท้าย</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="managePhoneLast4" class="form-control" maxlength="4" placeholder="เช่น 7556" inputmode="numeric"></div></div>
+        <div class="form-step-title"><span>1</span><div><b>ค้นหานัดหมาย</b><small>เลือกสแกน QR หรือกรอกเลขนัดหมาย</small></div></div>
+        <button type="button" class="btn btn-qr-scan w-100 mb-3" onclick="openQrScanner()"><i class="bi bi-qr-code-scan"></i><span><b>สแกน QR Code</b><small>เปิดกล้องเพื่อดูนัดหมายทันที</small></span></button>
+        <div class="manage-or"><span>หรือ</span></div>
+        <div class="field-block"><label class="form-label">เลขนัดหมาย</label><div class="input-with-icon"><i class="bi bi-ticket-perforated"></i><input type="text" id="manageBookingId" class="form-control" placeholder="กรอกเลขนัดหมายจากหน้าสรุป" autocapitalize="characters" spellcheck="false"></div></div>
+        <div class="field-block"><label class="form-label">เบอร์โทร 4 ตัวท้าย</label><div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="managePhoneLast4" class="form-control" maxlength="4" placeholder="กรอก 4 ตัวท้าย" inputmode="numeric"></div></div>
         <button type="button" id="btnFindBooking" class="btn btn-search w-100" onclick="findBookingUI()">ตรวจสอบนัดหมาย <i class="bi bi-search"></i></button>
         <button type="button" class="clear-action mt-3" onclick="clearManageBooking()"><i class="bi bi-arrow-counterclockwise"></i> ล้างข้อมูล</button>
       </div>
-      <div id="manageNotFoundCard" class="card main-card status-card status-neutral" style="display:none;"><div class="status-icon"><i class="bi bi-search"></i></div><h5>ไม่พบรายการจอง</h5><p>ตรวจสอบ Booking ID และเบอร์โทร 4 ตัวท้ายอีกครั้ง</p></div>
+      <div id="manageNotFoundCard" class="card main-card status-card status-neutral" style="display:none;"><div class="status-icon"><i class="bi bi-search"></i></div><h5>ไม่พบรายการจอง</h5><p>ตรวจสอบเลขนัดหมายและเบอร์โทร 4 ตัวท้ายอีกครั้ง</p></div>
       <div id="manageResult" class="card result-card p-4 mb-4" style="display:none;">
         <div class="section-heading mb-3"><div><span class="section-number"><i class="bi bi-check-lg"></i></span><b>รายละเอียดนัดหมาย</b></div></div>
         <div class="booking-summary-list">
-          <div><span>เลขที่จอง</span><b id="manageDisplayBookingId"></b></div>
+          <div><span>เลขนัดหมาย</span><b id="manageDisplayBookingId"></b></div>
           <div><span>ชื่อผู้จอง</span><b id="manageDisplayName"></b></div>
           <div><span>วันที่ / เวลา</span><b id="manageDisplayDateTime"></b></div>
           <div><span>สถานะ</span><b id="manageDisplayStatus"></b></div>
@@ -500,6 +527,15 @@
     <button type="button" data-nav-page="info" onclick="showPage('info')"><i class="bi bi-telephone"></i><b>ติดต่อ</b></button>
   </nav>
 
+  <div id="qrScannerOverlay" class="qr-scanner-overlay" aria-hidden="true">
+    <div class="qr-scanner-sheet">
+      <div class="qr-scanner-head"><div><span>QR SCANNER</span><h3>สแกน QR นัดหมาย</h3><p>วาง QR ให้อยู่ในกรอบ กล้องจะอ่านให้อัตโนมัติ</p></div><button type="button" class="scanner-close" onclick="closeQrScanner()" aria-label="ปิด"><i class="bi bi-x-lg"></i></button></div>
+      <div id="qrReader" class="qr-reader"></div>
+      <div id="qrScannerStatus" class="qr-scanner-status">กำลังเปิดกล้อง...</div>
+      <button type="button" class="btn btn-soft w-100 mt-3" onclick="closeQrScanner()">ปิดกล้อง</button>
+    </div>
+  </div>
+
   <div id="appModal" class="modal-screen">
     <div class="modal-box">
       <div id="modalIcon" class="modal-icon">!</div>
@@ -511,7 +547,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="config.js?v=14.0"></script>
-  <script src="app.js?v=14.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="config.js?v=14.1"></script>
+  <script src="app.js?v=14.1"></script>
 </body>
 </html>

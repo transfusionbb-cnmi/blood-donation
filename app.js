@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v14.0 */
+/* CNMI Blood Donation Supabase Frontend v14.1 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -13,6 +13,8 @@ let currentStaffProfile = null;
 let pendingPasswordRecovery = false;
 let lastDonorContext = null;
 let pendingDonorImport = null;
+let lastBookingResult = null;
+let activeQrScanner = null;
 
 sb.auth.onAuthStateChange(async function(event, session) {
   if (event === "PASSWORD_RECOVERY") {
@@ -62,7 +64,7 @@ function modalSecondaryClick() { closeModal(); if (modalSecondaryCallback) { con
 function showPage(page) {
   const pages = {
     home:"pageHome", check:"pageCheck", donationChoice:"pageDonationChoice", groupBooking:"pageGroupBooking",
-    screening:"pageScreening", booking:"pageBooking", manage:"pageManage", info:"pageInfo",
+    screening:"pageScreening", booking:"pageBooking", bookingSuccess:"pageBookingSuccess", manage:"pageManage", info:"pageInfo",
     staffLogin:"pageStaffLogin", staffChangePassword:"pageStaffChangePassword", staff:"pageStaff"
   };
   Object.keys(pages).forEach(function(key){ const el = $(pages[key]); if (el) el.classList.remove("active"); });
@@ -80,7 +82,7 @@ function showPage(page) {
 function updateMobileNav(page) {
   document.querySelectorAll(".mobile-bottom-nav button").forEach(function(btn) {
     const targetPage = btn.getAttribute("data-nav-page");
-    const bookingPages = ["donationChoice", "groupBooking", "screening", "booking"];
+    const bookingPages = ["donationChoice", "groupBooking", "screening", "booking", "bookingSuccess"];
     const active = targetPage === page || (targetPage === "donationChoice" && bookingPages.includes(page));
     btn.classList.toggle("active", active);
     if (active) btn.setAttribute("aria-current", "page");
@@ -594,6 +596,189 @@ function renderBookingSlots(slots) {
   }).join("");
 }
 
+function getBookingQrUrl(qrToken) {
+  const base = getAuthRedirectUrl().replace(/[#?].*$/, "");
+  return base + "#manage?qr=" + encodeURIComponent(String(qrToken || "").trim());
+}
+
+function renderBookingSuccess(data, name) {
+  lastBookingResult = {
+    bookingId: data.bookingId || "",
+    bookingCode: data.bookingCode || data.bookingId || "",
+    qrToken: data.qrToken || "",
+    bookingDate: data.bookingDate || "",
+    timeSlot: data.timeSlot || "",
+    name: name || ""
+  };
+
+  if ($("successBookingCode")) $("successBookingCode").innerText = lastBookingResult.bookingCode || "-";
+  if ($("successBookingName")) $("successBookingName").innerText = lastBookingResult.name || "-";
+  if ($("successBookingDate")) $("successBookingDate").innerText = isoToThaiDate(lastBookingResult.bookingDate, true);
+  if ($("successBookingTime")) $("successBookingTime").innerText = (lastBookingResult.timeSlot || "-") + " น.";
+
+  const qrBox = $("bookingQrCode");
+  if (qrBox) {
+    qrBox.innerHTML = "";
+    if (lastBookingResult.qrToken && window.QRCode) {
+      try {
+        new QRCode(qrBox, {
+          text: getBookingQrUrl(lastBookingResult.qrToken),
+          width: 220,
+          height: 220,
+          colorDark: "#1f2933",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        qrBox.innerHTML = '<div class="qr-fallback"><i class="bi bi-exclamation-circle"></i><span>สร้าง QR ไม่สำเร็จ<br>กรุณาเก็บเลขนัดหมายไว้</span></div>';
+      }
+    } else {
+      qrBox.innerHTML = '<div class="qr-fallback"><i class="bi bi-wifi-off"></i><span>ยังโหลดตัวสร้าง QR ไม่สำเร็จ<br>เลขนัดหมายยังใช้งานได้ตามปกติ</span></div>';
+    }
+  }
+  showPage("bookingSuccess");
+}
+
+async function copyBookingCode() {
+  if (!lastBookingResult || !lastBookingResult.bookingCode) return;
+  try {
+    await navigator.clipboard.writeText(lastBookingResult.bookingCode);
+    showModal({ title:"คัดลอกแล้ว", message:"คัดลอกเลขนัดหมาย " + lastBookingResult.bookingCode + " แล้ว", iconText:"✓", type:"success" });
+  } catch (err) {
+    showModal({ title:"เลขนัดหมาย", message:lastBookingResult.bookingCode, iconText:"#" });
+  }
+}
+
+function getQrDataUrl() {
+  const box = $("bookingQrCode");
+  if (!box) return "";
+  const canvas = box.querySelector("canvas");
+  if (canvas && canvas.toDataURL) return canvas.toDataURL("image/png");
+  const img = box.querySelector("img");
+  return img ? (img.src || "") : "";
+}
+
+function downloadBookingQr() {
+  if (!lastBookingResult) return;
+  const url = getQrDataUrl();
+  if (!url) {
+    showModal({ title:"ยังบันทึก QR ไม่ได้", message:"กรุณารอให้ QR แสดงครบก่อน หรือใช้เลขนัดหมายแทน", iconText:"!" });
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "CNMI-Platelet-" + (lastBookingResult.bookingCode || "booking") + ".png";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+async function shareBooking() {
+  if (!lastBookingResult) return;
+  const text = "CNMI Blood Donation\nเลขนัดหมาย: " + lastBookingResult.bookingCode +
+    "\nวันที่: " + isoToThaiDate(lastBookingResult.bookingDate, true) +
+    "\nเวลา: " + lastBookingResult.timeSlot + " น.";
+  const url = lastBookingResult.qrToken ? getBookingQrUrl(lastBookingResult.qrToken) : getAuthRedirectUrl();
+  if (navigator.share) {
+    try { await navigator.share({ title:"นัดหมายบริจาคเกล็ดเลือด CNMI", text:text, url:url }); return; } catch (err) { if (err && err.name === "AbortError") return; }
+  }
+  try {
+    await navigator.clipboard.writeText(text + "\n" + url);
+    showModal({ title:"คัดลอกข้อมูลนัดหมายแล้ว", message:"สามารถนำไปวางใน LINE หรือแอปอื่นได้เลย", iconText:"✓", type:"success" });
+  } catch (err) {
+    showModal({ title:"ข้อมูลนัดหมาย", message:text, iconText:"✓", type:"success" });
+  }
+}
+
+function extractQrToken(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const direct = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.exec(text);
+  if (direct) return direct[0];
+  const match = /(?:[?#&]|^)qr=([0-9a-f-]{36})(?:&|$)/i.exec(text);
+  return match ? match[1] : "";
+}
+
+async function loadBookingFromQrToken(qrToken) {
+  const token = extractQrToken(qrToken) || String(qrToken || "").trim();
+  if (!token) {
+    showModal({ title:"อ่าน QR ไม่ได้", message:"QR นี้ไม่ใช่ QR นัดหมายของ CNMI", iconText:"!" });
+    return false;
+  }
+  $("manageResult").style.display = "none";
+  $("manageNotFoundCard").style.display = "none";
+  currentManageBooking = null;
+
+  const { data, error } = await sb.rpc("find_booking_by_qr", { p_qr_token: token });
+  if (error || !data || !data.found) {
+    $("manageNotFoundCard").style.display = "block";
+    return false;
+  }
+
+  const displayCode = data.bookingCode || data.bookingId || "-";
+  currentManageBooking = { bookingId:data.bookingId || displayCode, bookingCode:displayCode, phoneLast4:"", status:data.status || "", qrToken:token };
+  if ($("manageBookingId")) $("manageBookingId").value = displayCode;
+  if ($("managePhoneLast4")) $("managePhoneLast4").value = "";
+  $("manageDisplayBookingId").innerText = displayCode;
+  $("manageDisplayName").innerText = data.name || "-";
+  $("manageDisplayDateTime").innerText = isoToThaiDate(data.bookingDate, true) + " เวลา " + (data.timeSlot || "-");
+  $("manageDisplayStatus").innerText = data.status || "-";
+  $("btnCancelBooking").style.display = (data.status || "") === "ยกเลิก" ? "none" : "block";
+  $("manageResult").style.display = "block";
+  showPage("manage");
+  return true;
+}
+
+async function openQrScanner() {
+  const overlay = $("qrScannerOverlay");
+  const status = $("qrScannerStatus");
+  if (!overlay) return;
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden", "false");
+  if (status) status.innerText = "กำลังเปิดกล้อง...";
+
+  if (!window.Html5Qrcode) {
+    if (status) status.innerText = "อุปกรณ์นี้ยังเปิดตัวสแกนไม่ได้ กรุณาใช้กล้องโทรศัพท์สแกน QR หรือกรอกเลขนัดหมาย";
+    return;
+  }
+
+  try {
+    if (activeQrScanner) { try { await activeQrScanner.stop(); } catch (e) {} try { await activeQrScanner.clear(); } catch (e) {} }
+    activeQrScanner = new Html5Qrcode("qrReader");
+    await activeQrScanner.start(
+      { facingMode:"environment" },
+      { fps:10, qrbox:{ width:240, height:240 }, aspectRatio:1.0 },
+      async function(decodedText) {
+        const token = extractQrToken(decodedText);
+        if (!token) {
+          if (status) status.innerText = "พบ QR แต่ไม่ใช่นัดหมาย CNMI";
+          return;
+        }
+        if (status) status.innerText = "อ่าน QR สำเร็จ";
+        await closeQrScanner();
+        await loadBookingFromQrToken(token);
+      },
+      function() {}
+    );
+    if (status) status.innerText = "วาง QR ให้อยู่กลางกรอบ";
+  } catch (err) {
+    if (status) status.innerText = "เปิดกล้องไม่ได้ กรุณาอนุญาต Camera หรือใช้กล้องโทรศัพท์สแกน QR";
+  }
+}
+
+async function closeQrScanner() {
+  const overlay = $("qrScannerOverlay");
+  if (activeQrScanner) {
+    try { await activeQrScanner.stop(); } catch (err) {}
+    try { await activeQrScanner.clear(); } catch (err) {}
+    activeQrScanner = null;
+  }
+  if (overlay) {
+    overlay.classList.remove("show");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+}
+
 async function submitBooking() {
   const name = $("bookingName").value.trim();
   const donorId = $("bookingDonorId").value.trim();
@@ -623,12 +808,7 @@ async function submitBooking() {
     return;
   }
 
-  showModal({
-    title:"จองคิวเกล็ดเลือดสำเร็จครับ",
-    message:"เลขที่จอง: " + data.bookingId + "\nวันที่: " + isoToThaiDate(data.bookingDate, true) + "\nเวลา: " + data.timeSlot + " น.\n\nกรุณาบันทึกเลขที่จองไว้สำหรับตรวจสอบหรือยกเลิกนัดหมาย",
-    iconText:"✓",
-    type:"success"
-  });
+  renderBookingSuccess(data, name);
   $("bookingName").value = "";
   $("bookingDonorId").value = "";
   $("bookingPhone").value = "";
@@ -696,7 +876,7 @@ async function findBookingUI() {
   const btn = $("btnFindBooking");
 
   if (!bookingId || phoneLast4.length !== 4) {
-    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอก Booking ID และเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบครับ", iconText:"!" });
+    showModal({ title:"กรอกข้อมูลไม่ครบ", message:"กรุณากรอกเลขนัดหมายและเบอร์โทรศัพท์ 4 ตัวท้ายให้ครบ", iconText:"!" });
     return;
   }
 
@@ -713,8 +893,9 @@ async function findBookingUI() {
     return;
   }
 
-  currentManageBooking = { bookingId, phoneLast4, status:data.status || "" };
-  $("manageDisplayBookingId").innerText = data.bookingId || "-";
+  const displayCode = data.bookingCode || data.bookingId || bookingId;
+  currentManageBooking = { bookingId:data.bookingId || bookingId, bookingCode:displayCode, phoneLast4, status:data.status || "" };
+  $("manageDisplayBookingId").innerText = displayCode || "-";
   $("manageDisplayName").innerText = data.name || "-";
   $("manageDisplayDateTime").innerText = isoToThaiDate(data.bookingDate, true) + " เวลา " + (data.timeSlot || "-");
   $("manageDisplayStatus").innerText = data.status || "-";
@@ -724,12 +905,18 @@ async function findBookingUI() {
 
 function confirmCancelBooking() {
   if (!currentManageBooking) {
-    showModal({ title:"ไม่พบรายการจอง", message:"กรุณาตรวจสอบนัดหมายก่อนยกเลิกครับ", iconText:"!" });
+    showModal({ title:"ไม่พบรายการจอง", message:"กรุณาตรวจสอบนัดหมายก่อนยกเลิก", iconText:"!" });
     return;
   }
+  const enteredLast4 = onlyDigits($("managePhoneLast4")?.value || currentManageBooking.phoneLast4 || "");
+  if (enteredLast4.length !== 4) {
+    showModal({ title:"ยืนยันก่อนยกเลิก", message:"กรุณากรอกเบอร์โทร 4 ตัวท้ายก่อนยกเลิกนัดหมาย", iconText:"!" });
+    return;
+  }
+  currentManageBooking.phoneLast4 = enteredLast4;
   showModal({
     title:"ยืนยันการยกเลิกนัดหมาย",
-    message:"ต้องการยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " ใช่หรือไม่",
+    message:"ต้องการยกเลิกนัดหมาย " + (currentManageBooking.bookingCode || currentManageBooking.bookingId) + " ใช่หรือไม่",
     iconText:"!",
     secondaryText:"กลับไปตรวจสอบ",
     primaryText:"ยืนยันยกเลิก",
@@ -753,7 +940,7 @@ async function cancelBookingUI() {
 
   showModal({
     title:"ยกเลิกนัดหมายสำเร็จ",
-    message:"ระบบได้ยกเลิกนัดหมายเลขที่จอง " + currentManageBooking.bookingId + " แล้ว",
+    message:"ระบบได้ยกเลิกนัดหมาย " + (currentManageBooking.bookingCode || currentManageBooking.bookingId) + " แล้ว",
     iconText:"✓",
     type:"success",
     onPrimary:function(){ findBookingUI(); loadBookingSlots(); }
@@ -1849,7 +2036,7 @@ async function loadStaffBookings() {
 
   box.innerHTML = '<div class="staff-result">กำลังโหลด...</div>';
   const { data, error } = await sb.from("bookings")
-    .select("booking_id,full_name,phone,donor_id,booking_date,time_slot,donation_type,status,note")
+    .select("booking_id,public_code,full_name,phone,donor_id,booking_date,time_slot,donation_type,status,note")
     .eq("booking_date", date)
     .eq("donation_type", "Platelet")
     .order("time_slot", { ascending:true });
@@ -1861,7 +2048,7 @@ async function loadStaffBookings() {
     box.innerHTML = '<div class="staff-result">ไม่พบรายการจองเกล็ดเลือดในวันนี้</div>';
     return;
   }
-  box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>เวลา</th><th>ชื่อ</th><th>โทร</th><th>Donor ID</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>' +
+  box.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>เวลา</th><th>เลขนัด</th><th>ชื่อ</th><th>โทร</th><th>Donor ID</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>' +
     data.map(r => {
       const safeId = String(r.booking_id || "").replace(/'/g, "\\'");
       const statusClass = r.status === 'ต้องติดต่อ' ? 'booking-status-contact' : (r.status === 'ยกเลิก' ? 'booking-status-cancel' : 'booking-status-ok');
@@ -1870,6 +2057,7 @@ async function loadStaffBookings() {
         : '-';
       return '<tr>' +
         '<td data-label="เวลา">' + escapeHtml(String(r.time_slot).slice(0,5)) + '</td>' +
+        '<td data-label="เลขนัด">' + escapeHtml(r.public_code || r.booking_id || '') + '</td>' +
         '<td data-label="ชื่อ">' + escapeHtml(r.full_name) + '</td>' +
         '<td data-label="โทร"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a></td>' +
         '<td data-label="Donor ID">' + escapeHtml(r.donor_id || '') + '</td>' +
@@ -2338,7 +2526,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=13.2").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=14.1").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
@@ -2355,6 +2543,13 @@ document.addEventListener("DOMContentLoaded", async function() {
   const hashText = String(window.location.hash || "") + " " + String(window.location.search || "");
   if (pendingPasswordRecovery || hashText.includes("type=recovery")) {
     showPage("staffChangePassword");
+    return;
+  }
+
+  const qrTokenFromUrl = extractQrToken(String(window.location.hash || "") + "&" + String(window.location.search || ""));
+  if (qrTokenFromUrl) {
+    showPage("manage");
+    await loadBookingFromQrToken(qrTokenFromUrl);
     return;
   }
 
