@@ -27,7 +27,7 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at 50% -10%, rgba(217,47,53,.055), transparent 360px),
+    radial-gradient(circle at 50% -10%, rgba(201,65,73,.045), transparent 360px),
     var(--cnmi-bg);
   color: var(--cnmi-text);
   font-family: 'Noto Sans Thai', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1185,4 +1185,248 @@ button.platelet-day-cell:hover { border-color: #cfd6da; box-shadow: var(--shadow
 
 @media (max-width:700px) {
   .qr-lookup-actions { grid-template-columns:1fr; }
+}
+
+/* =========================================================
+   CNMI Donor v15.0 — softer blood-service UI + calendars/logs
+   ========================================================= */
+
+/* Softer blood-red palette: keep red for clinical identity, reduce harshness on large surfaces. */
+:root {
+  --cnmi-red: #c94149;
+  --cnmi-red-dark: #a92f36;
+  --cnmi-red-soft: #fff3f4;
+  --cnmi-bg: #f7f6f5;
+  --cnmi-line: #ebe7e7;
+  --shadow-red: 0 12px 28px rgba(201, 65, 73, .16);
+}
+body {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(201,65,73,.045), transparent 390px),
+    var(--cnmi-bg);
+}
+.btn-search {
+  background: linear-gradient(135deg, var(--cnmi-red) 0%, #d64d55 100%);
+  border-color: transparent;
+}
+.brand-mark, .primary-menu .menu-symbol { background: #fff0f1; }
+.home-menu-card.calendar-menu .menu-symbol { background:#f7f0ed; color:#a7544d; }
+
+/* Admin/Staff preview switch */
+.btn-role-switch {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  border:1px solid #ead6d8;
+  background:#fff7f7;
+  color:var(--cnmi-red-dark);
+  font-weight:800;
+  border-radius:14px;
+}
+.btn-role-switch.active {
+  background:#f0f4f5;
+  color:#45545d;
+  border-color:#d7e0e3;
+}
+.staff-profile-pill.staff-preview-mode {
+  background:#f2f5f6;
+  border-color:#dce4e7;
+  color:#47545b;
+}
+
+/* Friendly import logs */
+.friendly-log-box { white-space:normal !important; }
+.friendly-log-list { display:grid; gap:10px; }
+.friendly-log-card {
+  border:1px solid var(--cnmi-line);
+  border-radius:18px;
+  background:#fff;
+  padding:14px 15px;
+  box-shadow:0 4px 14px rgba(38,45,50,.035);
+}
+.friendly-log-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+.friendly-log-top > div { display:grid; gap:2px; }
+.friendly-log-top > div > b { font-size:.8rem; color:var(--cnmi-muted); font-weight:650; }
+.friendly-log-top > i { color:#9aabb3; font-size:1.25rem; }
+.friendly-log-type { font-weight:800; color:var(--cnmi-text); font-size:.94rem; }
+.friendly-log-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.friendly-log-stats span {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:8px 10px; border-radius:12px; background:#f6f7f8;
+}
+.friendly-log-stats small { color:var(--cnmi-muted); font-size:.72rem; }
+.friendly-log-stats b { font-size:1rem; }
+.friendly-log-file {
+  display:flex; align-items:center; gap:7px; margin-top:9px; color:#66747c; font-size:.78rem;
+  overflow-wrap:anywhere;
+}
+.friendly-log-file i { color:#8e9ca4; }
+.friendly-log-meta-line {
+  display:flex; justify-content:space-between; gap:10px; border-top:1px dashed var(--cnmi-line);
+  margin-top:9px; padding-top:9px; font-size:.8rem;
+}
+.friendly-log-meta-line span { color:var(--cnmi-muted); }
+.log-system-details { margin-top:9px; font-size:.75rem; color:#758188; }
+.log-system-details summary { cursor:pointer; font-weight:700; }
+.log-system-details div { margin-top:5px; overflow-wrap:anywhere; }
+.log-empty { min-height:92px; display:flex; align-items:center; justify-content:center; gap:9px; color:#8a959c; text-align:center; }
+.log-empty i { font-size:1.2rem; }
+.mini-pager { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.mini-pager span { color:var(--cnmi-muted); font-size:.78rem; font-weight:700; }
+.log-day-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:13px; }
+.log-day-heading > div { display:grid; }
+.log-day-heading span { color:var(--cnmi-muted); font-size:.75rem; }
+.log-day-heading b { font-size:1rem; }
+.import-log-filter { grid-template-columns:minmax(180px,240px) minmax(180px,260px) auto; align-items:end; }
+
+/* Public Whole Blood group availability */
+.public-calendar-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+.public-calendar-head h4 { margin:2px 0 3px; font-weight:800; font-size:1.08rem; }
+.public-calendar-head p, .public-calendar-head small { margin:0; color:var(--cnmi-muted); font-size:.78rem; }
+.public-month-picker { width:min(210px, 42%); flex:0 0 auto; }
+.public-availability-calendar { margin-top:16px; }
+.availability-calendar-head, .availability-calendar-grid {
+  display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px;
+}
+.availability-calendar-head { margin-bottom:6px; }
+.availability-calendar-head > div { text-align:center; color:#79858c; font-size:.68rem; font-weight:800; padding:4px 0; }
+.group-public-day {
+  min-height:68px; border-radius:14px; border:1px solid var(--cnmi-line); background:#f7f8f8;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 3px;
+  color:#7b868d; text-align:center;
+}
+button.group-public-day { cursor:pointer; }
+.group-public-day b { font-size:.88rem; color:inherit; }
+.group-public-day span { font-size:.62rem; line-height:1.2; }
+.group-public-day.open { background:#eff8f3; border-color:#cfe8da; color:#287a55; }
+.group-public-day.open:hover, .group-public-day.open.selected { background:#e0f2e8; border-color:#85c5a4; box-shadow:0 0 0 3px rgba(42,138,94,.08); }
+.group-public-day.closed { background:#f6f6f6; color:#a1a8ac; }
+.group-public-day.past { opacity:.58; }
+.group-public-day.empty { border-color:transparent; background:transparent; }
+.calendar-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; color:#707c83; font-size:.72rem; }
+.calendar-legend span { display:flex; align-items:center; gap:6px; }
+.legend-dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+.legend-dot.open { background:#59a97d; }
+.legend-dot.closed { background:#c4c8cb; }
+.selected-date-display {
+  min-height:50px; border:1px solid var(--cnmi-line); border-radius:15px; background:#f8f9f9;
+  display:flex; align-items:center; gap:10px; padding:11px 13px; color:#879198;
+}
+.selected-date-display.selected { background:#f0f8f4; border-color:#cbe5d7; color:#276e50; }
+.selected-date-display > span { display:grid; gap:1px; }
+.selected-date-display small { color:#718078; font-size:.72rem; }
+.public-calendar-message {
+  min-height:110px; display:flex; align-items:center; justify-content:center; gap:12px; text-align:left;
+  border:1px dashed #d9dddf; border-radius:18px; color:#78848a; background:#fafafa; padding:18px;
+}
+.public-calendar-message > i { font-size:1.4rem; }
+.public-calendar-message > div { display:grid; gap:3px; }
+.public-calendar-message b { color:#4f5b62; }
+.public-calendar-message span { font-size:.78rem; }
+.public-calendar-message.error { color:#a33e44; background:#fff5f5; border-color:#eccfd1; }
+
+/* Whole Blood group staff calendar */
+.group-day-status { display:grid; gap:2px; margin-top:6px; }
+.group-day-status b { font-size:.76rem; }
+.group-day-status span { font-size:.62rem; color:var(--cnmi-muted); }
+.group-day-note { display:block; margin-top:4px; color:#8b6b55; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.platelet-day-cell.group-open { background:#f2faf6; border-color:#d4eade; }
+.platelet-day-cell.group-unprepared { background:#fafafa; color:#9ba3a8; }
+.group-day-edit-grid { grid-template-columns:minmax(180px,260px) minmax(260px,1fr); }
+
+/* Room calendar */
+.room-calendar-grid { width:100%; }
+.room-calendar-head, .room-calendar-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:7px; }
+.room-calendar-head { margin-bottom:7px; }
+.room-calendar-head > div { text-align:center; color:#7a858b; font-size:.7rem; font-weight:800; padding:4px; }
+.room-day-cell {
+  min-width:0; min-height:104px; border:1px solid var(--cnmi-line); border-radius:16px; background:#fff;
+  padding:9px; display:flex; flex-direction:column; align-items:flex-start; text-align:left; color:#4f5c63;
+}
+button.room-day-cell { cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; }
+button.room-day-cell:hover { transform:translateY(-1px); box-shadow:var(--shadow-sm); }
+.room-day-cell.empty { background:transparent; border-color:transparent; }
+.room-day-number { align-self:flex-end; font-weight:800; font-size:.82rem; color:#7f898f; }
+.room-day-state { display:flex; align-items:center; gap:5px; margin-top:5px; }
+.room-day-state i { font-size:.9rem; }
+.room-day-state b { font-size:.73rem; }
+.room-day-cell small { margin-top:5px; font-size:.62rem; line-height:1.25; color:#78838a; overflow-wrap:anywhere; }
+.room-day-cell.event-normal { background:#fbfcfc; }
+.room-day-cell.event-normal .room-day-state { color:#4d8a6b; }
+.room-day-cell.event-weekend { background:#f4f5f5; color:#8e979c; }
+.room-day-cell.event-closed { background:#fff3f3; border-color:#efd1d3; }
+.room-day-cell.event-closed .room-day-state { color:#b13a42; }
+.room-day-cell.event-limited { background:#fff8ea; border-color:#efdfb8; }
+.room-day-cell.event-limited .room-day-state { color:#a06d19; }
+.room-day-cell.event-mobile { background:#eef6fb; border-color:#ccdfeb; }
+.room-day-cell.event-mobile .room-day-state { color:#367595; }
+.room-day-cell.event-activity { background:#f5f1fa; border-color:#ddd3e9; }
+.room-day-cell.event-activity .room-day-state { color:#765aa0; }
+.room-day-cell.event-open { background:#eef8f2; border-color:#cde6d7; }
+.room-day-cell.event-open .room-day-state { color:#287b54; }
+.room-event-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.room-note-wide { grid-column:1 / -1; }
+.published-banner {
+  display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:14px;
+  background:#eef8f2; color:#2d7654; margin-bottom:14px; font-size:.8rem;
+}
+.public-calendar-status { margin-bottom:4px; }
+.room-highlight-list { display:grid; gap:10px; }
+.room-highlight {
+  display:grid; grid-template-columns:auto 1fr; gap:12px; border:1px solid var(--cnmi-line);
+  border-radius:18px; background:#fff; padding:14px 15px; box-shadow:var(--shadow-sm);
+}
+.room-highlight-icon { width:42px; height:42px; border-radius:14px; display:grid; place-items:center; background:#f5f6f6; }
+.room-highlight > div:last-child { display:grid; gap:2px; }
+.room-highlight span { color:var(--cnmi-muted); font-size:.72rem; }
+.room-highlight b { font-size:.95rem; }
+.room-highlight p { margin:0; color:#69767d; font-size:.78rem; line-height:1.45; }
+.room-highlight.event-closed .room-highlight-icon { background:#fff0f1; color:#b53b43; }
+.room-highlight.event-limited .room-highlight-icon { background:#fff6df; color:#a16d18; }
+.room-highlight.event-mobile .room-highlight-icon { background:#edf6fb; color:#357796; }
+.room-highlight.event-activity .room-highlight-icon { background:#f4eff9; color:#755a9c; }
+.room-highlight.event-open .room-highlight-icon { background:#edf8f1; color:#297954; }
+.announcement-preview {
+  white-space:pre-wrap; background:#faf9f8; border:1px solid var(--cnmi-line); border-radius:16px;
+  padding:16px; font-size:.84rem; line-height:1.7; color:#4c5960;
+}
+
+@media (max-width: 820px) {
+  .import-log-filter { grid-template-columns:1fr 1fr; }
+  .import-log-filter .btn { grid-column:1 / -1; }
+  .room-event-grid, .group-day-edit-grid { grid-template-columns:1fr; }
+  .room-note-wide { grid-column:auto; }
+  .staff-topbar-actions { flex-wrap:wrap; }
+}
+
+@media (max-width: 600px) {
+  .public-calendar-head { align-items:stretch; flex-direction:column; gap:10px; }
+  .public-month-picker { width:100%; }
+  .group-public-day { min-height:56px; border-radius:11px; padding:4px 2px; }
+  .group-public-day b { font-size:.78rem; }
+  .group-public-day span { font-size:.52rem; }
+  .availability-calendar-head, .availability-calendar-grid { gap:4px; }
+  .room-calendar-head, .room-calendar-days { gap:4px; }
+  .room-day-cell { min-height:70px; border-radius:11px; padding:5px; }
+  .room-day-number { font-size:.7rem; }
+  .room-day-state { gap:3px; margin-top:3px; }
+  .room-day-state i { font-size:.68rem; }
+  .room-day-state b { font-size:.54rem; }
+  .room-day-cell small { font-size:.45rem; line-height:1.1; max-height:2.2em; overflow:hidden; }
+  .room-highlight { border-radius:16px; padding:12px; }
+  .friendly-log-card { padding:12px; }
+  .mini-pager .btn { padding:.42rem .65rem; font-size:.72rem; }
+  .import-log-filter { grid-template-columns:1fr; }
+  .import-log-filter .btn { grid-column:auto; }
+  .btn-role-switch { order:-1; width:100%; justify-content:center; }
+}
+.announcement-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.contact-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width: 520px) {
+  .contact-action-grid { grid-template-columns:1fr; }
+  .announcement-actions { width:100%; }
+  .announcement-actions .btn { flex:1 1 100%; }
+}
+@media (min-width: 901px) {
+  .staff-nav-card { max-height: calc(100vh - 150px); overflow-y:auto; scrollbar-width:thin; }
 }

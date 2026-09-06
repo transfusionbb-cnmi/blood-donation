@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>ห้องบริจาคโลหิต CNMI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#d92f35">
+  <meta name="theme-color" content="#c94149">
   <meta name="color-scheme" content="light">
   <meta name="format-detection" content="telephone=no">
   <meta name="mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=14.2" rel="stylesheet">
+  <link href="styles.css?v=15.0" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -51,6 +51,15 @@
           <div class="menu-copy">
             <div class="menu-title">บริจาคเกล็ดเลือด / เลือดแดง</div>
             <div class="menu-subtitle">เกล็ดเลือดจองคิว · เลือดแดง Walk-in ได้</div>
+          </div>
+          <i class="bi bi-chevron-right menu-arrow"></i>
+        </button>
+
+        <button type="button" class="home-menu-card calendar-menu" onclick="showRoomCalendarPublic()">
+          <div class="menu-symbol"><i class="bi bi-calendar-event"></i></div>
+          <div class="menu-copy">
+            <div class="menu-title">ปฏิทินห้องบริจาคโลหิต</div>
+            <div class="menu-subtitle">ดูวันเปิด–ปิด ออกหน่วย และกิจกรรมประจำเดือน</div>
           </div>
           <i class="bi bi-chevron-right menu-arrow"></i>
         </button>
@@ -214,11 +223,24 @@
         <div><div class="page-kicker">WHOLE BLOOD · GROUP</div><h2 class="page-title">แจ้งนัดหมายบริจาคเป็นหมู่คณะ</h2><p class="page-subtitle">สำหรับกลุ่มมากกว่า 10 คน เจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันวันนัด</p></div>
       </div>
       <div class="compact-notice mb-3"><i class="bi bi-info-circle"></i><span>การส่งแบบฟอร์มนี้เป็นการแจ้งความประสงค์ ยังไม่ถือว่ายืนยันนัดหมายจนกว่าเจ้าหน้าที่จะติดต่อกลับ</span></div>
+
+      <div class="card main-card p-3 p-md-4 mb-3 group-public-calendar-card">
+        <div class="public-calendar-head">
+          <div><span class="page-kicker">วันที่เปิดรับหมู่คณะ</span><h4>เลือกวันที่สีเขียว</h4><p>ระบบแสดงเฉพาะเดือนที่ห้องบริจาคเปิดรับคำขอแล้ว</p></div>
+          <input type="month" id="groupPublicMonth" class="form-control public-month-picker" aria-label="เลือกเดือน">
+        </div>
+        <div id="groupPublicCalendar" class="public-availability-calendar"><div class="empty-state-inline">กำลังโหลดวันที่เปิดรับ...</div></div>
+        <div class="calendar-legend compact-legend">
+          <span><i class="legend-dot open"></i> เปิดรับคำขอ</span>
+          <span><i class="legend-dot closed"></i> งดรับ / ไม่เปิด</span>
+        </div>
+      </div>
+
       <div class="card main-card p-3 p-md-4 mb-4">
         <div class="form-step-title"><span>1</span><div><b>ข้อมูลหมู่คณะ</b><small>ใช้สำหรับประสานและเตรียมพื้นที่รับบริจาค</small></div></div>
         <div class="field-block"><label class="form-label">ชื่อหน่วยงาน / กลุ่ม</label><div class="input-with-icon"><i class="bi bi-building"></i><input type="text" id="groupName" class="form-control" placeholder="ชื่อหน่วยงานหรือชื่อกลุ่ม"></div></div>
         <div class="staff-form-grid public-group-grid">
-          <div class="field-block"><label class="form-label">วันที่ต้องการมา</label><input type="date" id="groupDate" class="form-control"></div>
+          <div class="field-block"><label class="form-label">วันที่ที่เลือก</label><input type="hidden" id="groupDate"><div id="groupSelectedDate" class="selected-date-display"><i class="bi bi-calendar-check"></i><span>กรุณาเลือกวันที่จากตารางด้านบน</span></div></div>
           <div class="field-block"><label class="form-label">จำนวนโดยประมาณ</label><input type="number" id="groupCount" class="form-control" min="11" step="1" placeholder="มากกว่า 10 คน"></div>
         </div>
         <div class="section-divider"></div>
@@ -354,16 +376,35 @@
         <button type="button" id="btnCancelBooking" class="btn btn-outline-danger w-100 mt-3" onclick="confirmCancelBooking()">ยกเลิกนัดหมายนี้</button>
       </div>
     </div>
+    <div id="pageRoomCalendar" class="app-page">
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
+        <div><div class="page-kicker">ปฏิทินห้องบริจาคโลหิต</div><h2 class="page-title">เดือนนี้ห้องเปิดวันไหน?</h2><p class="page-subtitle">รวมวันปิดทำการ รับจำนวนจำกัด ออกหน่วย และกิจกรรมพิเศษ</p></div>
+      </div>
+      <div class="card main-card p-3 p-md-4 mb-3 public-room-toolbar">
+        <div class="public-calendar-head">
+          <div><b>เลือกเดือน</b><small>ปฏิทินจะแสดงเมื่อเจ้าหน้าที่เผยแพร่แล้ว</small></div>
+          <input type="month" id="publicRoomMonth" class="form-control public-month-picker" aria-label="เลือกเดือน">
+        </div>
+      </div>
+      <div class="card main-card p-3 p-md-4 mb-3">
+        <div id="publicRoomCalendarStatus" class="public-calendar-status">กำลังโหลด...</div>
+        <div id="publicRoomCalendar" class="room-calendar-grid public-room-grid"></div>
+      </div>
+      <div id="publicRoomHighlights" class="room-highlight-list mb-4"></div>
+      <div class="compact-notice mb-4"><i class="bi bi-clock"></i><span>เวลาทำการปกติ จันทร์–ศุกร์ 08:30–15:30 น. หากมีประกาศพิเศษให้ยึดตามปฏิทินด้านบน</span></div>
+    </div>
+
     <div id="pageInfo" class="app-page">
       <div class="page-head mb-3">
         <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
         <div><div class="page-kicker">ข้อมูลบริการ</div><h2 class="page-title">ติดต่อห้องบริจาคโลหิต</h2><p class="page-subtitle">เวลาเปิดทำการ สถานที่ และเบอร์โทร</p></div>
       </div>
       <div class="card main-card p-3 p-md-4 mb-4 contact-card">
-        <div class="contact-tile"><div class="contact-icon"><i class="bi bi-clock"></i></div><div><b>วันและเวลาทำการ</b><p>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</p><small>วันหยุดพิเศษ กรุณาติดต่อเจ้าหน้าที่อีกครั้ง</small></div></div>
+        <div class="contact-tile"><div class="contact-icon"><i class="bi bi-clock"></i></div><div><b>วันและเวลาทำการ</b><p>จันทร์–ศุกร์ เวลา 08:30–15:30 น.</p><small>วันหยุดพิเศษและกิจกรรม กรุณาดูปฏิทินห้องบริจาคโลหิต</small></div></div>
         <div class="contact-tile"><div class="contact-icon"><i class="bi bi-geo-alt"></i></div><div><b>สถานที่</b><p>ห้องบริจาคโลหิต โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์</p><small>Bang Pla, Bang Phli District, Samut Prakan 10540</small></div></div>
         <div class="contact-tile"><div class="contact-icon"><i class="bi bi-telephone"></i></div><div><b>ติดต่อสอบถาม</b><p><a id="contactPhone" href="tel:028396050">02-839-6050</a></p></div></div>
-        <a id="mapLink" class="btn btn-search w-100 mt-2" target="_blank" rel="noopener"><i class="bi bi-map"></i> เปิด Google Maps</a>
+        <div class="contact-action-grid mt-2"><button type="button" class="btn btn-soft" onclick="showRoomCalendarPublic()"><i class="bi bi-calendar-event"></i> ดูปฏิทินเปิด–ปิด</button><a id="mapLink" class="btn btn-search" target="_blank" rel="noopener"><i class="bi bi-map"></i> เปิด Google Maps</a></div>
       </div>
     </div>
     <div id="pageStaffLogin" class="app-page">
@@ -399,7 +440,11 @@
     <div id="pageStaff" class="app-page staff-wide">
       <div class="staff-topbar mb-3">
         <div class="staff-topbar-title"><div class="staff-app-mark"><i class="bi bi-droplet-fill"></i></div><div><small>CNMI Blood Donation</small><h2>ระบบเจ้าหน้าที่</h2></div></div>
-        <div class="staff-topbar-actions"><button type="button" class="btn btn-soft btn-sm" onclick="showPage('home')"><i class="bi bi-house"></i> หน้าหลัก</button><button type="button" class="btn btn-soft btn-sm" onclick="staffLogout()"><i class="bi bi-box-arrow-right"></i> ออกจากระบบ</button></div>
+        <div class="staff-topbar-actions">
+          <button type="button" id="staffRoleSwitchBtn" class="btn btn-role-switch btn-sm" onclick="toggleAdminStaffView()" style="display:none;"><i class="bi bi-person-badge"></i> <span>ดูแบบ Staff</span></button>
+          <button type="button" class="btn btn-soft btn-sm" onclick="showPage('home')"><i class="bi bi-house"></i> หน้าหลัก</button>
+          <button type="button" class="btn btn-soft btn-sm" onclick="staffLogout()"><i class="bi bi-box-arrow-right"></i> ออกจากระบบ</button>
+        </div>
       </div>
 
       <div class="staff-layout">
@@ -410,9 +455,12 @@
               <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')"><i class="bi bi-grid-1x2"></i><span>ภาพรวม</span></button>
               <button type="button" class="staff-tab" data-staff-tab="donorImport" onclick="showStaffTab('donorImport')"><i class="bi bi-cloud-arrow-up"></i><span>นำเข้าผู้บริจาค</span></button>
               <button type="button" class="staff-tab" data-staff-tab="infectiousImport" onclick="showStaffTab('infectiousImport')"><i class="bi bi-shield-exclamation"></i><span>ผลติดเชื้อ</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="importLogs" onclick="showStaffTab('importLogs')"><i class="bi bi-clock-history"></i><span>ประวัตินำเข้า</span></button>
               <button type="button" class="staff-tab" data-staff-tab="slots" onclick="showStaffTab('slots')"><i class="bi bi-calendar3"></i><span>ตารางเกล็ดเลือด</span></button>
               <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>คิวเกล็ดเลือด</span></button>
-              <button type="button" class="staff-tab" data-staff-tab="groups" onclick="showStaffTab('groups')"><i class="bi bi-people"></i><span>หมู่คณะเลือดแดง</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="groupSlots" onclick="showStaffTab('groupSlots')"><i class="bi bi-calendar2-week"></i><span>ตารางหมู่คณะ</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="groups" onclick="showStaffTab('groups')"><i class="bi bi-people"></i><span>คำขอหมู่คณะ</span></button>
+              <button type="button" class="staff-tab" data-staff-tab="roomCalendar" onclick="showStaffTab('roomCalendar')"><i class="bi bi-calendar-event"></i><span>เปิด–ปิดห้อง</span></button>
               <button type="button" id="staffTabBtn_admin" class="staff-tab admin-only" data-staff-tab="admin" onclick="showStaffTab('admin')" style="display:none;"><i class="bi bi-people"></i><span>เจ้าหน้าที่</span></button>
             </div>
           </nav>
@@ -424,12 +472,20 @@
             <div class="dashboard-grid mb-3">
               <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-calendar-check"></i></div><div><div class="dashboard-label">คิวเกล็ดเลือดวันนี้</div><div id="dashBookingsToday" class="dashboard-number">-</div><div class="dashboard-sub">รายการที่ยังไม่ยกเลิก</div></div></div>
               <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-clock"></i></div><div><div class="dashboard-label">รอบเกล็ดเลือดวันนี้</div><div id="dashSlotsToday" class="dashboard-number">-</div><div class="dashboard-sub">09:00 / 13:00 น.</div></div></div>
-              <div class="dashboard-card"><div class="dash-icon warning"><i class="bi bi-exclamation-triangle"></i></div><div><div class="dashboard-label">ต้องติดตาม</div><div id="dashInfectious" class="dashboard-number">-</div><div class="dashboard-sub">Infectious positive</div></div></div>
-              <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-database"></i></div><div><div class="dashboard-label">รายการบริจาค</div><div id="dashDonations" class="dashboard-number">-</div><div class="dashboard-sub">ทั้งหมดใน Supabase</div></div></div>
+              <div class="dashboard-card"><div class="dash-icon warning"><i class="bi bi-exclamation-triangle"></i></div><div><div class="dashboard-label">ต้องติดตาม</div><div id="dashInfectious" class="dashboard-number">-</div><div class="dashboard-sub">ผลติดเชื้อที่ต้องติดตาม</div></div></div>
+              <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-database"></i></div><div><div class="dashboard-label">รายการบริจาค</div><div id="dashDonations" class="dashboard-number">-</div><div class="dashboard-sub">จำนวนรายการทั้งหมดในระบบ</div></div></div>
             </div>
             <div class="staff-grid-2">
               <div class="card main-card staff-card p-4"><div class="staff-section-head mb-3"><h5>สถานะระบบ</h5></div><div id="dashboardResult" class="staff-result compact">กำลังโหลดภาพรวม...</div></div>
-              <div class="card main-card staff-card p-4"><div class="staff-section-head mb-3"><h5>นำเข้าล่าสุด</h5></div><div id="dashboardImportLogs" class="staff-result compact">กำลังโหลดประวัติ...</div></div>
+              <div class="card main-card staff-card p-4">
+                <div class="staff-section-head mb-3"><div><h5>กิจกรรมนำเข้าวันนี้</h5><small>แสดงครั้งละ 3 รายการ</small></div><button type="button" class="btn btn-soft btn-sm" onclick="showStaffTab('importLogs')">ดูประวัติ</button></div>
+                <div id="dashboardImportLogs" class="staff-result compact">กำลังโหลดประวัติ...</div>
+                <div id="dashboardLogPager" class="mini-pager mt-3" style="display:none;">
+                  <button type="button" class="btn btn-soft btn-sm" onclick="changeDashboardLogPage(-1)"><i class="bi bi-chevron-left"></i> ก่อนหน้า</button>
+                  <span id="dashboardLogPageText">1 / 1</span>
+                  <button type="button" class="btn btn-soft btn-sm" onclick="changeDashboardLogPage(1)">ถัดไป <i class="bi bi-chevron-right"></i></button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -451,6 +507,25 @@
               <label class="form-label">วาง Unit No ทีละบรรทัด</label><textarea id="infectiousUnitList" class="form-control mb-3" rows="5" placeholder="CN6200066&#10;CN6300038"></textarea>
               <button type="button" id="btnUpdateUnitList" class="btn btn-soft w-100" onclick="updateInfectiousFromTextArea()">อัปเดตจาก Unit No</button>
               <div id="infectiousResult" class="staff-result mt-3" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div id="staffTab_importLogs" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>IMPORT HISTORY</span><h3>ประวัติการนำเข้าข้อมูล</h3><p>เลือกวันที่และประเภทเพื่อดูรายละเอียดแบบอ่านง่าย</p></div></div>
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="staff-filter-row import-log-filter">
+                <div class="field-block mb-0"><label class="form-label">วันที่</label><input type="date" id="importLogDate" class="form-control"></div>
+                <div class="field-block mb-0"><label class="form-label">ประเภท</label><select id="importLogType" class="form-select"><option value="">ทั้งหมด</option><option value="donor_import">ข้อมูลผู้บริจาค</option><option value="infectious_update">ผลติดเชื้อ</option></select></div>
+                <button type="button" class="btn btn-search" onclick="loadImportLogHistory(1)"><i class="bi bi-search"></i> ดู Log</button>
+              </div>
+            </div>
+            <div class="card main-card staff-card p-4">
+              <div id="importLogHistoryResult" class="staff-result">เลือกวันที่เพื่อดูประวัติ</div>
+              <div id="importLogHistoryPager" class="mini-pager mt-3" style="display:none;">
+                <button type="button" class="btn btn-soft btn-sm" onclick="changeImportLogHistoryPage(-1)"><i class="bi bi-chevron-left"></i> ก่อนหน้า</button>
+                <span id="importLogHistoryPageText">1 / 1</span>
+                <button type="button" class="btn btn-soft btn-sm" onclick="changeImportLogHistoryPage(1)">ถัดไป <i class="bi bi-chevron-right"></i></button>
+              </div>
             </div>
           </div>
 
@@ -498,11 +573,85 @@
             </div>
           </div>
 
+          <div id="staffTab_groupSlots" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>WHOLE BLOOD · GROUP CALENDAR</span><h3>ตารางรับบริจาคเลือดแดงเป็นหมู่คณะ</h3><p>กำหนดวันจันทร์–ศุกร์ที่พร้อมรับคำขอหมู่คณะมากกว่า 10 คน แล้วเปิดรับเป็นรายเดือน</p></div></div>
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="platelet-month-toolbar">
+                <div class="field-block mb-0"><label class="form-label">เดือนที่จัดการ</label><input type="month" id="groupAdminMonth" class="form-control"></div>
+                <div class="month-status-box"><span>สถานะเดือน</span><b id="groupAdminMonthStatus">-</b><small id="groupAdminMonthHint">เลือกเดือนเพื่อโหลดตาราง</small></div>
+                <div class="platelet-month-actions">
+                  <button type="button" class="btn btn-soft" onclick="prepareGroupBookingMonth()"><i class="bi bi-calendar-plus"></i> เตรียมตาราง</button>
+                  <button type="button" class="btn btn-search" onclick="publishGroupBookingMonth(true)"><i class="bi bi-megaphone"></i> เปิดรับเดือนนี้</button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="publishGroupBookingMonth(false)"><i class="bi bi-pause-circle"></i> ปิดรอบเดือน</button>
+                </div>
+              </div>
+              <div id="groupAdminResult" class="staff-result mt-3" style="display:none;"></div>
+            </div>
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="staff-section-head mb-3"><div><h5>เปิด / งดรับหมู่คณะเฉพาะวัน</h5><small>คำขอยังต้องรอเจ้าหน้าที่โทรยืนยันเหมือนเดิม</small></div></div>
+              <div class="staff-form-grid group-day-edit-grid">
+                <div class="field-block"><label class="form-label">วันที่</label><input type="date" id="groupAdminDate" class="form-control"></div>
+                <div class="field-block"><label class="form-label">หมายเหตุภายใน</label><input type="text" id="groupAdminNote" class="form-control" placeholder="เช่น คนไม่พอ / มีกิจกรรม / ไม่สะดวกรับกลุ่ม"></div>
+              </div>
+              <div class="staff-action-row">
+                <button type="button" class="btn btn-outline-danger flex-grow-1" onclick="setGroupBookingDayOpen(false)"><i class="bi bi-calendar-x"></i> งดรับวันนี้</button>
+                <button type="button" class="btn btn-soft flex-grow-1" onclick="setGroupBookingDayOpen(true)"><i class="bi bi-calendar-check"></i> เปิดรับวันนี้</button>
+              </div>
+              <div class="form-text mt-2">ถ้าวันนั้นมีคำขออยู่แล้ว ระบบจะเปลี่ยนสถานะเป็น “ต้องติดต่อ” โดยไม่ลบคำขอเดิม</div>
+            </div>
+            <div class="card main-card staff-card p-3 p-md-4">
+              <div class="staff-section-head mb-3"><div><h5>ปฏิทินหมู่คณะเลือดแดง</h5><small>คลิกวันที่เพื่อเลือกไปจัดการด้านบน</small></div><button type="button" class="btn btn-soft btn-sm" onclick="loadGroupBookingMonthAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+              <div id="groupAdminCalendar" class="platelet-admin-calendar"><div class="staff-result">เลือกเดือนเพื่อโหลดตาราง</div></div>
+            </div>
+          </div>
+
           <div id="staffTab_groups" class="staff-tab-page">
             <div class="staff-page-head"><div><span>WHOLE BLOOD · GROUP</span><h3>คำขอบริจาคเลือดแดงเป็นหมู่คณะ</h3><p>สำหรับกลุ่มมากกว่า 10 คน ตรวจสอบแล้วติดต่อกลับเพื่อยืนยันนัดหมาย</p></div></div>
             <div class="card main-card staff-card p-4">
               <div class="staff-filter-row"><div class="field-block mb-0"><label class="form-label">ตั้งแต่วันที่</label><input type="date" id="groupListFrom" class="form-control"></div><button type="button" class="btn btn-search" onclick="loadStaffGroupRequests()"><i class="bi bi-search"></i> โหลดคำขอ</button></div>
               <div id="staffGroupRequestsResult" class="table-responsive mt-3"></div>
+            </div>
+          </div>
+
+          <div id="staffTab_roomCalendar" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>ROOM CALENDAR</span><h3>ปฏิทินเปิด–ปิดห้องบริจาคโลหิต</h3><p>บันทึกครั้งเดียว แล้วใช้เป็นปฏิทินสาธารณะและข้อความประกาศรายเดือน</p></div></div>
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="platelet-month-toolbar">
+                <div class="field-block mb-0"><label class="form-label">เดือนที่จัดการ</label><input type="month" id="roomAdminMonth" class="form-control"></div>
+                <div class="month-status-box"><span>สถานะประกาศ</span><b id="roomAdminMonthStatus">-</b><small id="roomAdminMonthHint">แก้ข้อมูลให้เรียบร้อยแล้วค่อยเผยแพร่</small></div>
+                <div class="platelet-month-actions">
+                  <button type="button" class="btn btn-soft" onclick="prepareRoomCalendarMonth()"><i class="bi bi-calendar-plus"></i> เตรียมเดือน</button>
+                  <button type="button" class="btn btn-search" onclick="publishRoomCalendarMonth(true)"><i class="bi bi-megaphone"></i> เผยแพร่</button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="publishRoomCalendarMonth(false)"><i class="bi bi-eye-slash"></i> ซ่อนประกาศ</button>
+                </div>
+              </div>
+              <div id="roomAdminResult" class="staff-result mt-3" style="display:none;"></div>
+            </div>
+
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="staff-section-head mb-3"><div><h5>เพิ่มสถานะ / กิจกรรมในวันนั้น</h5><small>วันปกติไม่ต้องกรอก ระบบถือว่าเปิด จันทร์–ศุกร์ 08:30–15:30 น.</small></div></div>
+              <div class="staff-form-grid room-event-grid">
+                <div class="field-block"><label class="form-label">วันที่</label><input type="date" id="roomEventDate" class="form-control"></div>
+                <div class="field-block"><label class="form-label">ประเภท</label><select id="roomEventType" class="form-select" onchange="applyRoomEventTypeDefaults()"><option value="closed">ปิดทำการ</option><option value="limited">เปิดรับจำนวนจำกัด</option><option value="mobile_unit">ออกหน่วยนอกสถานที่</option><option value="activity">กิจกรรม / หมายเหตุพิเศษ</option><option value="open">เปิดทำการปกติเป็นกรณีพิเศษ</option></select></div>
+                <div class="field-block"><label class="form-label">หัวข้อสั้น</label><input type="text" id="roomEventTitle" class="form-control" placeholder="เช่น วันหยุดนักขัตฤกษ์"></div>
+                <div class="field-block"><label class="form-label">เวลา <span class="optional">ถ้ามี</span></label><input type="text" id="roomEventTime" class="form-control" placeholder="เช่น 09:00–14:00 น."></div>
+                <div class="field-block"><label class="form-label">สถานที่ <span class="optional">ถ้ามี</span></label><input type="text" id="roomEventLocation" class="form-control" placeholder="เช่น สภ.บางพลี"></div>
+                <div class="field-block room-note-wide"><label class="form-label">ข้อความที่ผู้บริจาคเห็น</label><input type="text" id="roomEventNote" class="form-control" placeholder="เขียนสั้น ๆ สำหรับประกาศ"></div>
+              </div>
+              <div class="staff-action-row">
+                <button type="button" class="btn btn-search flex-grow-1" onclick="saveRoomCalendarEvent()"><i class="bi bi-check2-circle"></i> บันทึกวันนี้</button>
+                <button type="button" class="btn btn-outline-danger" onclick="deleteRoomCalendarEvent()"><i class="bi bi-trash3"></i> ลบสถานะวันนี้</button>
+              </div>
+            </div>
+
+            <div class="card main-card staff-card p-3 p-md-4 mb-3">
+              <div class="staff-section-head mb-3"><div><h5>ปฏิทินห้องบริจาค</h5><small>คลิกวันที่เพื่อแก้ไขรายละเอียดได้</small></div><button type="button" class="btn btn-soft btn-sm" onclick="loadRoomCalendarAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+              <div id="roomAdminCalendar" class="room-calendar-grid"></div>
+            </div>
+
+            <div class="card main-card staff-card p-4">
+              <div class="staff-section-head mb-3"><div><h5>ประกาศพร้อมใช้</h5><small>สร้างจากตารางเดียวกัน ใช้ต่อใน Facebook, LINE OA หรือ Instagram ได้ทันที</small></div><div class="announcement-actions"><button type="button" class="btn btn-soft btn-sm" onclick="copyRoomAnnouncement()"><i class="bi bi-copy"></i> คัดลอกข้อความ</button><button type="button" class="btn btn-search btn-sm" onclick="downloadRoomCalendarPoster()"><i class="bi bi-image"></i> ดาวน์โหลดภาพประกาศ</button></div></div>
+              <div id="roomAnnouncementText" class="announcement-preview">เพิ่มข้อมูลในปฏิทินก่อน แล้วข้อความประกาศจะสร้างให้อัตโนมัติ</div>
             </div>
           </div>
 
@@ -556,7 +705,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="config.js?v=14.2"></script>
-  <script src="app.js?v=14.2"></script>
+  <script src="config.js?v=15.0"></script>
+  <script src="app.js?v=15.0"></script>
 </body>
 </html>

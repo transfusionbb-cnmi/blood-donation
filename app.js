@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v14.2 */
+/* CNMI Blood Donation Supabase Frontend v15.0 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -16,6 +16,14 @@ let pendingDonorImport = null;
 let lastBookingResult = null;
 let activeQrScanner = null;
 let imageQrScanner = null;
+let staffViewMode = null;
+let dashboardImportRows = [];
+let dashboardImportPage = 1;
+let importLogHistoryPage = 1;
+let importLogHistoryTotalPages = 1;
+let currentGroupAdminDays = [];
+let currentRoomAdminEvents = [];
+let currentPublicRoomEvents = [];
 
 sb.auth.onAuthStateChange(async function(event, session) {
   if (event === "PASSWORD_RECOVERY") {
@@ -65,7 +73,8 @@ function modalSecondaryClick() { closeModal(); if (modalSecondaryCallback) { con
 function showPage(page) {
   const pages = {
     home:"pageHome", check:"pageCheck", donationChoice:"pageDonationChoice", groupBooking:"pageGroupBooking",
-    screening:"pageScreening", booking:"pageBooking", bookingSuccess:"pageBookingSuccess", manage:"pageManage", info:"pageInfo",
+    screening:"pageScreening", booking:"pageBooking", bookingSuccess:"pageBookingSuccess", manage:"pageManage",
+    roomCalendar:"pageRoomCalendar", info:"pageInfo",
     staffLogin:"pageStaffLogin", staffChangePassword:"pageStaffChangePassword", staff:"pageStaff"
   };
   Object.keys(pages).forEach(function(key){ const el = $(pages[key]); if (el) el.classList.remove("active"); });
@@ -77,6 +86,12 @@ function showPage(page) {
 
   if (page === "staff" && currentStaffProfile) {
     setTimeout(loadStaffDashboard, 50);
+  }
+  if (page === "groupBooking") {
+    setTimeout(loadGroupPublicCalendar, 40);
+  }
+  if (page === "roomCalendar") {
+    setTimeout(loadPublicRoomCalendar, 40);
   }
 }
 
@@ -936,6 +951,11 @@ async function submitGroupBookingRequest() {
   });
   ["groupName","groupCount","groupCoordinator","groupPhone","groupNote"].forEach(id => { if ($(id)) $(id).value = ""; });
   if ($("groupDate")) $("groupDate").value = "";
+  if ($("groupSelectedDate")) {
+    $("groupSelectedDate").classList.remove("selected");
+    $("groupSelectedDate").innerHTML = '<i class="bi bi-calendar-check"></i><span>กรุณาเลือกวันที่จากตารางด้านบน</span>';
+  }
+  document.querySelectorAll(".group-public-day.selected").forEach(el => el.classList.remove("selected"));
 }
 
 function clearManageBooking() {
@@ -1244,16 +1264,57 @@ async function changeTemporaryPassword() {
   setTimeout(function(){ showPage("staff"); }, 600);
 }
 
+function getEffectiveStaffRole() {
+  if (!currentStaffProfile) return "staff";
+  if (currentStaffProfile.role === "admin" && staffViewMode === "staff") return "staff";
+  return currentStaffProfile.role || "staff";
+}
+
+function isAdminView() {
+  return !!currentStaffProfile && currentStaffProfile.role === "admin" && getEffectiveStaffRole() === "admin";
+}
+
 function applyStaffProfileUI() {
   const profile = currentStaffProfile || {};
-  const isAdmin = profile.role === "admin";
+  const actualAdmin = profile.role === "admin";
+  const effectiveRole = getEffectiveStaffRole();
   const bar = $("staffProfileBar");
   if (bar) {
     bar.style.display = "block";
-    bar.innerText = (profile.display_name || profile.email || "เจ้าหน้าที่") + " · " + (profile.role || "staff") + (profile.must_change_password ? " · ต้องเปลี่ยนรหัสผ่าน" : "");
+    const modeText = actualAdmin && effectiveRole === "staff" ? " · กำลังดูแบบ Staff" : " · " + effectiveRole;
+    bar.innerText = (profile.display_name || profile.email || "เจ้าหน้าที่") + modeText + (profile.must_change_password ? " · ต้องเปลี่ยนรหัสผ่าน" : "");
+    bar.classList.toggle("staff-preview-mode", actualAdmin && effectiveRole === "staff");
   }
   const adminBtn = $("staffTabBtn_admin");
-  if (adminBtn) adminBtn.style.display = isAdmin ? "block" : "none";
+  if (adminBtn) adminBtn.style.display = isAdminView() ? "block" : "none";
+
+  const switchBtn = $("staffRoleSwitchBtn");
+  if (switchBtn) {
+    switchBtn.style.display = actualAdmin ? "inline-flex" : "none";
+    const span = switchBtn.querySelector("span");
+    if (span) span.innerText = effectiveRole === "staff" ? "กลับ Admin" : "ดูแบบ Staff";
+    switchBtn.classList.toggle("active", effectiveRole === "staff");
+  }
+}
+
+function toggleAdminStaffView() {
+  if (!currentStaffProfile || currentStaffProfile.role !== "admin") return;
+  const goingStaff = getEffectiveStaffRole() === "admin";
+  staffViewMode = goingStaff ? "staff" : null;
+  applyStaffProfileUI();
+
+  const activeAdminPage = $("staffTab_admin") && $("staffTab_admin").classList.contains("active");
+  if (goingStaff && activeAdminPage) showStaffTab("overview");
+  else loadStaffDashboard();
+
+  showModal({
+    title: goingStaff ? "เปลี่ยนเป็นมุมมอง Staff แล้ว" : "กลับสู่มุมมอง Admin แล้ว",
+    message: goingStaff
+      ? "เมนูและคำสั่ง Admin ถูกปิดจากหน้าจอนี้ชั่วคราว เพื่อให้ตรวจดูสิ่งที่เจ้าหน้าที่ทั่วไปเห็นได้"
+      : "สิทธิ์และเมนู Admin กลับมาแสดงตามปกติ",
+    iconText: goingStaff ? "S" : "A",
+    type:"success"
+  });
 }
 
 async function requireAdmin() {
@@ -1263,8 +1324,8 @@ async function requireAdmin() {
     showPage("staffChangePassword");
     return false;
   }
-  if (!currentStaffProfile || currentStaffProfile.role !== "admin") {
-    showModal({ title:"ไม่มีสิทธิ์ Admin", message:"เมนูนี้ใช้ได้เฉพาะผู้ดูแลระบบ", iconText:"!" });
+  if (!isAdminView()) {
+    showModal({ title:"ไม่มีสิทธิ์ Admin ในมุมมองนี้", message:"ขณะนี้กำลังใช้งานแบบ Staff กรุณากด “กลับ Admin” ก่อนใช้เมนูผู้ดูแลระบบ", iconText:"!" });
     return false;
   }
   return true;
@@ -1273,12 +1334,13 @@ async function requireAdmin() {
 async function staffLogout() {
   await sb.auth.signOut();
   currentStaffProfile = null;
+  staffViewMode = null;
   showPage("home");
 }
 
 function showStaffTab(tab) {
-  if (tab === "admin" && (!currentStaffProfile || currentStaffProfile.role !== "admin")) {
-    showModal({ title:"ไม่มีสิทธิ์ Admin", message:"เมนูนี้ใช้ได้เฉพาะผู้ดูแลระบบ", iconText:"!" });
+  if (tab === "admin" && !isAdminView()) {
+    showModal({ title:"ไม่มีสิทธิ์ Admin ในมุมมองนี้", message:"หากเป็น Admin กรุณากด “กลับ Admin” ก่อน", iconText:"!" });
     return;
   }
   document.querySelectorAll(".staff-tab").forEach(btn => btn.classList.toggle("active", btn.dataset.staffTab === tab));
@@ -1286,9 +1348,12 @@ function showStaffTab(tab) {
   const target = $("staffTab_" + tab);
   if (target) target.classList.add("active");
   if (tab === "overview") loadStaffDashboard();
+  if (tab === "importLogs") loadImportLogHistory(1);
   if (tab === "slots") loadPlateletMonthAdmin();
   if (tab === "bookings") loadStaffBookings();
+  if (tab === "groupSlots") loadGroupBookingMonthAdmin();
   if (tab === "groups") loadStaffGroupRequests();
+  if (tab === "roomCalendar") loadRoomCalendarAdmin();
   if (tab === "admin") adminLoadStaffAccessList();
 }
 
@@ -1296,6 +1361,110 @@ async function getExactCount(builder) {
   const { count, error } = await builder;
   if (error) throw error;
   return count || 0;
+}
+
+function bangkokDayBoundsISO(dateText) {
+  const d = isoDateObj(dateText || todayISO()) || isoDateObj(todayISO());
+  const y = d.getFullYear(), m = pad2(d.getMonth() + 1), day = pad2(d.getDate());
+  const start = new Date(y + "-" + m + "-" + day + "T00:00:00+07:00");
+  const next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12, 0, 0, 0);
+  const ny = next.getFullYear(), nm = pad2(next.getMonth() + 1), nd = pad2(next.getDate());
+  const end = new Date(ny + "-" + nm + "-" + nd + "T00:00:00+07:00");
+  return { start:start.toISOString(), end:end.toISOString() };
+}
+
+function importTypeLabel(type) {
+  const key = String(type || "").trim();
+  if (key === "donor_import") return "นำเข้าข้อมูลผู้บริจาค";
+  if (key === "infectious_update") return "อัปเดตผลติดเชื้อ";
+  return key ? "งานนำเข้าข้อมูล" : "ไม่ระบุประเภท";
+}
+
+function parseImportLogMessage(message) {
+  const raw = String(message || "").trim();
+  const result = { file:"", sheet:"", mode:"", other:"" };
+  if (!raw) return result;
+  raw.split(",").map(x => x.trim()).filter(Boolean).forEach(part => {
+    const idx = part.indexOf("=");
+    if (idx < 0) {
+      result.other = result.other ? result.other + ", " + part : part;
+      return;
+    }
+    const key = part.slice(0, idx).trim().toLowerCase();
+    const value = part.slice(idx + 1).trim();
+    if (key === "file") result.file = value;
+    else if (key === "sheet") result.sheet = value;
+    else if (key === "mode") result.mode = value;
+    else result.other = result.other ? result.other + ", " + part : part;
+  });
+  return result;
+}
+
+function formatBangkokLogTime(value, includeDate) {
+  if (!value) return "-";
+  try {
+    return new Intl.DateTimeFormat("th-TH", {
+      timeZone:"Asia/Bangkok",
+      day: includeDate ? "numeric" : undefined,
+      month: includeDate ? "short" : undefined,
+      year: includeDate ? "numeric" : undefined,
+      hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false
+    }).format(new Date(value));
+  } catch (err) {
+    return "-";
+  }
+}
+
+function renderImportLogCards(rows, options) {
+  options = options || {};
+  if (!rows || rows.length === 0) {
+    return '<div class="log-empty"><i class="bi bi-inbox"></i><span>' + escapeHtml(options.emptyText || "ยังไม่มีกิจกรรมนำเข้าในวันที่เลือก") + '</span></div>';
+  }
+  return '<div class="friendly-log-list">' + rows.map(function(r) {
+    const info = parseImportLogMessage(r.message);
+    const fileLine = info.file ? '<div class="friendly-log-file"><i class="bi bi-file-earmark-spreadsheet"></i><span>' + escapeHtml(info.file) + '</span></div>' : '';
+    const sheetLine = (!options.compact && info.sheet) ? '<div class="friendly-log-meta-line"><span>ชีต</span><b>' + escapeHtml(info.sheet) + '</b></div>' : '';
+    const systemBits = [];
+    if (info.mode) systemBits.push("mode=" + info.mode);
+    if (info.other) systemBits.push(info.other);
+    const systemDetails = (!options.compact && systemBits.length)
+      ? '<details class="log-system-details"><summary>รายละเอียดทางระบบ</summary><div>' + escapeHtml(systemBits.join(", ")) + '</div></details>'
+      : '';
+    return '<article class="friendly-log-card">' +
+      '<div class="friendly-log-top"><div><span class="friendly-log-type">' + escapeHtml(importTypeLabel(r.import_type)) + '</span><b>' + escapeHtml(formatBangkokLogTime(r.created_at, !!options.includeDate)) + '</b></div>' +
+      '<i class="bi ' + (r.import_type === "infectious_update" ? "bi-shield-check" : "bi-database-check") + '"></i></div>' +
+      '<div class="friendly-log-stats"><span><small>สำเร็จ</small><b>' + escapeHtml(r.imported_count ?? 0) + '</b></span><span><small>ข้าม</small><b>' + escapeHtml(r.skipped_count ?? 0) + '</b></span></div>' +
+      fileLine + sheetLine + systemDetails +
+      '</article>';
+  }).join('') + '</div>';
+}
+
+function renderDashboardImportLogs() {
+  const logBox = $("dashboardImportLogs");
+  const pager = $("dashboardLogPager");
+  const pageText = $("dashboardLogPageText");
+  if (!logBox) return;
+  const pageSize = 3;
+  const totalPages = Math.max(1, Math.ceil(dashboardImportRows.length / pageSize));
+  dashboardImportPage = Math.min(Math.max(1, dashboardImportPage), totalPages);
+  const start = (dashboardImportPage - 1) * pageSize;
+  const rows = dashboardImportRows.slice(start, start + pageSize);
+  logBox.className = "staff-result compact friendly-log-box";
+  logBox.innerHTML = renderImportLogCards(rows, { compact:true, emptyText:"วันนี้ยังไม่มีการนำเข้าข้อมูล" });
+  if (pager) pager.style.display = dashboardImportRows.length > pageSize ? "flex" : "none";
+  if (pageText) pageText.innerText = dashboardImportPage + " / " + totalPages;
+  if (pager) {
+    const buttons = pager.querySelectorAll("button");
+    if (buttons[0]) buttons[0].disabled = dashboardImportPage <= 1;
+    if (buttons[1]) buttons[1].disabled = dashboardImportPage >= totalPages;
+  }
+}
+
+function changeDashboardLogPage(delta) {
+  const pageSize = 3;
+  const totalPages = Math.max(1, Math.ceil(dashboardImportRows.length / pageSize));
+  dashboardImportPage = Math.min(totalPages, Math.max(1, dashboardImportPage + Number(delta || 0)));
+  renderDashboardImportLogs();
 }
 
 async function loadStaffDashboard() {
@@ -1336,33 +1505,18 @@ async function loadStaffDashboard() {
         "บริจาคทั้งหมด: " + donationCount + " รายการ";
     }
 
+    const bounds = bangkokDayBoundsISO(today);
     const { data: logs, error: logError } = await sb.from("import_logs")
       .select("import_type, imported_count, skipped_count, message, created_at")
+      .gte("created_at", bounds.start)
+      .lt("created_at", bounds.end)
       .order("created_at", { ascending:false })
-      .limit(6);
+      .limit(60);
 
     if (logError) throw logError;
-    if (logBox) {
-      const rows = Array.isArray(logs) ? logs : [];
-      if (rows.length === 0) {
-        logBox.className = "staff-result";
-        logBox.innerText = "ยังไม่มีประวัติการนำเข้า";
-      } else {
-        logBox.className = "table-responsive";
-        logBox.innerHTML = '<table class="table table-sm preview-table mobile-card-table"><thead><tr><th>วันที่</th><th>ประเภท</th><th>สำเร็จ</th><th>ข้าม</th><th>รายละเอียด</th></tr></thead><tbody>' +
-          rows.map(function(r) {
-            const dt = r.created_at ? new Date(r.created_at).toLocaleString("th-TH") : "-";
-            return '<tr>' +
-              '<td data-label="วันที่">' + escapeHtml(dt) + '</td>' +
-              '<td data-label="ประเภท">' + escapeHtml(r.import_type || '') + '</td>' +
-              '<td data-label="สำเร็จ">' + escapeHtml(r.imported_count ?? 0) + '</td>' +
-              '<td data-label="ข้าม">' + escapeHtml(r.skipped_count ?? 0) + '</td>' +
-              '<td data-label="รายละเอียด">' + escapeHtml(r.message || '') + '</td>' +
-              '</tr>';
-          }).join('') +
-          '</tbody></table>';
-      }
-    }
+    dashboardImportRows = Array.isArray(logs) ? logs : [];
+    dashboardImportPage = 1;
+    renderDashboardImportLogs();
   } catch (err) {
     if (box) {
       box.className = "staff-result fail";
@@ -1373,6 +1527,64 @@ async function loadStaffDashboard() {
       logBox.innerText = "โหลดประวัติไม่สำเร็จ";
     }
   }
+}
+
+async function loadImportLogHistory(page) {
+  const box = $("importLogHistoryResult");
+  if (!box) return;
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const date = $("importLogDate")?.value || todayISO();
+  const type = $("importLogType")?.value || "";
+  if ($("importLogDate") && !$("importLogDate").value) $("importLogDate").value = date;
+
+  const pageSize = 5;
+  importLogHistoryPage = Math.max(1, Number(page || importLogHistoryPage || 1));
+  const bounds = bangkokDayBoundsISO(date);
+
+  box.className = "staff-result";
+  box.innerHTML = "กำลังโหลดประวัติ...";
+  let query = sb.from("import_logs")
+    .select("import_type, imported_count, skipped_count, message, created_at", { count:"exact" })
+    .gte("created_at", bounds.start)
+    .lt("created_at", bounds.end)
+    .order("created_at", { ascending:false });
+
+  if (type) query = query.eq("import_type", type);
+  const start = (importLogHistoryPage - 1) * pageSize;
+  const end = start + pageSize - 1;
+  const { data, count, error } = await query.range(start, end);
+
+  if (error) {
+    box.className = "staff-result fail";
+    box.innerText = "โหลดประวัติไม่สำเร็จ\n" + error.message;
+    return;
+  }
+
+  const total = Number(count || 0);
+  importLogHistoryTotalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (importLogHistoryPage > importLogHistoryTotalPages && total > 0) {
+    importLogHistoryPage = importLogHistoryTotalPages;
+    return loadImportLogHistory(importLogHistoryPage);
+  }
+
+  box.className = "staff-result friendly-log-box";
+  box.innerHTML = '<div class="log-day-heading"><div><span>วันที่</span><b>' + escapeHtml(isoToThaiDate(date, true)) + '</b></div><span>' + escapeHtml(total) + ' รายการ</span></div>' +
+    renderImportLogCards(Array.isArray(data) ? data : [], { includeDate:false, emptyText:"ไม่พบ Log ตามตัวกรองนี้" });
+
+  const pager = $("importLogHistoryPager");
+  const pageText = $("importLogHistoryPageText");
+  if (pager) pager.style.display = total > pageSize ? "flex" : "none";
+  if (pageText) pageText.innerText = importLogHistoryPage + " / " + importLogHistoryTotalPages;
+  if (pager) {
+    const buttons = pager.querySelectorAll("button");
+    if (buttons[0]) buttons[0].disabled = importLogHistoryPage <= 1;
+    if (buttons[1]) buttons[1].disabled = importLogHistoryPage >= importLogHistoryTotalPages;
+  }
+}
+
+function changeImportLogHistoryPage(delta) {
+  const next = Math.min(importLogHistoryTotalPages, Math.max(1, importLogHistoryPage + Number(delta || 0)));
+  if (next !== importLogHistoryPage) loadImportLogHistory(next);
 }
 
 async function readWorkbookFromFile(file) {
@@ -2155,6 +2367,645 @@ async function staffSetPlateletBookingStatus(bookingId, status) {
   await loadPlateletMonthAdmin();
 }
 
+
+function calendarMonthOffset(range) {
+  const first = new Date(range.year, range.month - 1, 1, 12);
+  return (first.getDay() + 6) % 7;
+}
+
+function roomEventMeta(type) {
+  const map = {
+    closed: { label:"ปิดทำการ", icon:"bi-x-circle", className:"event-closed" },
+    limited: { label:"รับจำนวนจำกัด", icon:"bi-people", className:"event-limited" },
+    mobile_unit: { label:"ออกหน่วย · ห้องปิด", icon:"bi-truck", className:"event-mobile" },
+    activity: { label:"กิจกรรม", icon:"bi-megaphone", className:"event-activity" },
+    open: { label:"เปิดทำการ", icon:"bi-check-circle", className:"event-open" }
+  };
+  return map[type] || map.activity;
+}
+
+function selectGroupPublicDate(value) {
+  const hidden = $("groupDate");
+  const display = $("groupSelectedDate");
+  if (hidden) hidden.value = value;
+  if (display) {
+    display.classList.add("selected");
+    display.innerHTML = '<i class="bi bi-calendar-check"></i><span><b>' + escapeHtml(isoToThaiDate(value, true)) + '</b><small>วันที่ที่เลือกสำหรับส่งคำขอ</small></span>';
+  }
+  document.querySelectorAll(".group-public-day.selected").forEach(el => el.classList.remove("selected"));
+  const target = document.querySelector('.group-public-day[data-date="' + value + '"]');
+  if (target) target.classList.add("selected");
+}
+
+async function loadGroupPublicCalendar(allowAutoNext) {
+  const monthInput = $("groupPublicMonth");
+  const calendar = $("groupPublicCalendar");
+  if (!monthInput || !calendar) return;
+  if (!monthInput.value) monthInput.value = currentMonthValue();
+  const month = monthInput.value;
+  const range = monthRange(month);
+  if (!range) return;
+
+  calendar.innerHTML = '<div class="empty-state-inline">กำลังโหลดวันที่เปิดรับ...</div>';
+  const { data, error } = await sb.rpc("get_group_booking_calendar", { p_month:month });
+  if (error || !data || data.ok !== true) {
+    calendar.innerHTML = '<div class="public-calendar-message error"><i class="bi bi-exclamation-circle"></i><span>โหลดตารางไม่สำเร็จ กรุณาลองใหม่</span></div>';
+    return;
+  }
+
+  if (!data.published) {
+    if (allowAutoNext !== false && month === currentMonthValue()) {
+      const next = nextMonthValue();
+      const probe = await sb.rpc("get_group_booking_calendar", { p_month:next });
+      if (!probe.error && probe.data && probe.data.ok === true && probe.data.published) {
+        monthInput.value = next;
+        return loadGroupPublicCalendar(false);
+      }
+    }
+    calendar.innerHTML = '<div class="public-calendar-message"><i class="bi bi-calendar2-week"></i><div><b>เดือนนี้ยังไม่เปิดรับคำขอหมู่คณะ</b><span>กรุณาเลือกเดือนอื่น หรือติดต่อเจ้าหน้าที่</span></div></div>';
+    return;
+  }
+
+  const dayMap = {};
+  (data.days || []).forEach(d => dayMap[d.date] = d);
+  const headers = ["จ.","อ.","พ.","พฤ.","ศ.","ส.","อา."];
+  let html = '<div class="availability-calendar-head">' + headers.map(h => '<div>' + h + '</div>').join('') + '</div><div class="availability-calendar-grid">';
+  const offset = calendarMonthOffset(range);
+  for (let i = 0; i < offset; i++) html += '<div class="group-public-day empty"></div>';
+  const today = todayISO();
+
+  for (let day = 1; day <= range.days; day++) {
+    const iso = month + "-" + pad2(day);
+    const dt = new Date(range.year, range.month - 1, day, 12);
+    const weekend = dt.getDay() === 0 || dt.getDay() === 6;
+    const row = dayMap[iso];
+    const past = iso < today;
+    const open = !weekend && !past && row && row.open === true;
+
+    if (open) {
+      html += '<button type="button" class="group-public-day open" data-date="' + iso + '" onclick="selectGroupPublicDate(\'' + iso + '\')"><b>' + day + '</b><span>เปิดรับ</span></button>';
+    } else {
+      html += '<div class="group-public-day closed ' + (past ? 'past' : '') + '"><b>' + day + '</b><span>' + (weekend ? 'ไม่เปิด' : past ? 'ผ่านแล้ว' : 'งดรับ') + '</span></div>';
+    }
+  }
+  html += '</div>';
+  calendar.innerHTML = html;
+
+  const selected = $("groupDate")?.value;
+  if (selected && selected.startsWith(month + "-") && dayMap[selected]?.open) selectGroupPublicDate(selected);
+  else {
+    if ($("groupDate")) $("groupDate").value = "";
+    const display = $("groupSelectedDate");
+    if (display) {
+      display.classList.remove("selected");
+      display.innerHTML = '<i class="bi bi-calendar-check"></i><span>กรุณาเลือกวันที่จากตารางด้านบน</span>';
+    }
+  }
+}
+
+async function prepareGroupBookingMonth() {
+  const month = $("groupAdminMonth")?.value;
+  const box = $("groupAdminResult");
+  if (!month) { setStaffResult(box, "กรุณาเลือกเดือน", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("prepare_group_booking_month", { p_month:month });
+  if (error || !data || data.ok !== true) setStaffResult(box, "เตรียมตารางไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
+  else setStaffResult(box, "เตรียมตารางหมู่คณะ " + thaiMonthLabel(month) + " แล้ว\nวันจันทร์–ศุกร์จะเปิดรับเป็นค่าเริ่มต้น จากนั้นปิดเฉพาะวันที่ไม่สะดวกได้", true);
+  await loadGroupBookingMonthAdmin();
+}
+
+async function publishGroupBookingMonth(published) {
+  const month = $("groupAdminMonth")?.value;
+  const box = $("groupAdminResult");
+  if (!month) { setStaffResult(box, "กรุณาเลือกเดือน", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("set_group_booking_month_published", { p_month:month, p_published:!!published });
+  if (error || !data || data.ok !== true) setStaffResult(box, (published ? "เปิดรับ" : "ปิดรอบ") + "ไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
+  else setStaffResult(box, published ? "เปิดรับคำขอหมู่คณะเดือนนี้แล้ว" : "ปิดรับคำขอหมู่คณะเดือนนี้แล้ว", true);
+  await loadGroupBookingMonthAdmin();
+}
+
+async function setGroupBookingDayOpen(open) {
+  const date = $("groupAdminDate")?.value;
+  const note = $("groupAdminNote")?.value.trim() || "";
+  const box = $("groupAdminResult");
+  if (!date) { setStaffResult(box, "กรุณาเลือกวันที่", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("set_group_booking_day_open", { p_booking_date:date, p_open:!!open, p_note:note });
+  if (error || !data || data.ok !== true) {
+    setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
+  } else {
+    const affected = Number(data.affectedRequests || 0);
+    setStaffResult(box, (open ? "เปิดรับหมู่คณะวันที่นี้แล้ว" : "งดรับหมู่คณะวันที่นี้แล้ว") + (affected ? "\nมีคำขอเดิม " + affected + " รายการ เปลี่ยนเป็น “ต้องติดต่อ”" : ""), true);
+  }
+  await loadGroupBookingMonthAdmin();
+}
+
+function selectGroupAdminDate(value) {
+  if ($("groupAdminDate")) $("groupAdminDate").value = value;
+  const row = currentGroupAdminDays.find(d => d.date === value);
+  if ($("groupAdminNote")) $("groupAdminNote").value = row?.note || "";
+}
+
+async function loadGroupBookingMonthAdmin() {
+  const monthInput = $("groupAdminMonth");
+  const calendar = $("groupAdminCalendar");
+  if (!monthInput || !calendar) return;
+  if (!monthInput.value) monthInput.value = currentMonthValue();
+  const month = monthInput.value;
+  const range = monthRange(month); if (!range) return;
+  const isStaff = await ensureStaff(false); if (!isStaff) return;
+
+  calendar.innerHTML = '<div class="staff-result">กำลังโหลดตาราง...</div>';
+  const { data, error } = await sb.rpc("get_group_booking_calendar", { p_month:month });
+  if (error || !data || data.ok !== true) {
+    calendar.innerHTML = '<div class="staff-result fail">โหลดตารางไม่สำเร็จ<br>' + escapeHtml(error?.message || data?.message || "") + '</div>';
+    return;
+  }
+
+  currentGroupAdminDays = Array.isArray(data.days) ? data.days : [];
+  if ($("groupAdminMonthStatus")) {
+    $("groupAdminMonthStatus").innerText = data.published ? "เปิดให้ส่งคำขอแล้ว" : (currentGroupAdminDays.length ? "ฉบับร่าง · ยังไม่เปิดรับ" : "ยังไม่ได้เตรียมตาราง");
+    $("groupAdminMonthStatus").className = data.published ? "published" : "draft";
+  }
+  if ($("groupAdminMonthHint")) $("groupAdminMonthHint").innerText = data.published ? "ผู้บริจาคเห็นวันที่เปิดรับเดือนนี้แล้ว" : "ปิดวันที่ไม่สะดวกให้เรียบร้อยก่อนเปิดรับ";
+
+  const dayMap = {};
+  currentGroupAdminDays.forEach(d => dayMap[d.date] = d);
+  const headers = ["จ.","อ.","พ.","พฤ.","ศ.","ส.","อา."];
+  let html = '<div class="platelet-calendar-head">' + headers.map(h => '<div>' + h + '</div>').join('') + '</div><div class="platelet-calendar-grid">';
+  const offset = calendarMonthOffset(range);
+  for (let i=0;i<offset;i++) html += '<div class="platelet-day-cell empty"></div>';
+  for (let day=1; day<=range.days; day++) {
+    const iso = month + "-" + pad2(day);
+    const dt = new Date(range.year, range.month - 1, day, 12);
+    const weekend = dt.getDay() === 0 || dt.getDay() === 6;
+    const row = dayMap[iso];
+    if (weekend) {
+      html += '<div class="platelet-day-cell weekend"><div class="platelet-day-number">' + day + '</div><span>ไม่เปิด</span></div>';
+    } else if (!row) {
+      html += '<button type="button" class="platelet-day-cell weekday group-unprepared" onclick="selectGroupAdminDate(\'' + iso + '\')"><div class="platelet-day-number">' + day + '</div><span>ยังไม่เตรียม</span></button>';
+    } else {
+      html += '<button type="button" class="platelet-day-cell weekday group-day ' + (row.open ? 'group-open' : 'day-closed') + '" onclick="selectGroupAdminDate(\'' + iso + '\')">' +
+        '<div class="platelet-day-number">' + day + '</div>' +
+        '<div class="group-day-status"><b>' + (row.open ? 'เปิดรับ' : 'งดรับ') + '</b><span>' + escapeHtml(String(row.requests || 0)) + ' คำขอ</span></div>' +
+        (row.note ? '<small class="group-day-note">' + escapeHtml(row.note) + '</small>' : '') +
+        '</button>';
+    }
+  }
+  html += '</div>';
+  calendar.innerHTML = html;
+}
+
+function showRoomCalendarPublic() {
+  showPage("roomCalendar");
+}
+
+function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
+  const dt = new Date(range.year, range.month - 1, day, 12);
+  const weekend = dt.getDay() === 0 || dt.getDay() === 6;
+  const meta = event ? roomEventMeta(event.type) : null;
+  let className = "room-day-cell";
+  let label = "";
+  let icon = "";
+  let detail = "";
+
+  if (event) {
+    className += " " + meta.className;
+    label = meta.label;
+    icon = '<i class="bi ' + meta.icon + '"></i>';
+    detail = event.title || event.location || event.time || "";
+  } else if (weekend) {
+    className += " event-weekend";
+    label = "ปิด";
+    icon = '<i class="bi bi-moon-stars"></i>';
+    detail = "วันหยุดประจำสัปดาห์";
+  } else {
+    className += " event-normal";
+    label = "เปิด";
+    icon = '<i class="bi bi-check-circle"></i>';
+    detail = publicMode ? "08:30–15:30" : "ปกติ";
+  }
+
+  const inner = '<div class="room-day-number">' + day + '</div><div class="room-day-state">' + icon + '<b>' + escapeHtml(label) + '</b></div>' + (detail ? '<small>' + escapeHtml(detail) + '</small>' : '');
+  if (clickable) return '<button type="button" class="' + className + '" onclick="selectRoomAdminDate(\'' + iso + '\')">' + inner + '</button>';
+  return '<div class="' + className + '">' + inner + '</div>';
+}
+
+function renderRoomCalendar(container, month, events, clickable, publicMode) {
+  const range = monthRange(month);
+  if (!container || !range) return;
+  const eventMap = {};
+  (events || []).forEach(e => eventMap[e.date] = e);
+  const headers = ["จ.","อ.","พ.","พฤ.","ศ.","ส.","อา."];
+  let html = '<div class="room-calendar-head">' + headers.map(h => '<div>' + h + '</div>').join('') + '</div><div class="room-calendar-days">';
+  const offset = calendarMonthOffset(range);
+  for (let i=0;i<offset;i++) html += '<div class="room-day-cell empty"></div>';
+  for (let day=1; day<=range.days; day++) {
+    const iso = month + "-" + pad2(day);
+    html += roomCalendarCellHtml(day, iso, range, eventMap[iso], clickable, publicMode);
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderRoomHighlights(container, events) {
+  if (!container) return;
+  const visible = (events || []).filter(e => e.type !== "open" || e.title || e.note || e.location || e.time);
+  if (!visible.length) {
+    container.innerHTML = '<div class="public-calendar-message"><i class="bi bi-check-circle"></i><div><b>ไม่มีประกาศพิเศษในเดือนนี้</b><span>เปิดทำการปกติ จันทร์–ศุกร์ 08:30–15:30 น.</span></div></div>';
+    return;
+  }
+  container.innerHTML = visible.map(e => {
+    const meta = roomEventMeta(e.type);
+    const parts = [];
+    if (e.time) parts.push(e.time);
+    if (e.location) parts.push(e.location);
+    if (e.note) parts.push(e.note);
+    return '<article class="room-highlight ' + meta.className + '"><div class="room-highlight-icon"><i class="bi ' + meta.icon + '"></i></div><div><span>' + escapeHtml(isoToThaiDate(e.date, true)) + '</span><b>' + escapeHtml(e.title || meta.label) + '</b><p>' + escapeHtml(parts.join(" · ") || meta.label) + '</p></div></article>';
+  }).join('');
+}
+
+async function loadPublicRoomCalendar(allowAutoNext) {
+  const monthInput = $("publicRoomMonth");
+  const calendar = $("publicRoomCalendar");
+  const status = $("publicRoomCalendarStatus");
+  const highlights = $("publicRoomHighlights");
+  if (!monthInput || !calendar) return;
+  if (!monthInput.value) monthInput.value = currentMonthValue();
+  const month = monthInput.value;
+  if (status) status.innerText = "กำลังโหลดปฏิทิน...";
+  calendar.innerHTML = "";
+  if (highlights) highlights.innerHTML = "";
+
+  const { data, error } = await sb.rpc("get_room_calendar", { p_month:month });
+  if (error || !data || data.ok !== true) {
+    if (status) status.innerText = "โหลดปฏิทินไม่สำเร็จ กรุณาลองใหม่";
+    return;
+  }
+
+  if (!data.published) {
+    if (allowAutoNext !== false && month === currentMonthValue()) {
+      const next = nextMonthValue();
+      const probe = await sb.rpc("get_room_calendar", { p_month:next });
+      if (!probe.error && probe.data && probe.data.ok === true && probe.data.published) {
+        monthInput.value = next;
+        return loadPublicRoomCalendar(false);
+      }
+    }
+    if (status) status.innerHTML = '<div class="public-calendar-message"><i class="bi bi-calendar2"></i><div><b>เดือนนี้ยังไม่มีประกาศ</b><span>กรุณาดูอีกครั้งหลังเจ้าหน้าที่เผยแพร่ตาราง</span></div></div>';
+    return;
+  }
+
+  currentPublicRoomEvents = Array.isArray(data.events) ? data.events : [];
+  if (status) status.innerHTML = '<div class="published-banner"><i class="bi bi-check2-circle"></i><span><b>' + escapeHtml(thaiMonthLabel(month)) + '</b> · ตารางที่เผยแพร่แล้ว</span></div>';
+  renderRoomCalendar(calendar, month, currentPublicRoomEvents, false, true);
+  renderRoomHighlights(highlights, currentPublicRoomEvents);
+}
+
+async function prepareRoomCalendarMonth() {
+  const month = $("roomAdminMonth")?.value;
+  const box = $("roomAdminResult");
+  if (!month) { setStaffResult(box, "กรุณาเลือกเดือน", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("prepare_room_calendar_month", { p_month:month });
+  if (error || !data || data.ok !== true) setStaffResult(box, "เตรียมเดือนไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
+  else setStaffResult(box, "เตรียมปฏิทิน " + thaiMonthLabel(month) + " แล้ว\nเพิ่มเฉพาะวันที่ปิด รับจำกัด ออกหน่วย หรือมีกิจกรรมพิเศษได้เลย", true);
+  await loadRoomCalendarAdmin();
+}
+
+async function publishRoomCalendarMonth(published) {
+  const month = $("roomAdminMonth")?.value;
+  const box = $("roomAdminResult");
+  if (!month) { setStaffResult(box, "กรุณาเลือกเดือน", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("set_room_calendar_month_published", { p_month:month, p_published:!!published });
+  if (error || !data || data.ok !== true) setStaffResult(box, (published ? "เผยแพร่" : "ซ่อนประกาศ") + "ไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
+  else setStaffResult(box, published ? "เผยแพร่ปฏิทินให้ผู้บริจาคเห็นแล้ว" : "ซ่อนปฏิทินเดือนนี้จากหน้าสาธารณะแล้ว", true);
+  await loadRoomCalendarAdmin();
+}
+
+function applyRoomEventTypeDefaults() {
+  const type = $("roomEventType")?.value || "closed";
+  const title = $("roomEventTitle");
+  if (!title || title.value.trim()) return;
+  const meta = roomEventMeta(type);
+  title.value = meta.label;
+}
+
+async function saveRoomCalendarEvent() {
+  const date = $("roomEventDate")?.value;
+  const type = $("roomEventType")?.value || "closed";
+  const title = $("roomEventTitle")?.value.trim() || "";
+  const note = $("roomEventNote")?.value.trim() || "";
+  const location = $("roomEventLocation")?.value.trim() || "";
+  const timeText = $("roomEventTime")?.value.trim() || "";
+  const box = $("roomAdminResult");
+  if (!date) { setStaffResult(box, "กรุณาเลือกวันที่", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("upsert_room_calendar_event", {
+    p_event_date:date,
+    p_event_type:type,
+    p_title:title,
+    p_public_note:note,
+    p_location:location,
+    p_time_text:timeText,
+    p_is_public:true
+  });
+  if (error || !data || data.ok !== true) setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
+  else setStaffResult(box, "บันทึกสถานะวันที่ " + isoToThaiDate(date, true) + " แล้ว", true);
+  await loadRoomCalendarAdmin();
+}
+
+async function deleteRoomCalendarEvent() {
+  const date = $("roomEventDate")?.value;
+  const box = $("roomAdminResult");
+  if (!date) { setStaffResult(box, "กรุณาเลือกวันที่ก่อน", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const { data, error } = await sb.rpc("delete_room_calendar_event", { p_event_date:date });
+  if (error || !data || data.ok !== true) setStaffResult(box, "ลบไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
+  else {
+    setStaffResult(box, "ลบสถานะพิเศษของวันที่นี้แล้ว ระบบจะกลับไปใช้วันเปิด/ปิดปกติ", true);
+    ["roomEventTitle","roomEventNote","roomEventLocation","roomEventTime"].forEach(id => { if ($(id)) $(id).value = ""; });
+  }
+  await loadRoomCalendarAdmin();
+}
+
+function selectRoomAdminDate(value) {
+  if ($("roomEventDate")) $("roomEventDate").value = value;
+  const event = currentRoomAdminEvents.find(e => e.date === value);
+  if ($("roomEventType")) $("roomEventType").value = event?.type || "closed";
+  if ($("roomEventTitle")) $("roomEventTitle").value = event?.title || "";
+  if ($("roomEventNote")) $("roomEventNote").value = event?.note || "";
+  if ($("roomEventLocation")) $("roomEventLocation").value = event?.location || "";
+  if ($("roomEventTime")) $("roomEventTime").value = event?.time || "";
+  const form = $("roomEventDate");
+  if (form && form.scrollIntoView) form.scrollIntoView({ behavior:"smooth", block:"center" });
+}
+
+function buildRoomAnnouncement(month, events) {
+  const sorted = [...(events || [])].sort((a,b) => String(a.date).localeCompare(String(b.date)));
+  const lines = [];
+  lines.push("📅 ตารางห้องบริจาคโลหิต ประจำเดือน " + thaiMonthLabel(month));
+  lines.push("");
+  lines.push("เวลาทำการปกติ: จันทร์–ศุกร์ 08:30–15:30 น.");
+  if (!sorted.length) {
+    lines.push("เดือนนี้ไม่มีประกาศเปลี่ยนแปลงเพิ่มเติม");
+  } else {
+    lines.push("");
+    sorted.forEach(e => {
+      const meta = roomEventMeta(e.type);
+      const details = [];
+      if (e.title && e.title !== meta.label) details.push(e.title);
+      if (e.time) details.push(e.time);
+      if (e.location) details.push("สถานที่ " + e.location);
+      if (e.note) details.push(e.note);
+      lines.push("• " + isoToThaiDate(e.date, true) + " — " + meta.label + (details.length ? " · " + details.join(" · ") : ""));
+    });
+  }
+  lines.push("");
+  lines.push("สอบถามเพิ่มเติม โทร. " + (CONFIG.PHONE_TEXT || "02-839-6050") + " ในวันและเวลาทำการครับ");
+  return lines.join("\n");
+}
+
+async function loadRoomCalendarAdmin() {
+  const monthInput = $("roomAdminMonth");
+  const calendar = $("roomAdminCalendar");
+  if (!monthInput || !calendar) return;
+  if (!monthInput.value) monthInput.value = currentMonthValue();
+  const month = monthInput.value;
+  const isStaff = await ensureStaff(false); if (!isStaff) return;
+  calendar.innerHTML = '<div class="staff-result">กำลังโหลดปฏิทิน...</div>';
+
+  const { data, error } = await sb.rpc("get_room_calendar", { p_month:month });
+  if (error || !data || data.ok !== true) {
+    calendar.innerHTML = '<div class="staff-result fail">โหลดปฏิทินไม่สำเร็จ<br>' + escapeHtml(error?.message || data?.message || "") + '</div>';
+    return;
+  }
+
+  currentRoomAdminEvents = Array.isArray(data.events) ? data.events : [];
+  if ($("roomAdminMonthStatus")) {
+    $("roomAdminMonthStatus").innerText = data.published ? "เผยแพร่แล้ว" : "ฉบับร่าง · ผู้บริจาคยังไม่เห็น";
+    $("roomAdminMonthStatus").className = data.published ? "published" : "draft";
+  }
+  if ($("roomAdminMonthHint")) $("roomAdminMonthHint").innerText = data.published ? "หน้า Public ใช้ข้อมูลชุดนี้อยู่" : "ตรวจวันปิด/ออกหน่วยให้ครบก่อนเผยแพร่";
+
+  renderRoomCalendar(calendar, month, currentRoomAdminEvents, true, false);
+  if ($("roomAnnouncementText")) $("roomAnnouncementText").innerText = buildRoomAnnouncement(month, currentRoomAdminEvents);
+
+  const r = monthRange(month);
+  const today = todayISO();
+  if (r && $("roomEventDate")) {
+    $("roomEventDate").min = r.start > today ? r.start : r.start;
+    $("roomEventDate").max = r.end;
+  }
+}
+
+async function copyRoomAnnouncement() {
+  const text = $("roomAnnouncementText")?.innerText || "";
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    showModal({ title:"คัดลอกแล้ว", message:"นำข้อความไปวางใน Facebook, LINE OA หรือ Instagram ได้เลย", iconText:"✓", type:"success" });
+  } catch (err) {
+    showModal({ title:"คัดลอกอัตโนมัติไม่ได้", message:"กรุณาเลือกข้อความในกล่องแล้วคัดลอกด้วยตนเอง", iconText:"!" });
+  }
+}
+
+function posterRoundRect(ctx, x, y, w, h, radius, fill, stroke) {
+  const r = Math.min(radius, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+}
+
+function posterWrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  if (!words.length) return y;
+  let line = "";
+  let lineCount = 0;
+  for (let i = 0; i < words.length; i++) {
+    const test = line ? line + " " + words[i] : words[i];
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, y);
+      y += lineHeight;
+      lineCount++;
+      line = words[i];
+      if (maxLines && lineCount >= maxLines - 1) {
+        const rest = [line].concat(words.slice(i + 1)).join(" ");
+        let clipped = rest;
+        while (clipped.length > 1 && ctx.measureText(clipped + "…").width > maxWidth) clipped = clipped.slice(0, -1);
+        ctx.fillText(clipped + (clipped !== rest ? "…" : ""), x, y);
+        return y + lineHeight;
+      }
+    } else {
+      line = test;
+    }
+  }
+  if (line) ctx.fillText(line, x, y);
+  return y + lineHeight;
+}
+
+function posterEventStyle(type) {
+  const map = {
+    closed: { fill:"#fff0f1", stroke:"#edc9cc", text:"#a9363e", short:"ปิด" },
+    limited: { fill:"#fff7e6", stroke:"#efdcae", text:"#98661a", short:"รับจำกัด" },
+    mobile_unit: { fill:"#edf6fb", stroke:"#cbdfea", text:"#336f8d", short:"ออกหน่วย" },
+    activity: { fill:"#f5f0fa", stroke:"#ddd1e8", text:"#715492", short:"กิจกรรม" },
+    open: { fill:"#edf8f1", stroke:"#cbe5d5", text:"#287651", short:"เปิด" }
+  };
+  return map[type] || map.activity;
+}
+
+async function downloadRoomCalendarPoster() {
+  const month = $("roomAdminMonth")?.value || currentMonthValue();
+  const range = monthRange(month);
+  if (!range) {
+    showModal({ title:"ยังสร้างภาพไม่ได้", message:"กรุณาเลือกเดือนก่อน", iconText:"!" });
+    return;
+  }
+
+  try {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext("2d");
+    const events = [...(currentRoomAdminEvents || [])].sort((a,b) => String(a.date).localeCompare(String(b.date)));
+    const eventMap = {};
+    events.forEach(e => eventMap[e.date] = e);
+
+    ctx.fillStyle = "#f8f5f4";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Header
+    posterRoundRect(ctx, 46, 46, 988, 190, 34, "#fffafb", "#efdfe0");
+    ctx.fillStyle = "#c94149";
+    ctx.font = '800 56px "Noto Sans Thai", sans-serif';
+    ctx.fillText("CNMI Blood Donation", 92, 116);
+    ctx.fillStyle = "#1f2933";
+    ctx.font = '800 48px "Noto Sans Thai", sans-serif';
+    ctx.fillText("ตารางห้องบริจาคโลหิต", 92, 174);
+    ctx.fillStyle = "#69757c";
+    ctx.font = '600 28px "Noto Sans Thai", sans-serif';
+    ctx.fillText(thaiMonthLabel(month), 92, 215);
+
+    // Calendar frame
+    const calX = 46, calY = 270, calW = 988;
+    const gap = 8;
+    const colW = (calW - gap * 6) / 7;
+    const headerH = 48;
+    const cellH = 112;
+    const headers = ["จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์","อาทิตย์"];
+    ctx.font = '700 22px "Noto Sans Thai", sans-serif';
+    ctx.textAlign = "center";
+    headers.forEach((h, idx) => {
+      const x = calX + idx * (colW + gap);
+      posterRoundRect(ctx, x, calY, colW, headerH, 14, idx >= 5 ? "#f0eeee" : "#f3e7e8", null);
+      ctx.fillStyle = idx >= 5 ? "#747b7f" : "#9c3a40";
+      ctx.fillText(h, x + colW / 2, calY + 31);
+    });
+
+    const offset = calendarMonthOffset(range);
+    const rows = Math.ceil((offset + range.days) / 7);
+    const startY = calY + headerH + 10;
+    ctx.textAlign = "left";
+
+    for (let i = 0; i < rows * 7; i++) {
+      const day = i - offset + 1;
+      const col = i % 7;
+      const row = Math.floor(i / 7);
+      const x = calX + col * (colW + gap);
+      const y = startY + row * (cellH + gap);
+      if (day < 1 || day > range.days) {
+        posterRoundRect(ctx, x, y, colW, cellH, 16, "#f5f3f2", null);
+        continue;
+      }
+
+      const iso = month + "-" + pad2(day);
+      const dt = new Date(range.year, range.month - 1, day, 12);
+      const weekend = dt.getDay() === 0 || dt.getDay() === 6;
+      const event = eventMap[iso];
+      let fill = weekend ? "#f1efee" : "#ffffff";
+      let stroke = "#e6e1df";
+      let statusColor = weekend ? "#858d91" : "#43805f";
+      let statusText = weekend ? "ปิด" : "เปิด";
+      let detail = weekend ? "วันหยุด" : "08:30–15:30";
+
+      if (event) {
+        const st = posterEventStyle(event.type);
+        fill = st.fill; stroke = st.stroke; statusColor = st.text; statusText = st.short;
+        detail = event.title || event.location || event.time || "";
+      }
+
+      posterRoundRect(ctx, x, y, colW, cellH, 16, fill, stroke);
+      ctx.fillStyle = "#505d63";
+      ctx.font = '800 26px "Noto Sans Thai", sans-serif';
+      ctx.fillText(String(day), x + 12, y + 31);
+
+      ctx.fillStyle = statusColor;
+      ctx.font = '800 22px "Noto Sans Thai", sans-serif';
+      ctx.fillText(statusText, x + 12, y + 61);
+
+      ctx.fillStyle = "#758087";
+      ctx.font = '500 16px "Noto Sans Thai", sans-serif';
+      const short = String(detail || "").slice(0, 25);
+      posterWrapText(ctx, short, x + 12, y + 86, colW - 24, 18, 2);
+    }
+
+    // Highlights / footer
+    const highY = startY + rows * (cellH + gap) + 24;
+    ctx.fillStyle = "#1f2933";
+    ctx.font = '800 28px "Noto Sans Thai", sans-serif';
+    ctx.fillText("ประกาศพิเศษ", 62, highY);
+    let y = highY + 38;
+    const special = events.filter(e => e.type !== "open" || e.title || e.note || e.location || e.time);
+    ctx.font = '600 21px "Noto Sans Thai", sans-serif';
+    if (!special.length) {
+      ctx.fillStyle = "#68757c";
+      ctx.fillText("เดือนนี้ไม่มีประกาศเปลี่ยนแปลงเพิ่มเติม", 62, y);
+      y += 32;
+    } else {
+      special.slice(0, 3).forEach(e => {
+        const meta = roomEventMeta(e.type);
+        const bits = [e.title || meta.label, e.time, e.location].filter(Boolean);
+        ctx.fillStyle = "#4d5960";
+        y = posterWrapText(ctx, "• " + isoToThaiDate(e.date, true) + " — " + bits.join(" · "), 62, y, 956, 28, 1);
+        y += 3;
+      });
+      if (special.length > 3) {
+        ctx.fillStyle = "#7a858b";
+        ctx.fillText("ดูรายละเอียดเพิ่มเติมที่ donor.cnmiblood.com", 62, y);
+        y += 30;
+      }
+    }
+
+    ctx.fillStyle = "#69757c";
+    ctx.font = '600 20px "Noto Sans Thai", sans-serif';
+    ctx.fillText("เวลาทำการปกติ จันทร์–ศุกร์ 08:30–15:30 น.", 62, 1288);
+    ctx.fillStyle = "#c94149";
+    ctx.font = '800 22px "Noto Sans Thai", sans-serif';
+    ctx.fillText("สอบถาม " + (CONFIG.PHONE_TEXT || "02-839-6050") + "  •  donor.cnmiblood.com", 62, 1322);
+
+    const link = document.createElement("a");
+    link.download = "CNMI-Donor-Calendar-" + month + ".png";
+    link.href = canvas.toDataURL("image/png");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    showModal({ title:"สร้างภาพประกาศแล้ว", message:"ได้ภาพแนวตั้งสำหรับนำไปโพสต์ต่อใน Facebook, LINE OA หรือ Instagram ได้เลย", iconText:"✓", type:"success" });
+  } catch (err) {
+    showModal({ title:"สร้างภาพไม่สำเร็จ", message:"กรุณาลองใหม่อีกครั้ง หรือใช้ปุ่มคัดลอกข้อความแทน", iconText:"!" });
+  }
+}
+
 async function loadStaffGroupRequests() {
   const box = $("staffGroupRequestsResult"); if (!box) return;
   const isStaff = await ensureStaff(true); if (!isStaff) return;
@@ -2177,7 +3028,7 @@ async function loadStaffGroupRequests() {
       '<td data-label="ผู้ประสาน">' + escapeHtml(r.coordinator_name) + '</td>' +
       '<td data-label="โทร"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a></td>' +
       '<td data-label="สถานะ">' + escapeHtml(r.status) + '</td>' +
-      '<td data-label="จัดการ"><select class="form-select form-select-sm" onchange="staffSetGroupRequestStatus(\'' + safeId + '\',this.value)"><option value="">เปลี่ยนสถานะ</option><option value="รอติดต่อ">รอติดต่อ</option><option value="ยืนยันแล้ว">ยืนยันแล้ว</option><option value="ไม่รับ">ไม่รับ</option><option value="ยกเลิก">ยกเลิก</option></select></td>' +
+      '<td data-label="จัดการ"><select class="form-select form-select-sm" onchange="staffSetGroupRequestStatus(\'' + safeId + '\',this.value)"><option value="">เปลี่ยนสถานะ</option><option value="รอติดต่อ">รอติดต่อ</option><option value="ยืนยันแล้ว">ยืนยันแล้ว</option><option value="ต้องติดต่อ">ต้องติดต่อ</option><option value="ไม่รับ">ไม่รับ</option><option value="ยกเลิก">ยกเลิก</option></select></td>' +
       '</tr>';
   }).join('') + '</tbody></table>';
 }
@@ -2506,10 +3357,35 @@ function initInputs() {
     bookingDate.max = getNextMonthEndISO();
     bookingDate.addEventListener("change", loadBookingSlots);
   }
-  const groupDate = $("groupDate"); if (groupDate) groupDate.min = today;
   const groupPhone = $("groupPhone"); if (groupPhone) groupPhone.addEventListener("input", () => groupPhone.value = onlyDigits(groupPhone.value).slice(0,10));
   const bookingListDate = $("bookingListDate"); if (bookingListDate) bookingListDate.value = today;
   const groupListFrom = $("groupListFrom"); if (groupListFrom) groupListFrom.value = today;
+  const importLogDate = $("importLogDate"); if (importLogDate) importLogDate.value = today;
+
+  const groupPublicMonth = $("groupPublicMonth");
+  if (groupPublicMonth) {
+    groupPublicMonth.value = currentMonthValue();
+    groupPublicMonth.min = currentMonthValue();
+    groupPublicMonth.max = nextMonthValue();
+    groupPublicMonth.addEventListener("change", function(){
+      if ($("groupDate")) $("groupDate").value = "";
+      const display = $("groupSelectedDate");
+      if (display) {
+        display.classList.remove("selected");
+        display.innerHTML = '<i class="bi bi-calendar-check"></i><span>กรุณาเลือกวันที่จากตารางด้านบน</span>';
+      }
+      loadGroupPublicCalendar(false);
+    });
+  }
+
+  const publicRoomMonth = $("publicRoomMonth");
+  if (publicRoomMonth) {
+    publicRoomMonth.value = currentMonthValue();
+    publicRoomMonth.min = currentMonthValue();
+    publicRoomMonth.max = nextMonthValue();
+    publicRoomMonth.addEventListener("change", function(){ loadPublicRoomCalendar(false); });
+  }
+
   const plateletMonth = $("plateletMonth");
   if (plateletMonth) {
     plateletMonth.value = currentMonthValue();
@@ -2526,6 +3402,49 @@ function initInputs() {
     const r = monthRange(plateletMonth?.value || currentMonthValue());
     plateletCloseDate.min = today;
     if (r) plateletCloseDate.max = r.end;
+  }
+
+  const groupAdminMonth = $("groupAdminMonth");
+  if (groupAdminMonth) {
+    groupAdminMonth.value = currentMonthValue();
+    groupAdminMonth.min = currentMonthValue();
+    groupAdminMonth.max = nextMonthValue();
+    groupAdminMonth.addEventListener("change", function(){
+      const r = monthRange(groupAdminMonth.value);
+      if ($("groupAdminDate") && r) {
+        $("groupAdminDate").min = r.start > today ? r.start : today;
+        $("groupAdminDate").max = r.end;
+        $("groupAdminDate").value = "";
+      }
+      loadGroupBookingMonthAdmin();
+    });
+  }
+  const groupAdminDate = $("groupAdminDate");
+  if (groupAdminDate) {
+    const r = monthRange(groupAdminMonth?.value || currentMonthValue());
+    groupAdminDate.min = today;
+    if (r) groupAdminDate.max = r.end;
+  }
+
+  const roomAdminMonth = $("roomAdminMonth");
+  if (roomAdminMonth) {
+    roomAdminMonth.value = currentMonthValue();
+    roomAdminMonth.min = currentMonthValue();
+    roomAdminMonth.max = nextMonthValue();
+    roomAdminMonth.addEventListener("change", function(){
+      const r = monthRange(roomAdminMonth.value);
+      if ($("roomEventDate") && r) {
+        $("roomEventDate").min = r.start;
+        $("roomEventDate").max = r.end;
+        $("roomEventDate").value = "";
+      }
+      loadRoomCalendarAdmin();
+    });
+  }
+  const roomEventDate = $("roomEventDate");
+  if (roomEventDate) {
+    const r = monthRange(roomAdminMonth?.value || currentMonthValue());
+    if (r) { roomEventDate.min = r.start; roomEventDate.max = r.end; }
   }
 
   ["staffEmail", "adminStaffEmail"].forEach(id => {
@@ -2602,7 +3521,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=14.2").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.0").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
