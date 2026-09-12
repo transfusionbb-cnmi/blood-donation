@@ -2302,3 +2302,180 @@ body[data-page="question"] .public-ask-floating,body[data-page="staff"] .public-
   .home-primary-grid .home-quick-card{min-height:92px;grid-template-columns:50px minmax(0,1fr)}
   .home-primary-grid .home-quick-card b,.home-primary-grid .home-quick-card small{min-height:auto}
 }
+
+/* v15.29 — Staff mobile compact UI: less copy, less vertical clutter */
+@media (max-width: 700px) {
+  body[data-page="staff"] .brand-header { display: none !important; }
+  body[data-page="staff"] .public-shell { padding-top: 0 !important; }
+
+  body[data-page="staff"] .staff-topbar {
+    min-height: 52px;
+    margin: 0 0 8px !important;
+    padding: 7px 8px;
+    border-radius: 16px;
+    gap: 8px;
+    flex-wrap: nowrap;
+    box-shadow: 0 5px 16px rgba(28,39,49,.04);
+  }
+  body[data-page="staff"] .staff-app-mark { width: 34px; height: 34px; border-radius: 11px; }
+  body[data-page="staff"] .staff-topbar-title { min-width: 0; gap: 8px; }
+  body[data-page="staff"] .staff-topbar-title h2 { font-size: .9rem; white-space: nowrap; }
+  body[data-page="staff"] .staff-topbar-actions { gap: 5px; flex-wrap: nowrap; margin-left: auto; }
+  body[data-page="staff"] .staff-topbar-actions .btn { min-height: 36px; border-radius: 11px !important; }
+  body[data-page="staff"] .staff-topbar-actions .btn:nth-child(2),
+  body[data-page="staff"] .staff-topbar-actions .btn:nth-child(3) {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+    font-size: 0;
+  }
+  body[data-page="staff"] .staff-topbar-actions .btn:nth-child(2) i,
+  body[data-page="staff"] .staff-topbar-actions .btn:nth-child(3) i { font-size: .95rem; margin: 0; }
+
+  body[data-page="staff"] .staff-sidebar {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 7px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  body[data-page="staff"] .staff-profile-pill {
+    min-width: 0;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 13px;
+    font-size: .68rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body[data-page="staff"] .staff-nav-card {
+    position: static;
+    z-index: auto;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible !important;
+  }
+  body[data-page="staff"] .staff-nav-groups { display: block; padding: 0; overflow: visible; }
+  body[data-page="staff"] .staff-nav-groups .staff-nav-group { display: none !important; }
+  body[data-page="staff"] .staff-menu-all-btn {
+    width: auto;
+    min-height: 38px;
+    padding: 7px 10px;
+    border-radius: 12px;
+    font-size: .72rem;
+    white-space: nowrap;
+  }
+  body[data-page="staff"] .staff-menu-all-btn > i:last-child { display: none; }
+
+  #staffTab_questions .staff-page-head {
+    align-items: center;
+    margin: 2px 1px 9px;
+  }
+  #staffTab_questions .staff-page-head > div > span,
+  #staffTab_questions .staff-page-head p { display: none; }
+  #staffTab_questions .staff-page-head h3 { margin: 0; font-size: 1.18rem; }
+  #staffTab_questions .page-head-actions .btn {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border-radius: 12px !important;
+    font-size: 0;
+  }
+  #staffTab_questions .page-head-actions .btn i { font-size: .95rem; margin: 0; }
+  #staffTab_questions .refresh-text { display: none; }
+
+  #staffTab_questions .staff-card { border-radius: 18px !important; }
+  #staffTab_questions .push-settings-card { padding: 13px !important; margin-bottom: 10px !important; }
+  #staffTab_questions .push-settings-card .staff-section-head { align-items: flex-start; }
+  #staffTab_questions .push-settings-card .staff-section-head h5 { font-size: .9rem; }
+  #staffTab_questions .push-settings-card .staff-section-head small {
+    display: block;
+    margin-top: 2px;
+    color: #819099;
+    font-size: .66rem;
+    line-height: 1.35;
+  }
+  #staffTab_questions .push-settings-card .status-pill {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    font-size: .62rem;
+  }
+  #staffTab_questions .push-setting-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-top: 10px !important;
+  }
+  #staffTab_questions .push-check {
+    min-height: 44px;
+    padding: 9px 10px;
+    border-radius: 13px;
+    gap: 7px;
+    align-items: center;
+  }
+  #staffTab_questions .push-check input { margin: 0; }
+  #staffTab_questions .push-check b { font-size: .74rem; line-height: 1.25; }
+  #staffTab_questions .push-check small { display: none; }
+  #staffTab_questions #btnEnablePush {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    border-radius: 14px !important;
+    font-size: .86rem;
+  }
+  #staffTab_questions .staff-install-help {
+    margin-top: 8px;
+    padding: 8px 9px;
+    border-radius: 13px;
+    flex-direction: row;
+    align-items: center;
+    gap: 7px;
+  }
+  #staffTab_questions .staff-install-help > div {
+    min-width: 0;
+    flex: 1;
+    gap: 6px;
+    align-items: center;
+    font-size: .68rem;
+    line-height: 1.3;
+  }
+  #staffTab_questions .staff-install-help a {
+    width: auto;
+    min-height: 36px;
+    padding: 6px 9px;
+    border-radius: 11px !important;
+    font-size: .66rem;
+  }
+
+  #staffTab_questions .question-list-card { padding: 12px !important; }
+  #staffTab_questions .question-inbox-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  #staffTab_questions .question-inbox-filters button {
+    min-height: 42px;
+    padding: 7px 9px;
+    border-radius: 13px;
+    font-size: .76rem;
+    text-align: center;
+  }
+  #staffTab_questions .question-inbox-filters b {
+    min-width: 19px;
+    height: 19px;
+    margin-left: 3px;
+    font-size: .62rem;
+  }
+  #staffTab_questions #staffQuestionList { margin-top: 9px !important; }
+  #staffTab_questions .staff-result { padding: 11px; border-radius: 13px; font-size: .74rem; }
+  #staffTab_questions .staff-question-card { padding: 11px; border-radius: 15px; gap: 10px; }
+  #staffTab_questions .staff-question-icon { width: 40px; height: 40px; border-radius: 12px; }
+  #staffTab_questions .staff-question-main { gap: 9px; }
+  #staffTab_questions .staff-question-main h5 { font-size: .9rem; margin: 2px 0; }
+  #staffTab_questions .staff-question-main p { font-size: .75rem; line-height: 1.4; }
+  #staffTab_questions .staff-question-main small { font-size: .65rem; }
+}

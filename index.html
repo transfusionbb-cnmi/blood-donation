@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.26" rel="stylesheet">
+  <link href="styles.css?v=15.29" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -678,7 +678,7 @@
     </div>
     <div id="pageStaff" class="app-page staff-wide">
       <div class="staff-topbar mb-3">
-        <div class="staff-topbar-title"><div class="staff-app-mark"><i class="bi bi-droplet-fill"></i></div><div><small>CNMI Blood Donation</small><h2>ระบบเจ้าหน้าที่</h2></div></div>
+        <div class="staff-topbar-title"><div class="staff-app-mark"><i class="bi bi-droplet-fill"></i></div><div><small>CNMI Blood Donation</small><h2>เจ้าหน้าที่</h2></div></div>
         <div class="staff-topbar-actions">
           <button type="button" id="staffRoleSwitchBtn" class="btn btn-role-switch btn-sm" onclick="toggleAdminStaffView()" style="display:none;"><i class="bi bi-person-badge"></i> <span>ดูแบบ Staff</span></button>
           <button type="button" class="btn btn-soft btn-sm" onclick="showPage('home')"><i class="bi bi-house"></i> หน้าหลัก</button>
@@ -690,7 +690,7 @@
         <aside class="staff-sidebar">
           <div id="staffProfileBar" class="staff-profile-pill" style="display:none;"></div>
           <nav class="staff-nav-card staff-nav-groups">
-            <button type="button" class="staff-menu-all-btn" onclick="openStaffMenuLauncher()"><i class="bi bi-grid-3x3-gap"></i><span>เมนูทั้งหมด</span><i class="bi bi-chevron-right"></i></button>
+            <button type="button" class="staff-menu-all-btn" onclick="openStaffMenuLauncher()"><i class="bi bi-grid-3x3-gap"></i><span>เมนู</span><i class="bi bi-chevron-right"></i></button>
             <div class="staff-nav-group open" data-nav-group="today">
               <button type="button" class="staff-nav-group-title" onclick="toggleStaffNavGroup('today')"><span><i class="bi bi-sun"></i> งานวันนี้</span><i class="bi bi-chevron-down nav-chevron"></i></button>
               <div class="staff-nav-group-items">
@@ -841,19 +841,19 @@
           </div>
 
           <div id="staffTab_questions" class="staff-tab-page">
-            <div class="staff-page-head"><div><span>DONOR QUESTION INBOX</span><h3>คำถามผู้บริจาค</h3><p>รวมคำถามที่ต้องให้คนช่วยตอบไว้ที่เดียว เรื่องหลังบริจาคและผลตรวจจะถูกทำเครื่องหมายว่าต้องให้แพทย์/ผู้รับผิดชอบดู</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffQuestions()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div></div>
+            <div class="staff-page-head"><div><span>INBOX</span><h3>คำถามผู้บริจาค</h3><p>คำถามใหม่และรายการที่ต้องให้แพทย์ดู</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffQuestions()" aria-label="รีเฟรชรายการคำถาม" title="รีเฟรช"><i class="bi bi-arrow-clockwise"></i> <span class="refresh-text">Refresh</span></button></div></div>
 
             <div class="card main-card staff-card p-4 mb-3 push-settings-card">
-              <div class="staff-section-head"><div><h5><i class="bi bi-bell"></i> แจ้งเตือนบนโทรศัพท์เครื่องนี้</h5><small>เปิดครั้งเดียว เมื่อมีคำถามใหม่จะเด้งบนโทรศัพท์ และแตะแจ้งเตือนเพื่อเปิดบทสนทนานั้นได้ทันที</small></div><span id="pushSupportStatus" class="status-pill neutral">กำลังตรวจสอบ</span></div>
+              <div class="staff-section-head"><div><h5><i class="bi bi-bell"></i> แจ้งเตือนคำถาม</h5><small>รับแจ้งเตือนคำถามใหม่บนเครื่องนี้</small></div><span id="pushSupportStatus" class="status-pill neutral">กำลังตรวจสอบ</span></div>
               <div class="push-setting-grid mt-3">
-                <label class="push-check"><input type="checkbox" id="pushNotifyGeneral" checked><span><b>คำถามทั่วไป</b><small>คิวคำถามใหม่ที่ Staff ควรรู้</small></span></label>
-                <label class="push-check doctor"><input type="checkbox" id="pushNotifyDoctor"><span><b>คำถามที่ต้องให้แพทย์ดู</b><small>เหมาะกับเครื่องของแพทย์/ผู้รับผิดชอบทางการแพทย์</small></span></label>
-                <button type="button" id="btnEnablePush" class="btn btn-search" onclick="enableStaffPushNotifications()"><i class="bi bi-bell-fill"></i> เปิดแจ้งเตือนเครื่องนี้</button>
+                <label class="push-check"><input type="checkbox" id="pushNotifyGeneral" checked><span><b>ทั่วไป</b></span></label>
+                <label class="push-check doctor"><input type="checkbox" id="pushNotifyDoctor"><span><b>สำหรับแพทย์</b></span></label>
+                <button type="button" id="btnEnablePush" class="btn btn-search" onclick="enableStaffPushNotifications()"><i class="bi bi-bell-fill"></i> เปิดแจ้งเตือน</button>
               </div>
-              <div class="staff-install-help"><div><i class="bi bi-phone"></i><span><b>ติดตั้ง Staff บนโทรศัพท์:</b> ให้เปิดหน้าสำหรับ Staff โดยเฉพาะก่อนเพิ่มลง Home Screen เพื่อให้ไอคอนเปิดกลับมาที่คำถามผู้บริจาค ไม่ใช่หน้าผู้บริจาค</span></div><a class="btn btn-soft btn-sm" href="staff.html#/staff/questions" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> เปิดหน้าติดตั้ง Staff</a></div>
+              <div class="staff-install-help"><div><i class="bi bi-phone"></i><span><b>ติดตั้ง Staff บน Home Screen</b></span></div><a class="btn btn-soft btn-sm" href="staff.html#/staff/questions" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> ติดตั้ง Staff</a></div>
             </div>
 
-            <div class="card main-card staff-card p-4 mb-3">
+            <div class="card main-card staff-card p-4 mb-3 question-list-card">
               <div class="question-inbox-filters">
                 <button type="button" class="active" data-question-filter="all" onclick="setStaffQuestionFilter('all')">ทั้งหมด <b id="questionCountAll">0</b></button>
                 <button type="button" data-question-filter="ใหม่" onclick="setStaffQuestionFilter('ใหม่')">ใหม่ <b id="questionCountNew">0</b></button>
@@ -1190,6 +1190,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.28"></script>
+  <script src="app.js?v=15.29"></script>
 </body>
 </html>

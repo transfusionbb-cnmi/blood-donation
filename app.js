@@ -1693,7 +1693,7 @@ function applyStaffProfileUI() {
   const bar = $("staffProfileBar");
   if (bar) {
     bar.style.display = "block";
-    const modeText = actualAdmin && effectiveRole === "staff" ? " · กำลังดูแบบ Staff" : " · " + effectiveRole;
+    const modeText = " · " + (effectiveRole === "admin" ? "Admin" : "Staff");
     bar.innerText = (profile.display_name || profile.email || "เจ้าหน้าที่") + modeText + (profile.must_change_password ? " · ต้องเปลี่ยนรหัสผ่าน" : "");
     bar.classList.toggle("staff-preview-mode", actualAdmin && effectiveRole === "staff");
   }
@@ -6522,7 +6522,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.28").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.29").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
