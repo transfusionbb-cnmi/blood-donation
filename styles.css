@@ -2225,3 +2225,80 @@ body[data-page="question"] .public-ask-floating,body[data-page="staff"] .public-
   .donor-chat-tracking-actions .btn{min-height:38px}
   .donor-chat-tracking-banner{flex-wrap:wrap}
 }
+
+/* v15.26 — Home UI balance + clearer hierarchy */
+.home-welcome-panel{
+  padding:28px 30px;
+  border-radius:30px;
+  background:linear-gradient(135deg,#fff 0%,#fff9fa 68%,#fff3f5 100%);
+  border:1px solid #f2e5e7;
+  box-shadow:0 16px 34px rgba(42,52,60,.055);
+}
+.home-welcome-panel .welcome-title{font-size:2rem;line-height:1.15;margin-bottom:8px}
+.home-welcome-panel .welcome-subtitle{font-size:.92rem;color:#74818a}
+.home-room-status{border-radius:22px;padding:14px 16px;box-shadow:0 9px 26px rgba(28,39,49,.045)}
+.home-section-title-spaced{margin-bottom:2px}
+.home-primary-grid{gap:14px}
+.home-primary-grid .home-quick-card{
+  min-height:126px;
+  padding:20px 20px;
+  border-radius:24px;
+  grid-template-columns:58px minmax(0,1fr);
+  gap:15px;
+  align-items:center;
+  overflow:hidden;
+}
+.home-primary-grid .home-quick-icon{
+  width:58px;height:58px;border-radius:19px;font-size:1.42rem;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.8);
+}
+.home-primary-grid .home-quick-copy{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.home-primary-grid .home-quick-card b{font-size:1.05rem;line-height:1.35;margin-bottom:5px;min-height:1.45em}
+.home-primary-grid .home-quick-card small{font-size:.8rem;line-height:1.4;min-height:1.4em}
+.home-primary-grid .home-quick-card.next-donation{background:linear-gradient(145deg,#fffafb,#fff5f6)}
+.home-primary-grid .home-quick-card.platelet{background:linear-gradient(145deg,#fffafb,#fff1f3)}
+.home-primary-grid .home-quick-card.prepare{background:linear-gradient(145deg,#fbfefc,#f3fbf6)}
+.home-primary-grid .home-quick-card.hours{background:linear-gradient(145deg,#fbfdfe,#f2f9fb)}
+.home-primary-grid .home-quick-card:focus-visible,.home-more-card:focus-visible,.donor-help-btn:focus-visible{outline:3px solid rgba(201,65,73,.22);outline-offset:2px}
+.home-secondary-grid{grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
+.home-secondary-grid .home-more-card{
+  min-height:96px;
+  border-radius:20px;
+  padding:15px 16px;
+  grid-template-columns:48px minmax(0,1fr) 22px;
+  gap:12px;
+  box-shadow:0 8px 22px rgba(28,39,49,.035);
+}
+.home-secondary-grid .home-more-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(28,39,49,.07);border-color:#dde4e7}
+.home-secondary-grid .menu-symbol{width:48px;height:48px;border-radius:16px;font-size:1.08rem}
+.home-secondary-grid .menu-title{font-size:.94rem;line-height:1.35}
+.home-secondary-grid .menu-subtitle{font-size:.72rem;line-height:1.4;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.home-secondary-grid .menu-arrow{color:#9aa5ab;font-size:1rem;justify-self:end}
+.home-secondary-grid .question-hub-card{border-color:#f0dadd;background:#fffafb}
+.home-secondary-grid .question-hub-card .menu-symbol{background:#fff0f2;color:#c94149}
+.donor-help-strip{
+  display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:13px;align-items:center;
+  border:1px solid #e5e9ec;background:#fff;border-radius:20px;padding:14px 16px;
+  box-shadow:0 8px 22px rgba(28,39,49,.035)
+}
+.donor-help-icon{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;background:#f3f6f7;color:#5d6c74;font-size:1.15rem}
+.donor-help-copy{min-width:0}.donor-help-copy b{display:block;font-size:.92rem;color:#2d3941}.donor-help-copy small{display:block;color:#77858d;font-size:.72rem;line-height:1.4;margin-top:2px}
+.donor-help-btn{min-height:44px;white-space:nowrap}
+.staff-link{margin-top:18px}
+.staff-install-help{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:15px;background:#fff8f8;border:1px solid #f0dadd;margin-top:12px}
+.staff-install-help>div{display:flex;gap:9px;align-items:flex-start;color:#68767e;font-size:.8rem;line-height:1.55}.staff-install-help i{color:#c94149;margin-top:2px}.staff-install-help a{white-space:nowrap;text-decoration:none}
+@media(max-width:700px){
+  .home-welcome-panel{padding:22px 20px;border-radius:25px}.home-welcome-panel .welcome-title{font-size:1.65rem}
+  .home-primary-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .home-primary-grid .home-quick-card{min-height:118px;padding:15px;grid-template-columns:48px minmax(0,1fr);gap:11px;border-radius:20px}
+  .home-primary-grid .home-quick-icon{width:48px;height:48px;border-radius:16px;font-size:1.2rem}
+  .home-primary-grid .home-quick-card b{font-size:.92rem}.home-primary-grid .home-quick-card small{font-size:.71rem}
+  .home-secondary-grid{grid-template-columns:1fr}.home-secondary-grid .home-more-card{min-height:88px}
+  .donor-help-strip{grid-template-columns:46px minmax(0,1fr);padding:13px}.donor-help-icon{width:46px;height:46px}.donor-help-btn{grid-column:1/-1;width:100%}
+  .staff-install-help{flex-direction:column}.staff-install-help a{width:100%}
+}
+@media(max-width:430px){
+  .home-primary-grid{grid-template-columns:1fr}
+  .home-primary-grid .home-quick-card{min-height:92px;grid-template-columns:50px minmax(0,1fr)}
+  .home-primary-grid .home-quick-card b,.home-primary-grid .home-quick-card small{min-height:auto}
+}

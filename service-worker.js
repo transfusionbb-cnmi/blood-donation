@@ -1,11 +1,13 @@
-const CACHE_NAME = "cnmi-donor-v15-25";
+const CACHE_NAME = "cnmi-donor-v15-26";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=15.25",
-  "./app.js?v=15.25",
+  "./styles.css?v=15.26",
+  "./app.js?v=15.26",
   "./config.js?v=15.5",
   "./manifest.webmanifest",
+  "./manifest-staff.webmanifest",
+  "./staff.html",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
@@ -52,7 +54,7 @@ self.addEventListener("push", function(event) {
     icon: payload.icon || "./icons/icon-192.png",
     badge: payload.badge || "./icons/icon-192.png",
     tag: payload.tag || "cnmi-donor-notification",
-    data: { url:payload.url || "./#/staff/questions", extra:payload.data || {} },
+    data: { url:payload.url || "./staff.html#/staff/questions", extra:payload.data || {} },
     renotify: true
   };
   event.waitUntil(self.registration.showNotification(title, options));
@@ -60,7 +62,11 @@ self.addEventListener("push", function(event) {
 
 self.addEventListener("notificationclick", function(event) {
   event.notification.close();
-  const targetUrl = event.notification?.data?.url || "./#/staff/questions";
+  let targetUrl = event.notification?.data?.url || "./staff.html#/staff/questions";
+  if (typeof targetUrl === "string") {
+    targetUrl = targetUrl.replace("./#/staff/", "./staff.html#/staff/");
+    targetUrl = targetUrl.replace("/#/staff/", "/staff.html#/staff/");
+  }
   event.waitUntil(clients.matchAll({ type:"window", includeUncontrolled:true }).then(function(list) {
     for (const client of list) {
       if ("focus" in client) {

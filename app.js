@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.25 */
+/* CNMI Blood Donation Supabase Frontend v15.26 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -6514,13 +6514,15 @@ function initMobileViewportPolish() {
 }
 
 function initPwaShell() {
+  const staffLauncher = window.CNMI_STAFF_LAUNCHER === true || /\/staff\.html$/i.test(window.location.pathname || "");
+  if (staffLauncher) document.body.classList.add("staff-launcher-shell");
   const standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
   const iosStandalone = window.navigator && window.navigator.standalone === true;
   if (standalone || iosStandalone) document.body.classList.add("is-standalone");
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.25").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.26").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
@@ -6541,7 +6543,9 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   if (!window.location.hash) {
-    history.replaceState({ cnmiRoute:"#/home" }, "", "#/home");
+    const staffLauncher = window.CNMI_STAFF_LAUNCHER === true || /\/staff\.html$/i.test(window.location.pathname || "");
+    const defaultHash = staffLauncher ? "#/staff/questions" : "#/home";
+    history.replaceState({ cnmiRoute:defaultHash }, "", defaultHash);
   }
   ["donorChatStepInput","donorChatStepTextarea"].forEach(function(id){
     const el = $(id);
