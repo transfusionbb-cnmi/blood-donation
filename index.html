@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.21" rel="stylesheet">
+  <link href="styles.css?v=15.22" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -723,6 +723,11 @@
         <main class="staff-content">
           <div id="staffTab_overview" class="staff-tab-page active">
             <div class="staff-page-head"><div><span>ภาพรวม</span><h3>วันนี้ในห้องบริจาคโลหิต</h3></div><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffDashboard()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+            <div id="donorDataFreshnessBanner" class="donor-freshness-banner mb-3">
+              <div class="donor-freshness-icon"><i class="bi bi-database-check"></i></div>
+              <div class="donor-freshness-copy"><small>สถานะข้อมูลผู้บริจาค</small><strong>กำลังตรวจสอบวันที่ข้อมูลล่าสุด...</strong><span>ระบบจะแจ้งวันที่ที่ต้องนำเข้าต่อให้โดยอัตโนมัติ</span></div>
+              <button type="button" class="btn btn-soft btn-sm" onclick="showStaffTab('donorImport')">อัปเดตข้อมูล</button>
+            </div>
             <div class="dashboard-grid mb-3">
               <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-calendar-check"></i></div><div><div class="dashboard-label">คิวเกล็ดเลือดวันนี้</div><div id="dashBookingsToday" class="dashboard-number">-</div><div class="dashboard-sub">รายการที่ยังไม่ยกเลิก</div></div></div>
               <div class="dashboard-card"><div class="dash-icon"><i class="bi bi-calendar2-plus"></i></div><div><div class="dashboard-label">คิวเกล็ดเลือดพรุ่งนี้</div><div id="dashBookingsTomorrow" class="dashboard-number">-</div><div class="dashboard-sub">เตรียมกำลังคนล่วงหน้า</div></div></div>
@@ -746,8 +751,21 @@
           </div>
 
           <div id="staffTab_donorImport" class="staff-tab-page">
-            <div class="staff-page-head"><div><span>DONOR DATA</span><h3>นำเข้าข้อมูลผู้บริจาค</h3><p>เลือกไฟล์ → ตรวจสอบ → ยืนยันนำเข้า</p></div></div>
+            <div class="staff-page-head"><div><span>DONOR DATA</span><h3>นำเข้าข้อมูลผู้บริจาค</h3><p>เลือกไฟล์ → ระบุวันที่ข้อมูลล่าสุด → ตรวจสอบ → ยืนยันนำเข้า</p></div></div>
+            <div id="donorImportFreshnessBanner" class="donor-freshness-banner mb-3">
+              <div class="donor-freshness-icon"><i class="bi bi-calendar2-check"></i></div>
+              <div class="donor-freshness-copy"><small>ข้อมูลผู้บริจาคในระบบ</small><strong>กำลังตรวจสอบวันที่ข้อมูลล่าสุด...</strong><span>ระบบจะแจ้งช่วงวันที่ที่ยังต้องอัปเดตให้</span></div>
+            </div>
             <div class="card main-card staff-card p-4">
+              <div class="data-through-field mb-3">
+                <div class="data-through-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="flex-grow-1">
+                  <label for="donorDataThroughDate" class="form-label mb-1">ข้อมูลในไฟล์นี้อัปเดตล่าสุดถึงวันที่ <span class="required-star">*</span></label>
+                  <div class="form-text mb-2">เลือกวันที่ล่าสุดที่ไฟล์ชุดนี้ครอบคลุมข้อมูลครบแล้ว เช่น ข้อมูลครบถึง 09/09/2569 ให้เลือกวันที่ 09/09/2569</div>
+                  <input type="date" id="donorDataThroughDate" class="form-control" onchange="updateDonorImportDateHint()">
+                  <div id="donorImportDateHint" class="data-through-hint mt-2">กรุณาระบุทุกครั้ง เพื่อให้ระบบจำแทนเจ้าหน้าที่ว่าครั้งหน้าต้องอัปเดตต่อจากวันไหน</div>
+                </div>
+              </div>
               <div class="upload-dropzone"><i class="bi bi-file-earmark-spreadsheet"></i><div><b>เลือกไฟล์ Excel</b><small>.xlsx หรือ .xls</small></div><input type="file" id="donorImportFile" class="form-control" accept=".xlsx,.xls"></div>
               <div class="staff-action-row mt-3"><button type="button" id="btnPreviewDonor" class="btn btn-soft flex-grow-1" onclick="previewDonorFile()"><i class="bi bi-eye"></i> ตรวจไฟล์ก่อน</button><button type="button" id="btnImportDonor" class="btn btn-search flex-grow-1" onclick="confirmImportDonorFile()" disabled><i class="bi bi-cloud-arrow-up"></i> ยืนยันนำเข้า</button></div>
               <div id="donorImportPreview" class="staff-result mt-3" style="display:none;"></div><div id="donorImportResult" class="staff-result mt-3" style="display:none;"></div>
@@ -1146,6 +1164,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.21"></script>
+  <script src="app.js?v=15.22"></script>
 </body>
 </html>

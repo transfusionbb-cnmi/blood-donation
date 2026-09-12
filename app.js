@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.21 */
+/* CNMI Blood Donation Supabase Frontend v15.22 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -1811,6 +1811,7 @@ function showStaffTab(tab, options) {
     if (window.location.hash !== route) history.pushState({ cnmiRoute:route }, "", route);
   }
   if (tab === "overview") loadStaffDashboard();
+  if (tab === "donorImport") loadDonorDataFreshness();
   if (tab === "importLogs") loadImportLogHistory(1);
   if (tab === "notifications") loadStaffNotifications();
   if (tab === "questions") { loadStaffQuestions(); loadPushSubscriptionState(); }
@@ -2302,7 +2303,7 @@ function importTypeLabel(type) {
 
 function parseImportLogMessage(message) {
   const raw = String(message || "").trim();
-  const result = { file:"", sheet:"", mode:"", other:"" };
+  const result = { file:"", sheet:"", mode:"", dataThrough:"", by:"", other:"" };
   if (!raw) return result;
   raw.split(",").map(x => x.trim()).filter(Boolean).forEach(part => {
     const idx = part.indexOf("=");
@@ -2315,6 +2316,8 @@ function parseImportLogMessage(message) {
     if (key === "file") result.file = value;
     else if (key === "sheet") result.sheet = value;
     else if (key === "mode") result.mode = value;
+    else if (key === "data_through") result.dataThrough = value;
+    else if (key === "by") result.by = value;
     else result.other = result.other ? result.other + ", " + part : part;
   });
   return result;
@@ -2335,6 +2338,145 @@ function formatBangkokLogTime(value, includeDate) {
   }
 }
 
+
+function currentStaffDisplayName() {
+  return String(currentStaffProfile?.display_name || currentStaffProfile?.email || "เจ้าหน้าที่").trim();
+}
+
+function calendarDayCountInclusive(startIso, endIso) {
+  const a = isoDateObj(startIso), b = isoDateObj(endIso);
+  if (!a || !b || a > b) return 0;
+  return Math.floor((b.getTime() - a.getTime()) / 86400000) + 1;
+}
+
+function inferDataThroughFromFileName(fileName) {
+  const name = String(fileName || "");
+  const m = name.match(/(?:^|\D)(\d{8})(?:\D|$)/);
+  if (!m) return "";
+  const token = m[1];
+  let y, mo, d;
+  const first4 = Number(token.slice(0,4));
+  const last4 = Number(token.slice(4,8));
+  if (first4 >= 1900 && first4 <= 2700) {
+    y = first4 > 2400 ? first4 - 543 : first4;
+    mo = Number(token.slice(4,6));
+    d = Number(token.slice(6,8));
+  } else if (last4 >= 1900 && last4 <= 2700) {
+    d = Number(token.slice(0,2));
+    mo = Number(token.slice(2,4));
+    y = last4 > 2400 ? last4 - 543 : last4;
+  } else return "";
+  if (!isValidCalendarDate_(y, mo, d)) return "";
+  return y + "-" + pad2(mo) + "-" + pad2(d);
+}
+
+let latestDonorDataMeta = null;
+
+function renderDonorFreshnessBanner(meta, errorText) {
+  const targets = [$('donorDataFreshnessBanner'), $('donorImportFreshnessBanner')].filter(Boolean);
+  const today = todayISO();
+  targets.forEach(function(box) {
+    box.classList.remove('current','stale','warning');
+    const strong = box.querySelector('strong');
+    const span = box.querySelector('.donor-freshness-copy span');
+    const small = box.querySelector('.donor-freshness-copy small');
+    if (errorText) {
+      box.classList.add('warning');
+      if (small) small.innerText = 'สถานะข้อมูลผู้บริจาค';
+      if (strong) strong.innerText = 'ตรวจสอบวันที่ข้อมูลล่าสุดไม่สำเร็จ';
+      if (span) span.innerText = errorText;
+      return;
+    }
+    if (!meta || !meta.dataThrough) {
+      box.classList.add('warning');
+      if (small) small.innerText = 'สถานะข้อมูลผู้บริจาค';
+      if (strong) strong.innerText = 'ยังไม่ได้ระบุว่า ข้อมูลผู้บริจาคล่าสุดถึงวันที่เท่าไร';
+      if (span) span.innerText = 'ครั้งถัดไปที่นำเข้า ให้เลือก “ข้อมูลในไฟล์นี้อัปเดตล่าสุดถึงวันที่” ระบบจะจำให้เอง';
+      return;
+    }
+    const latest = meta.dataThrough;
+    const who = meta.by || 'ไม่ระบุชื่อผู้บันทึก';
+    const when = formatBangkokLogTime(meta.created_at, true);
+    if (small) small.innerText = meta.inferred ? 'สถานะจากประวัติเดิม' : 'ข้อมูลผู้บริจาคล่าสุด';
+    if (strong) strong.innerText = (meta.inferred ? 'คาดว่าข้อมูลล่าสุดถึงวันที่ ' : 'อัปเดตถึงวันที่ ') + isoToThaiDate(latest, true);
+    if (latest === today) {
+      box.classList.add('current');
+      if (span) span.innerText = (meta.inferred ? 'คาดจากชื่อไฟล์เดิม · กรุณายืนยันวันที่ในการนำเข้าครั้งถัดไป · ' : 'ข้อมูลเป็นปัจจุบันถึงวันนี้ · ') + 'อัปโหลดโดย ' + who + ' · ' + when;
+    } else if (latest < today) {
+      box.classList.add('stale');
+      const start = addDaysISO(latest, 1);
+      const count = calendarDayCountInclusive(start, today);
+      if (span) span.innerText = (meta.inferred ? 'คาดจากชื่อไฟล์เดิม · ' : '') + 'ต้องอัปเดตต่อวันที่ ' + isoToThaiDate(start, true) + ' – ' + isoToThaiDate(today, true) + ' (' + count + ' วัน) · ครั้งล่าสุดโดย ' + who + ' · ' + when;
+    } else {
+      box.classList.add('warning');
+      if (span) span.innerText = 'วันที่ข้อมูลล่าสุดอยู่หลังวันนี้ กรุณาตรวจสอบ · บันทึกโดย ' + who + ' · ' + when;
+    }
+  });
+  updateDonorImportDateHint();
+}
+
+async function loadDonorDataFreshness() {
+  const input = $('donorDataThroughDate');
+  if (input) input.max = todayISO();
+  try {
+    const { data, error } = await sb.from('import_logs')
+      .select('message,created_at,created_by')
+      .eq('import_type','donor_import')
+      .order('created_at',{ ascending:false })
+      .limit(200);
+    if (error) throw error;
+    let best = null;
+    (Array.isArray(data) ? data : []).forEach(function(row) {
+      const info = parseImportLogMessage(row.message);
+      const explicit = /^\d{4}-\d{2}-\d{2}$/.test(info.dataThrough || '') ? info.dataThrough : '';
+      const inferred = explicit ? '' : inferDataThroughFromFileName(info.file);
+      const dateValue = explicit || inferred;
+      if (!dateValue) return;
+      if (!best || dateValue > best.dataThrough || (dateValue === best.dataThrough && explicit && best.inferred) || (dateValue === best.dataThrough && String(row.created_at || '') > String(best.created_at || ''))) {
+        best = { dataThrough:dateValue, by:info.by || (explicit ? '' : 'ไม่พบชื่อในประวัติเวอร์ชันเดิม'), created_at:row.created_at || '', created_by:row.created_by || null, inferred:!explicit, file:info.file || '' };
+      }
+    });
+    latestDonorDataMeta = best;
+    renderDonorFreshnessBanner(best, '');
+    return best;
+  } catch (err) {
+    latestDonorDataMeta = null;
+    renderDonorFreshnessBanner(null, err.message || String(err));
+    return null;
+  }
+}
+
+function updateDonorImportDateHint() {
+  const input = $('donorDataThroughDate');
+  const hint = $('donorImportDateHint');
+  const btn = $('btnImportDonor');
+  if (!input || !hint) return;
+  const value = input.value || '';
+  if (btn && pendingDonorImport) btn.disabled = !value;
+  if (!value) {
+    hint.className = 'data-through-hint mt-2';
+    hint.innerText = 'กรุณาระบุทุกครั้ง เพื่อให้ระบบจำแทนเจ้าหน้าที่ว่าครั้งหน้าต้องอัปเดตต่อจากวันไหน';
+    return;
+  }
+  if (!latestDonorDataMeta?.dataThrough) {
+    hint.className = 'data-through-hint mt-2 ok';
+    hint.innerText = 'ระบบจะบันทึกว่า ข้อมูลผู้บริจาคครอบคลุมถึงวันที่ ' + isoToThaiDate(value, true);
+    return;
+  }
+  const latest = latestDonorDataMeta.dataThrough;
+  if (value < latest) {
+    hint.className = 'data-through-hint mt-2 warn';
+    hint.innerText = 'วันที่นี้เก่ากว่าสถานะล่าสุดในระบบ (' + isoToThaiDate(latest, true) + ') สามารถนำเข้าเพื่อเติมข้อมูลย้อนหลังได้ แต่ระบบจะไม่ลดวันที่ข้อมูลล่าสุด';
+  } else if (value === latest) {
+    hint.className = 'data-through-hint mt-2';
+    hint.innerText = 'วันที่เดียวกับข้อมูลล่าสุดในระบบ ใช้ได้หากกำลังนำเข้าไฟล์แก้ไข/เติมข้อมูลของวันเดิม';
+  } else {
+    const start = addDaysISO(latest, 1);
+    hint.className = 'data-through-hint mt-2 ok';
+    hint.innerText = 'กรุณายืนยันว่าไฟล์ชุดนี้ครอบคลุมข้อมูลตั้งแต่ ' + isoToThaiDate(start, true) + ' ถึง ' + isoToThaiDate(value, true) + ' ครบแล้ว';
+  }
+}
+
 function renderImportLogCards(rows, options) {
   options = options || {};
   if (!rows || rows.length === 0) {
@@ -2343,6 +2485,10 @@ function renderImportLogCards(rows, options) {
   return '<div class="friendly-log-list">' + rows.map(function(r) {
     const info = parseImportLogMessage(r.message);
     const fileLine = info.file ? '<div class="friendly-log-file"><i class="bi bi-file-earmark-spreadsheet"></i><span>' + escapeHtml(info.file) + '</span></div>' : '';
+    const inferredLogDate = (!info.dataThrough && r.import_type === "donor_import") ? inferDataThroughFromFileName(info.file) : "";
+    const whoLine = '<div class="friendly-log-meta-line important"><span>อัปโหลดโดย</span><b>' + escapeHtml(info.by || "เวอร์ชันเดิมไม่ได้บันทึกชื่อ") + '</b></div>';
+    const dataDateLine = (info.dataThrough || inferredLogDate) ? '<div class="friendly-log-meta-line important"><span>' + (info.dataThrough ? 'ข้อมูลล่าสุดถึง' : 'คาดจากชื่อไฟล์ว่า ถึง') + '</span><b>' + escapeHtml(isoToThaiDate(info.dataThrough || inferredLogDate, true)) + '</b></div>' : '';
+    const dateTimeLine = '<div class="friendly-log-meta-line"><span>วัน-เวลาที่อัปโหลด</span><b>' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</b></div>';
     const sheetLine = (!options.compact && info.sheet) ? '<div class="friendly-log-meta-line"><span>ชีต</span><b>' + escapeHtml(info.sheet) + '</b></div>' : '';
     const systemBits = [];
     if (info.mode) systemBits.push("mode=" + info.mode);
@@ -2354,7 +2500,7 @@ function renderImportLogCards(rows, options) {
       '<div class="friendly-log-top"><div><span class="friendly-log-type">' + escapeHtml(importTypeLabel(r.import_type)) + '</span><b>' + escapeHtml(formatBangkokLogTime(r.created_at, !!options.includeDate)) + '</b></div>' +
       '<i class="bi ' + (r.import_type === "infectious_update" ? "bi-shield-check" : "bi-database-check") + '"></i></div>' +
       '<div class="friendly-log-stats"><span><small>สำเร็จ</small><b>' + escapeHtml(r.imported_count ?? 0) + '</b></span><span><small>ข้าม</small><b>' + escapeHtml(r.skipped_count ?? 0) + '</b></span></div>' +
-      fileLine + sheetLine + systemDetails +
+      whoLine + dataDateLine + dateTimeLine + fileLine + sheetLine + systemDetails +
       '</article>';
   }).join('') + '</div>';
 }
@@ -2395,6 +2541,7 @@ async function loadStaffDashboard() {
 
   if (box) box.innerText = "กำลังโหลดภาพรวม...";
   if (logBox) logBox.innerText = "กำลังโหลดประวัติ...";
+  loadDonorDataFreshness();
 
   try {
     const bookingsToday = await getExactCount(
@@ -2440,7 +2587,7 @@ async function loadStaffDashboard() {
 
     const bounds = bangkokDayBoundsISO(today);
     const { data: logs, error: logError } = await sb.from("import_logs")
-      .select("import_type, imported_count, skipped_count, message, created_at")
+      .select("*")
       .gte("created_at", bounds.start)
       .lt("created_at", bounds.end)
       .order("created_at", { ascending:false })
@@ -2477,7 +2624,7 @@ async function loadImportLogHistory(page) {
   box.className = "staff-result";
   box.innerHTML = "กำลังโหลดประวัติ...";
   let query = sb.from("import_logs")
-    .select("import_type, imported_count, skipped_count, message, created_at", { count:"exact" })
+    .select("*", { count:"exact" })
     .gte("created_at", bounds.start)
     .lt("created_at", bounds.end)
     .order("created_at", { ascending:false });
@@ -2822,6 +2969,7 @@ function resetDonorImportState() {
   pendingDonorImport = null;
   const previewBox = $("donorImportPreview");
   const resultBox = $("donorImportResult");
+  const dataThroughDate = $("donorDataThroughDate")?.value || "";
   const btn = $("btnImportDonor");
   if (previewBox) { previewBox.style.display = "none"; previewBox.innerText = ""; }
   if (resultBox) { resultBox.style.display = "none"; resultBox.innerText = ""; }
@@ -2909,7 +3057,7 @@ async function previewDonorFile() {
       return;
     }
 
-    if (importBtn) importBtn.disabled = false;
+    if (importBtn) importBtn.disabled = !dataThroughDate;
     setStaffResult(previewBox,
       "ตรวจไฟล์เรียบร้อย รอยืนยันนำเข้า\n\n" +
       "ชื่อไฟล์: " + file.name + "\n" +
@@ -2919,6 +3067,7 @@ async function previewDonorFile() {
       "ข้าม เพราะบริจาคไม่ได้: " + (parsed.skippedCannotDonate || 0) + " รายการ\n" +
       "ข้าม เพราะข้อมูลสำคัญไม่ครบ: " + (parsed.skippedMissing || 0) + " รายการ\n" +
       "ข้อมูลซ้ำในไฟล์เดียวกัน: " + deduped.duplicateInFile + " รายการ\n\n" +
+      (dataThroughDate ? "ยืนยันว่าข้อมูลชุดนี้ล่าสุดถึง: " + isoToThaiDate(dataThroughDate, true) + "\n\n" : "⚠ กรุณาเลือก ‘ข้อมูลในไฟล์นี้อัปเดตล่าสุดถึงวันที่’ ก่อนยืนยันนำเข้า\n\n") +
       "ตรวจแล้วค่อยกด “ยืนยันนำเข้า Supabase” เพื่อบันทึกจริง",
       true
     );
@@ -2942,9 +3091,21 @@ async function confirmImportDonorFile() {
     return;
   }
 
+  const dataThroughDate = $("donorDataThroughDate")?.value || "";
+  if (!dataThroughDate) {
+    setStaffResult(box, "กรุณาเลือก ‘ข้อมูลในไฟล์นี้อัปเดตล่าสุดถึงวันที่’ ก่อนยืนยันนำเข้า\n\nระบบจะใช้วันที่นี้จำว่าครั้งหน้าต้องอัปเดตข้อมูลต่อจากวันไหน", false);
+    $("donorDataThroughDate")?.focus();
+    return;
+  }
+  if (dataThroughDate > todayISO()) {
+    setStaffResult(box, "วันที่ข้อมูลล่าสุดต้องไม่เกินวันนี้ กรุณาตรวจสอบวันที่อีกครั้ง", false);
+    return;
+  }
+
   const parsed = pendingDonorImport.parsed || {};
   const records = pendingDonorImport.records;
   const fileName = pendingDonorImport.fileName || "";
+  const staffName = currentStaffDisplayName();
 
   showBusy(btn, true, "ยืนยันนำเข้า Supabase", "กำลังนำเข้า...");
   try {
@@ -2969,16 +3130,20 @@ async function confirmImportDonorFile() {
       }
     }
 
-    await sb.from("import_logs").insert({
+    const { error: logError } = await sb.from("import_logs").insert({
       import_type: "donor_import",
       imported_count: records.length,
       skipped_count: (parsed.skippedNoUnit || 0) + (parsed.skippedCannotDonate || 0) + (parsed.skippedMissing || 0) + (pendingDonorImport.duplicateInFile || 0),
-      message: `mode=${parsed.mode || "-"}, file=${fileName}`
+      created_by: currentStaffProfile?.user_id || null,
+      message: `data_through=${dataThroughDate}, by=${staffName}, mode=${parsed.mode || "-"}, file=${fileName}`
     });
+    if (logError) throw new Error("นำเข้าข้อมูลสำเร็จ แต่บันทึกประวัติการนำเข้าไม่สำเร็จ: " + logError.message);
 
     setStaffResult(box,
       "นำเข้าข้อมูลผู้บริจาคเสร็จแล้ว\n\n" +
       "ชื่อไฟล์: " + fileName + "\n" +
+      "ข้อมูลชุดนี้ล่าสุดถึง: " + isoToThaiDate(dataThroughDate, true) + "\n" +
+      "อัปโหลดโดย: " + staffName + "\n" +
       "โหมดไฟล์: " + (parsed.mode || "-") + "\n" +
       "ส่งเข้า Supabase: " + sent + " รายการ\n" +
       "ข้าม เพราะไม่มี Unit No: " + (parsed.skippedNoUnit || 0) + " รายการ\n" +
@@ -2992,6 +3157,8 @@ async function confirmImportDonorFile() {
     pendingDonorImport = null;
     if (btn) btn.disabled = true;
     if (previewBox) previewBox.style.display = "none";
+    if ($("donorDataThroughDate")) $("donorDataThroughDate").value = "";
+    await loadDonorDataFreshness();
     loadStaffDashboard();
   } catch (err) {
     setStaffResult(box, "นำเข้าไม่สำเร็จ\n" + (err.message || err), false);
@@ -3063,7 +3230,8 @@ async function importInfectiousFile() {
       import_type: "infectious_update",
       imported_count: result.updated,
       skipped_count: parsed.skipped + result.notFound,
-      message: `sheet=${parsed.sheetName}, file=${file.name}`
+      created_by: currentStaffProfile?.user_id || null,
+      message: `by=${currentStaffDisplayName()}, sheet=${parsed.sheetName}, file=${file.name}`
     });
     setStaffResult(box,
       "อัปเดต infectious positive เสร็จแล้ว\n\n" +
@@ -6173,7 +6341,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.21").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.22").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
