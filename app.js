@@ -1,7 +1,13 @@
-/* CNMI Blood Donation Supabase Frontend v15.26 */
+/* CNMI Blood Donation Supabase Frontend v15.30 */
 
 const CONFIG = window.CNMI_CONFIG || {};
-const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 let selectedGender = "";
 let currentQuestionIndex = 0;
@@ -48,6 +54,8 @@ let donorKnowledgeLoadedAt = 0;
 let currentKnowledgeId = null;
 let currentKnowledgeSourceQuestionId = null;
 let staffKnowledgeRows = [];
+let lastStaffGateState = "";
+let staffGateRequestId = 0;
 
 const DONOR_CHAT_STORAGE = {
   token:"cnmiDonorChatToken",
@@ -172,7 +180,11 @@ async function handleHashRoute() {
   if (route.staff) {
     pendingStaffRouteTab = route.tab || "overview";
     pendingStaffQuestionCode = route.openQuestion || "";
-    if (route.page === "staffLogin") { suppressRouteSync = true; showPage("staffLogin"); suppressRouteSync = false; return; }
+    if (route.page === "staffLogin") {
+      const savedSession = await getPersistedStaffSession();
+      if (savedSession) { await showStaffGate(); return; }
+      suppressRouteSync = true; showPage("staffLogin"); suppressRouteSync = false; return;
+    }
     if (route.page === "staffChangePassword") { suppressRouteSync = true; showPage("staffChangePassword"); suppressRouteSync = false; return; }
     await showStaffGate();
     if (currentStaffProfile) {
@@ -1451,10 +1463,58 @@ async function cancelBookingUI() {
   });
 }
 
+function setStaffAuthLoading(show, mode) {
+  let overlay = $("staffAuthLoading");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "staffAuthLoading";
+    overlay.className = "staff-auth-loading";
+    overlay.innerHTML = '<div class="staff-auth-loading-card"><div class="staff-auth-loading-mark"><i class="bi bi-person-badge"></i></div><div class="staff-auth-loading-copy"><b id="staffAuthLoadingTitle">กำลังเปิด Staff</b><small id="staffAuthLoadingText">กำลังตรวจสอบการเข้าสู่ระบบ...</small></div><button type="button" id="staffAuthRetryBtn" class="btn btn-search btn-sm" onclick="showStaffGate()" style="display:none;">ลองใหม่</button></div>';
+    document.body.appendChild(overlay);
+  }
+  if (!show) {
+    overlay.classList.remove("show", "error");
+    overlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+  const isError = mode === "error";
+  const title = $("staffAuthLoadingTitle");
+  const text = $("staffAuthLoadingText");
+  const retry = $("staffAuthRetryBtn");
+  if (title) title.textContent = isError ? "เปิด Staff ไม่สำเร็จ" : "กำลังเปิด Staff";
+  if (text) text.textContent = isError ? "การเชื่อมต่อสะดุด บัญชียังไม่ถูกออกจากระบบ" : "กำลังตรวจสอบการเข้าสู่ระบบ...";
+  if (retry) retry.style.display = isError ? "inline-flex" : "none";
+  overlay.classList.toggle("error", isError);
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden", "false");
+}
+
+async function getPersistedStaffSession() {
+  try {
+    const { data, error } = await sb.auth.getSession();
+    if (error) return null;
+    return data && data.session ? data.session : null;
+  } catch (err) {
+    return null;
+  }
+}
+
 async function showStaffGate() {
+  const requestId = ++staffGateRequestId;
+  setStaffAuthLoading(true);
   const ok = await ensureStaff(false);
-  if (ok) routeStaffAfterAuth();
-  else showPage("staffLogin");
+  if (requestId !== staffGateRequestId) return;
+  if (ok) {
+    setStaffAuthLoading(false);
+    routeStaffAfterAuth();
+    return;
+  }
+  if (lastStaffGateState === "connection") {
+    setStaffAuthLoading(true, "error");
+    return;
+  }
+  setStaffAuthLoading(false);
+  showPage("staffLogin");
 }
 
 async function staffLogin() {
@@ -1474,7 +1534,9 @@ async function staffLogin() {
     return;
   }
 
+  setStaffAuthLoading(true);
   const ok = await ensureStaff(true);
+  setStaffAuthLoading(false);
   if (ok) routeStaffAfterAuth();
 }
 
@@ -1618,18 +1680,49 @@ async function updatePasswordFromRecovery() {
 }
 
 async function ensureStaff(showError) {
-  const { data: userData } = await sb.auth.getUser();
-  if (!userData || !userData.user) return false;
+  lastStaffGateState = "";
 
-  const { data: syncData, error: syncError } = await sb.rpc("sync_my_staff_profile");
-  if (syncError || !syncData || syncData.ok !== true) {
+  const session = await getPersistedStaffSession();
+  if (!session || !session.user) {
+    currentStaffProfile = null;
+    lastStaffGateState = "signedout";
+    return false;
+  }
+
+  let syncData = null;
+  let syncError = null;
+  try {
+    const result = await Promise.race([
+      sb.rpc("sync_my_staff_profile"),
+      new Promise(function(resolve) {
+        setTimeout(function(){ resolve({ data:null, error:{ message:"timeout" } }); }, 12000);
+      })
+    ]);
+    syncData = result ? result.data : null;
+    syncError = result ? result.error : { message:"unknown" };
+  } catch (err) {
+    syncError = err || { message:"connection" };
+  }
+
+  if (syncError) {
+    // Network / server errors must not sign the user out. Keep the persisted session
+    // so reopening the Staff PWA does not unexpectedly ask for a password again.
+    lastStaffGateState = "connection";
+    if (showError) showModal({ title:"เชื่อมต่อระบบไม่ได้", message:"บัญชียังอยู่ในระบบ กรุณาลองใหม่เมื่ออินเทอร์เน็ตพร้อม", iconText:"!" });
+    return false;
+  }
+
+  if (!syncData || syncData.ok !== true) {
+    lastStaffGateState = "access";
     await sb.auth.signOut();
+    currentStaffProfile = null;
     if (showError) showModal({ title:"ไม่มีสิทธิ์เจ้าหน้าที่", message:"บัญชีนี้ยังไม่ได้รับสิทธิ์ใช้งานหลังบ้าน กรุณาให้แอดมินเพิ่ม email ในเมนูจัดการเจ้าหน้าที่ก่อน", iconText:"!" });
     return false;
   }
 
   currentStaffProfile = syncData.profile || null;
   applyStaffProfileUI();
+  lastStaffGateState = "ready";
   return true;
 }
 
@@ -1749,10 +1842,13 @@ async function requireAdmin() {
 }
 
 async function staffLogout() {
+  staffGateRequestId += 1;
+  setStaffAuthLoading(false);
   await sb.auth.signOut();
   currentStaffProfile = null;
   staffViewMode = null;
-  showPage("home");
+  const staffLauncher = window.CNMI_STAFF_LAUNCHER === true || /\/staff\.html$/i.test(window.location.pathname || "");
+  showPage(staffLauncher ? "staffLogin" : "home");
 }
 
 function toggleStaffNavGroup(groupId, forceOpen) {
@@ -6522,7 +6618,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.29").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.30").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

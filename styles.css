@@ -2479,3 +2479,25 @@ body[data-page="question"] .public-ask-floating,body[data-page="staff"] .public-
   #staffTab_questions .staff-question-main p { font-size: .75rem; line-height: 1.4; }
   #staffTab_questions .staff-question-main small { font-size: .65rem; }
 }
+
+
+/* v15.30 — Staff session restore + non-blank auth gate */
+.staff-auth-loading{
+  position:fixed; inset:0; z-index:12000; display:none; place-items:center;
+  padding:22px; background:#f7f6f5;
+}
+.staff-auth-loading.show{display:grid}
+.staff-auth-loading-card{
+  width:min(92vw,390px); display:grid; grid-template-columns:48px minmax(0,1fr);
+  gap:12px; align-items:center; padding:16px; border:1px solid #e7e9eb;
+  border-radius:20px; background:#fff; box-shadow:0 10px 34px rgba(28,39,49,.08);
+}
+.staff-auth-loading-mark{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#fff0f2;color:#c94149;font-size:1.2rem}
+.staff-auth-loading-copy{min-width:0}.staff-auth-loading-copy b{display:block;color:#26343c;font-size:.95rem}.staff-auth-loading-copy small{display:block;margin-top:2px;color:#7b8991;font-size:.73rem;line-height:1.4}
+.staff-auth-loading-card #staffAuthRetryBtn{grid-column:1/-1;min-height:42px;border-radius:13px}
+.staff-auth-loading.error .staff-auth-loading-mark{background:#fff7ea;color:#b87816}
+body.staff-launcher-shell[data-page="staffLogin"] .brand-header{display:none!important}
+@media(max-width:700px){
+  .staff-auth-loading{padding:16px}
+  .staff-auth-loading-card{width:100%;max-width:360px;padding:14px;border-radius:18px}
+}
