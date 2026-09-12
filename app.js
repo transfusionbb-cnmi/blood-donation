@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.20 */
+/* CNMI Blood Donation Supabase Frontend v15.21 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -4469,7 +4469,7 @@ function donorChatWriteJson(key, value) {
 }
 
 function donorChatInitialGreetingHtml() {
-  return '<div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>สวัสดีค่ะ ต้องการสอบถามเรื่องอะไรคะ?</b><span>พิมพ์ถามได้เลยค่ะ คำถามทั่วไปที่มีคำตอบจากข้อมูลของหน่วย ระบบจะตอบให้ทันที ส่วนเรื่องที่ต้องประเมินจะส่งต่อให้เจ้าหน้าที่หรือแพทย์</span></div></div>';
+  return '<div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>พิมพ์คำถามได้เลยค่ะ</b><span>เรื่องที่ตอบได้ ระบบจะช่วยตอบให้ทันที หากต้องให้เจ้าหน้าที่ช่วยดู เราจะส่งต่อให้ค่ะ</span></div></div>';
 }
 
 function donorChatPersistDraft() {
@@ -4918,7 +4918,46 @@ function chooseDonorChatReply(value, label) {
   donorChatStoreStepValue(step, value, label || value);
 }
 
+function showDonorAskEntry() {
+  const entry = $("donorAskEntry");
+  const panel = $("donorMyQuestionsPanel");
+  const shell = $("donorChatShell");
+  if (entry) entry.style.display = "block";
+  if (panel) panel.style.display = "none";
+  if (shell) shell.style.display = "none";
+  if ($("donorQuestionEmergency")) $("donorQuestionEmergency").style.display = "none";
+}
+
+function showDonorAskChat() {
+  const entry = $("donorAskEntry");
+  const panel = $("donorMyQuestionsPanel");
+  const shell = $("donorChatShell");
+  if (entry) entry.style.display = "none";
+  if (panel) panel.style.display = "none";
+  if (shell) shell.style.display = "flex";
+}
+
+function openDonorQuestionHistory() {
+  const entry = $("donorAskEntry");
+  const panel = $("donorMyQuestionsPanel");
+  const shell = $("donorChatShell");
+  if (entry) entry.style.display = "none";
+  if (shell) shell.style.display = "none";
+  if (panel) panel.style.display = "block";
+  renderDonorMyQuestions();
+}
+
+function toggleDonorCrossDeviceLookup(force) {
+  const box = $("donorQuestionCrossDevice");
+  if (!box) return;
+  const next = typeof force === "boolean" ? force : box.style.display === "none";
+  box.style.display = next ? "block" : "none";
+  box.open = !!next;
+  if (next) setTimeout(function(){ box.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 20);
+}
+
 function startNewDonorChat() {
+  showDonorAskChat();
   donorChatIntakeState = null;
   clearDonorChatResume();
   donorChatClearDraft();
@@ -5073,16 +5112,24 @@ function toggleDonorMyQuestions(force) {
   const panel = $("donorMyQuestionsPanel");
   if (!panel) return;
   const next = typeof force === "boolean" ? force : panel.style.display === "none";
-  panel.style.display = next ? "block" : "none";
-  if (next) renderDonorMyQuestions();
+  if (next) openDonorQuestionHistory();
+  else panel.style.display = "none";
 }
 
 function renderDonorMyQuestions() {
   const box = $("donorMyQuestionList");
   if (!box) return;
   const rows = getDonorChatHistory();
+  const prompt = $("donorCrossDevicePrompt");
+  const cross = $("donorQuestionCrossDevice");
+  if (cross) { cross.style.display = "none"; cross.open = false; }
+  if (prompt) {
+    prompt.style.display = "flex";
+    const text = prompt.querySelector("span");
+    if (text) text.textContent = rows.length ? "หาไม่เจอในรายการ?" : "เคยถามจากโทรศัพท์หรือคอมเครื่องอื่น?";
+  }
   if (!rows.length) {
-    box.innerHTML = '<div class="donor-my-question-empty"><i class="bi bi-chat-heart"></i><span>ยังไม่มีคำถามที่ส่งให้ทีมจากอุปกรณ์นี้</span></div>';
+    box.innerHTML = '<div class="donor-my-question-empty easy"><i class="bi bi-chat-heart"></i><b>ยังไม่มีคำถามในเครื่องนี้</b><span>หากเคยถามจากเครื่องอื่น กดปุ่มด้านล่างได้ค่ะ</span></div>';
     return;
   }
   box.innerHTML = rows.map(function(row, index){
@@ -5093,11 +5140,11 @@ function renderDonorMyQuestions() {
     return '<button type="button" class="donor-my-question-item" onclick="openSavedDonorQuestion(' + index + ')"><span class="donor-my-question-icon"><i class="bi ' + donorQuestionCategoryIcon(row.category || "other") + '"></i></span><span class="donor-my-question-copy"><b>' + escapeHtml(title) + '</b><small>' + detail + '</small><em>' + code + '</em></span>' + status + '<i class="bi bi-chevron-right"></i></button>';
   }).join('');
 }
-
 async function openSavedDonorQuestion(index) {
   const row = getDonorChatHistory()[Number(index)];
   if (!row) return;
   toggleDonorMyQuestions(false);
+  showDonorAskChat();
   if (row.accessToken) {
     const ok = await loadDonorQuestionByToken(row.accessToken, false);
     if (ok) return;
@@ -5110,12 +5157,13 @@ async function openSavedDonorQuestion(index) {
       return;
     }
   }
-  showModal({title:"เปิดคำถามไม่ได้",message:"รายการนี้อาจไม่อยู่ในอุปกรณ์แล้ว กรุณาใช้เลขคำถาม + เบอร์โทร 4 ตัวท้ายด้านล่าง",iconText:"!"});
-  toggleDonorMyQuestions(true);
+  showModal({title:"เปิดคำถามไม่ได้",message:"หากเคยถามจากเครื่องอื่น สามารถใช้เลขคำถามและเบอร์โทร 4 ตัวท้ายเพื่อเปิดได้ค่ะ",iconText:"!"});
+  openDonorQuestionHistory();
 }
 
 function renderDonorQuestionThread(q, replies, context) {
   context = context || {};
+  showDonorAskChat();
   const box = $("donorChatMessages");
   if (!box) return;
   currentDonorChatPublicCode = q.public_code || context.publicCode || currentDonorChatPublicCode;
@@ -5191,7 +5239,11 @@ async function loadDonorQuestionByToken(token, scroll) {
 
 async function restoreDonorChatConversation() {
   if (!$("donorChatMessages")) return;
-  if ($("donorChatThreadComposer")?.style.display === 'block') return;
+  showDonorAskEntry();
+  if ($("donorChatThreadComposer")?.style.display === 'block' && (currentDonorChatAccessToken || currentDonorChatPublicCode)) {
+    showDonorAskChat();
+    return;
+  }
   let token = currentDonorChatAccessToken;
   let code = currentDonorChatPublicCode;
   let phone4 = currentDonorChatPhoneLast4;
@@ -5201,13 +5253,16 @@ async function restoreDonorChatConversation() {
     phone4 = phone4 || localStorage.getItem(DONOR_CHAT_STORAGE.phone4) || '';
   } catch (e) {}
   if (token) {
+    showDonorAskChat();
     const ok = await loadDonorQuestionByToken(token, false);
     if (ok) return;
     clearDonorChatResume();
     code = '';
     phone4 = '';
+    showDonorAskEntry();
   }
   if (code && String(phone4).length === 4) {
+    showDonorAskChat();
     const { data, error } = await sb.rpc("lookup_donor_question", { p_public_code:code, p_phone_last4:phone4 });
     if (!error && data?.ok) {
       saveDonorChatResume("", code, phone4, { category:data.question?.category, message:data.question?.message, status:data.question?.status, updatedAt:data.question?.updated_at || data.question?.created_at });
@@ -5215,16 +5270,21 @@ async function restoreDonorChatConversation() {
       return;
     }
     clearDonorChatResume();
+    showDonorAskEntry();
   }
-  restoreDonorChatLocalDraft();
+  const restored = restoreDonorChatLocalDraft();
+  if (restored) {
+    showDonorAskChat();
+    return;
+  }
   renderDonorMyQuestions();
+  showDonorAskEntry();
 }
-
 async function lookupDonorQuestion() {
   const code = String($("donorQuestionLookupCode")?.value || "").trim().toUpperCase();
   const last4 = onlyDigits($("donorQuestionLookupPhone")?.value || "").slice(-4);
   const box = $("donorQuestionLookupResult");
-  if (!code || last4.length !== 4) { showModal({title:"กรอกข้อมูลให้ครบ",message:"กรุณากรอกเลขคำถามและเบอร์โทร 4 ตัวท้าย",iconText:"!"}); return; }
+  if (!code || last4.length !== 4) { showModal({title:"กรอกข้อมูลให้ครบ",message:"กรุณากรอกเลขคำถาม และเบอร์โทร 4 ตัวท้ายที่ใช้ตอนส่งคำถาม",iconText:"!"}); return; }
   if (box) box.innerHTML = '<div class="staff-result">กำลังเปิดบทสนทนา...</div>';
   const { data, error } = await sb.rpc("lookup_donor_question", { p_public_code:code, p_phone_last4:last4 });
   if (error || !data?.ok) { if (box) box.innerHTML = '<div class="staff-result fail">' + escapeHtml(error?.message || data?.message || "ไม่พบรายการ") + '</div>'; return; }
@@ -6113,7 +6173,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.15").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.21").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

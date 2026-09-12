@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.20" rel="stylesheet">
+  <link href="styles.css?v=15.21" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -516,27 +516,42 @@
         <button type="button" class="icon-back" onclick="showPage('home')" aria-label="กลับหน้าหลัก"><i class="bi bi-arrow-left"></i></button>
         <div>
           <div class="page-kicker">ถามห้องบริจาคโลหิต</div>
-          <h2 class="page-title">ถามเราได้เลย</h2>
-          <p class="page-subtitle">คุยกับห้องบริจาคได้เหมือนแชท เรื่องทั่วไปตอบให้ทันที เรื่องที่ต้องประเมินจะส่งต่อให้เจ้าหน้าที่หรือแพทย์</p>
+          <h2 class="page-title">มีคำถามเรื่องบริจาคโลหิต?</h2>
+          <p class="page-subtitle">ถามเราได้เลยค่ะ</p>
         </div>
       </div>
 
-      <div class="donor-chat-top-actions mb-3">
-        <button type="button" class="btn btn-search" onclick="startNewDonorChat()"><i class="bi bi-plus-lg"></i> ถามคำถามใหม่</button>
-        <button type="button" class="btn btn-soft" onclick="toggleDonorMyQuestions()"><i class="bi bi-clock-history"></i> คำถามของฉัน</button>
-        <span><i class="bi bi-phone"></i> ใช้ผ่านเว็บได้เลย ไม่ต้องติดตั้งแอป · รีเฟรชแล้วบทสนทนายังอยู่บนอุปกรณ์นี้</span>
+      <div id="donorAskEntry" class="card main-card donor-ask-entry mb-3">
+        <div class="donor-ask-entry-title">เลือกสิ่งที่ต้องการ</div>
+        <div class="donor-ask-entry-grid">
+          <button type="button" class="donor-ask-entry-btn primary" onclick="startNewDonorChat()">
+            <span class="donor-ask-entry-icon"><i class="bi bi-chat-dots-fill"></i></span>
+            <span><b>ถามคำถามใหม่</b><small>พิมพ์คำถามได้เลย</small></span>
+            <i class="bi bi-chevron-right donor-ask-entry-arrow"></i>
+          </button>
+          <button type="button" class="donor-ask-entry-btn" onclick="openDonorQuestionHistory()">
+            <span class="donor-ask-entry-icon"><i class="bi bi-clock-history"></i></span>
+            <span><b>ดูคำถามที่เคยถาม</b><small>กลับมาดูคำตอบเดิม</small></span>
+            <i class="bi bi-chevron-right donor-ask-entry-arrow"></i>
+          </button>
+        </div>
+        <div class="donor-ask-web-note"><i class="bi bi-globe2"></i> ใช้งานผ่านเว็บได้เลย ไม่ต้องติดตั้ง</div>
       </div>
 
       <div id="donorMyQuestionsPanel" class="card main-card donor-my-questions-panel mb-3" style="display:none;">
         <div class="donor-my-questions-head">
-          <div><b>คำถามของฉัน</b><small>คำถามที่เคยส่งให้ทีมจาก Browser นี้</small></div>
-          <button type="button" class="icon-close-soft" onclick="toggleDonorMyQuestions(false)" aria-label="ปิด"><i class="bi bi-x-lg"></i></button>
+          <button type="button" class="donor-simple-back" onclick="showDonorAskEntry()"><i class="bi bi-arrow-left"></i> กลับ</button>
+          <div><b>คำถามที่เคยถาม</b><small>แตะรายการเพื่อเปิดบทสนทนาเดิม</small></div>
         </div>
         <div id="donorMyQuestionList" class="donor-my-question-list"></div>
-        <details class="donor-question-crossdevice">
-          <summary><i class="bi bi-phone-flip"></i><span><b>เปิดจากเครื่องอื่น</b><small>ใช้เลขคำถาม + เบอร์โทร 4 ตัวท้าย</small></span></summary>
+        <div id="donorCrossDevicePrompt" class="donor-crossdevice-prompt">
+          <span>เคยถามจากโทรศัพท์หรือคอมเครื่องอื่น?</span>
+          <button type="button" class="btn btn-soft" onclick="toggleDonorCrossDeviceLookup(true)"><i class="bi bi-phone-flip"></i> เปิดคำถามจากเครื่องอื่น</button>
+        </div>
+        <details id="donorQuestionCrossDevice" class="donor-question-crossdevice" style="display:none;">
+          <summary><i class="bi bi-phone-flip"></i><span><b>เปิดคำถามจากเครื่องอื่น</b><small>กรอกเลขคำถามและเบอร์โทร 4 ตัวท้าย</small></span></summary>
           <div class="question-track-grid mt-3">
-            <input id="donorQuestionLookupCode" class="form-control" placeholder="เช่น Q260912-1234" autocomplete="off">
+            <input id="donorQuestionLookupCode" class="form-control" placeholder="เลขคำถาม เช่น Q260912-1234" autocomplete="off">
             <input id="donorQuestionLookupPhone" class="form-control" placeholder="เบอร์โทร 4 ตัวท้าย" inputmode="numeric" maxlength="4">
             <button type="button" class="btn btn-search" onclick="lookupDonorQuestion()"><i class="bi bi-search"></i> เปิดบทสนทนา</button>
           </div>
@@ -544,17 +559,18 @@
         </details>
       </div>
 
-      <div class="card main-card donor-chat-shell mb-3">
+      <div id="donorChatShell" class="card main-card donor-chat-shell mb-3" style="display:none;">
         <div class="donor-chat-head">
           <div class="donor-chat-avatar"><i class="bi bi-droplet-fill"></i></div>
           <div><b>CNMI Blood Donation</b><span>ผู้ช่วยห้องบริจาคโลหิต</span></div>
+          <button type="button" class="donor-chat-menu-back" onclick="showDonorAskEntry()"><i class="bi bi-grid"></i> เมนู</button>
           <span class="donor-chat-online"><i></i> พร้อมช่วย</span>
         </div>
         <div id="donorChatMessages" class="donor-chat-messages" aria-live="polite">
-          <div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>สวัสดีค่ะ ต้องการสอบถามเรื่องอะไรคะ?</b><span>พิมพ์ถามได้เลยค่ะ คำถามทั่วไปที่มีคำตอบจากข้อมูลของหน่วย ระบบจะตอบให้ทันที ส่วนเรื่องที่ต้องประเมินจะส่งต่อให้เจ้าหน้าที่หรือแพทย์</span></div></div>
+          <div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>พิมพ์คำถามได้เลยค่ะ</b><span>เรื่องที่ตอบได้ ระบบจะช่วยตอบให้ทันที หากต้องให้เจ้าหน้าที่ช่วยดู เราจะส่งต่อให้ค่ะ</span></div></div>
         </div>
         <div id="donorChatSmartComposer" class="donor-chat-smart-composer">
-          <div class="donor-chat-smart-title"><span><i class="bi bi-stars"></i> ลองพิมพ์คำถามได้เลย</span><small>คำตอบอัตโนมัติใช้เฉพาะข้อมูลที่หน่วยกำหนด</small></div>
+          <div class="donor-chat-smart-title"><span><i class="bi bi-chat-dots"></i> พิมพ์คำถามได้เลย</span></div>
           <div class="donor-chat-input-row">
             <input id="donorChatSmartInput" class="form-control" autocomplete="off" placeholder="เช่น วันนี้เปิดไหม / จองเกล็ดเลือดยังไง / เพิ่งถอนฟันบริจาคได้ไหม" onkeydown="if(event.key==='Enter'){event.preventDefault();submitDonorSmartQuestion();}">
             <button type="button" class="btn btn-search donor-chat-send" onclick="submitDonorSmartQuestion()" aria-label="ส่งคำถาม"><i class="bi bi-send-fill"></i></button>
@@ -1130,6 +1146,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.20"></script>
+  <script src="app.js?v=15.21"></script>
 </body>
 </html>

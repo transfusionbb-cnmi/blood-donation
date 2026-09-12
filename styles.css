@@ -2089,3 +2089,52 @@ body[data-page="question"] .public-ask-floating,body[data-page="staff"] .public-
 .knowledge-candidate{border:1px solid #eee;border-radius:16px;padding:14px 15px;display:flex;gap:14px;justify-content:space-between;align-items:center;background:#fff}.knowledge-candidate>div{min-width:0;flex:1}.knowledge-candidate span,.knowledge-candidate small{display:block;color:#8a949d;font-size:.78rem}.knowledge-candidate b{display:block;margin:.35rem 0;color:#26313a}.knowledge-candidate p{margin:0 0 .4rem;color:#59656f;line-height:1.5}
 .knowledge-history-box{border-top:1px solid #eee;padding-top:14px}.knowledge-history-list{display:grid;gap:8px}.knowledge-history-item{background:#f8f9fa;border-radius:13px;padding:11px 13px}.knowledge-history-item>div{display:flex;gap:10px;align-items:center}.knowledge-history-item span,.knowledge-history-item small{color:#7c8790;font-size:.78rem}.knowledge-history-item p{margin:.45rem 0 0;color:#555f67}
 @media(max-width:768px){.knowledge-summary-grid{grid-template-columns:1fr}.knowledge-form-grid,.knowledge-switches,.knowledge-toolbar{grid-template-columns:1fr}.knowledge-question-field,.knowledge-answer-field{grid-column:auto}.knowledge-card,.knowledge-candidate{flex-direction:column}.knowledge-card-actions{max-width:none;width:100%;justify-content:flex-start}.knowledge-card-actions .btn,.knowledge-candidate .btn{flex:1}.knowledge-toolbar select{width:100%}}
+
+/* v15.21 — Easy Ask UX: two clear choices first, chat/history only when selected */
+.donor-ask-entry{padding:24px;border-radius:24px!important;background:linear-gradient(180deg,#fff 0%,#fffafa 100%)}
+.donor-ask-entry-title{font-size:1rem;font-weight:800;color:#2f3a42;margin-bottom:14px}
+.donor-ask-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.donor-ask-entry-btn{width:100%;min-height:112px;border:1px solid #e7ebee;background:#fff;border-radius:20px;padding:18px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;text-align:left;color:#29363e;box-shadow:0 8px 24px rgba(33,41,48,.045);transition:.15s ease}
+.donor-ask-entry-btn:hover{transform:translateY(-1px);border-color:#efc7cb;box-shadow:0 10px 26px rgba(33,41,48,.07)}
+.donor-ask-entry-btn.primary{background:linear-gradient(135deg,#d94a54,#c83d47);border-color:#d94a54;color:#fff}
+.donor-ask-entry-icon{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;background:#fff0f2;color:#c8414b;font-size:1.35rem;flex:0 0 auto}
+.donor-ask-entry-btn.primary .donor-ask-entry-icon{background:rgba(255,255,255,.16);color:#fff}
+.donor-ask-entry-btn b,.donor-ask-entry-btn small{display:block}
+.donor-ask-entry-btn b{font-size:1.08rem;line-height:1.35}
+.donor-ask-entry-btn small{font-size:.82rem;line-height:1.45;margin-top:4px;color:#7b878e;font-weight:600}
+.donor-ask-entry-btn.primary small{color:rgba(255,255,255,.85)}
+.donor-ask-entry-arrow{color:#adb6bb;font-size:1.05rem}
+.donor-ask-entry-btn.primary .donor-ask-entry-arrow{color:#fff}
+.donor-ask-web-note{margin-top:16px;color:#7c888f;font-size:.8rem;display:flex;align-items:center;justify-content:center;gap:7px}
+.donor-ask-web-note i{color:#c8424c}
+
+.donor-my-questions-head{justify-content:flex-start}
+.donor-my-questions-head>div{min-width:0}
+.donor-simple-back{border:0;background:#f5f7f8;color:#58666e;border-radius:12px;padding:8px 11px;font-weight:750;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
+.donor-my-question-empty.easy{display:grid;justify-items:center;text-align:center;padding:24px 16px;gap:5px}
+.donor-my-question-empty.easy i{font-size:1.55rem;color:#c9434d;margin-bottom:2px}
+.donor-my-question-empty.easy b{color:#425059;font-size:.92rem}
+.donor-my-question-empty.easy span{color:#8a959b;font-size:.76rem;line-height:1.5}
+.donor-crossdevice-prompt{margin-top:12px;padding-top:12px;border-top:1px solid #edf0f2;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#728087;font-size:.78rem}
+.donor-crossdevice-prompt .btn{border-radius:12px;padding:8px 11px;font-size:.76rem;white-space:nowrap}
+.donor-question-crossdevice{border-top:0;background:#f8fafb;border-radius:16px;padding:12px;margin-top:10px}
+.donor-question-crossdevice summary{font-size:.82rem}
+
+.donor-chat-menu-back{margin-left:auto;border:0;background:#f5f7f8;color:#5f6c73;border-radius:11px;padding:7px 10px;font-weight:750;font-size:.76rem;display:inline-flex;align-items:center;gap:5px}
+.donor-chat-online{margin-left:0}
+.donor-chat-smart-title{justify-content:flex-start}
+
+@media(max-width:700px){
+  .donor-ask-entry{padding:16px;border-radius:20px!important}
+  .donor-ask-entry-title{font-size:.9rem;margin-bottom:10px}
+  .donor-ask-entry-grid{grid-template-columns:1fr;gap:10px}
+  .donor-ask-entry-btn{min-height:92px;padding:14px;border-radius:17px;gap:12px}
+  .donor-ask-entry-icon{width:48px;height:48px;border-radius:15px;font-size:1.2rem}
+  .donor-ask-entry-btn b{font-size:1rem}
+  .donor-ask-entry-btn small{font-size:.78rem}
+  .donor-ask-web-note{font-size:.74rem;margin-top:13px}
+  .donor-crossdevice-prompt{align-items:stretch;flex-direction:column}
+  .donor-crossdevice-prompt .btn{width:100%;min-height:44px}
+  .donor-my-questions-head{align-items:flex-start}
+  .donor-chat-menu-back{margin-left:auto}
+}
