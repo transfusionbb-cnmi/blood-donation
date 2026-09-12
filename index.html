@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.16" rel="stylesheet">
+  <link href="styles.css?v=15.17" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -517,7 +517,7 @@
         <div>
           <div class="page-kicker">ถามห้องบริจาคโลหิต</div>
           <h2 class="page-title">ถามเราได้เลย</h2>
-          <p class="page-subtitle">เลือกเรื่องที่อยากถามก่อน เรื่องทั่วไปตอบให้ทันที เรื่องที่ต้องประเมินจะส่งต่อให้เจ้าหน้าที่หรือแพทย์</p>
+          <p class="page-subtitle">คุยกับห้องบริจาคได้เหมือนแชท เรื่องทั่วไปตอบให้ทันที เรื่องที่ต้องประเมินจะส่งต่อให้เจ้าหน้าที่หรือแพทย์</p>
         </div>
       </div>
 
@@ -545,39 +545,30 @@
           <button type="button" class="medical" onclick="selectDonorQuestionCategory('test_result')"><i class="bi bi-file-medical"></i><span><b>ผลตรวจ / ได้รับแจ้งให้ติดต่อ</b><small>สอบถามผลหรือการนัดติดตาม</small></span></button>
           <button type="button" onclick="selectDonorQuestionCategory('other')"><i class="bi bi-chat-square-text"></i><span><b>เรื่องอื่น ๆ</b><small>พิมพ์คำถามถึงเจ้าหน้าที่</small></span></button>
         </div>
+        <div id="donorChatIntakeComposer" class="donor-chat-live-composer" style="display:none;">
+          <div id="donorChatPromptText" class="donor-chat-prompt"></div>
+          <div id="donorChatChoiceReplies" class="donor-chat-reply-chips" style="display:none;"></div>
+          <div id="donorChatInputRow" class="donor-chat-input-row">
+            <input id="donorChatStepInput" class="form-control" autocomplete="off" placeholder="พิมพ์คำตอบ...">
+            <textarea id="donorChatStepTextarea" class="form-control" rows="2" placeholder="พิมพ์ข้อความ..." style="display:none;"></textarea>
+            <input id="donorChatStepDate" class="form-control" type="date" style="display:none;">
+            <button type="button" id="donorChatSkipStep" class="btn btn-soft donor-chat-skip" onclick="skipDonorChatStep()" style="display:none;">ข้าม</button>
+            <button type="button" id="donorChatSendStep" class="btn btn-search donor-chat-send" onclick="submitDonorChatStep()" aria-label="ส่ง"><i class="bi bi-send-fill"></i></button>
+          </div>
+        </div>
+
+        <div id="donorChatThreadComposer" class="donor-chat-live-composer donor-chat-thread-composer" style="display:none;">
+          <div class="donor-chat-prompt"><span id="donorChatLiveStatus">บทสนทนานี้ส่งถึงทีมแล้ว</span></div>
+          <div class="donor-chat-input-row">
+            <textarea id="donorChatFollowupText" class="form-control" rows="2" placeholder="พิมพ์ข้อความเพิ่มเติม..."></textarea>
+            <button type="button" class="btn btn-search donor-chat-send" onclick="sendDonorQuestionFollowup()" aria-label="ส่งข้อความ"><i class="bi bi-send-fill"></i></button>
+          </div>
+        </div>
       </div>
 
       <div id="donorQuestionEmergency" class="question-emergency-banner mb-3" style="display:none;">
         <i class="bi bi-exclamation-triangle-fill"></i>
         <div><b>ถ้าอาการรุนแรง ไม่ต้องรอคำตอบในแอพ</b><span>หากหมดสติ หายใจลำบาก เจ็บหน้าอก เลือดออกมากไม่หยุด หรืออาการแย่ลงรวดเร็ว ให้ไปห้องฉุกเฉินหรือโทร 1669 ทันที</span></div>
-      </div>
-
-      <div id="donorQuestionFormCard" class="card main-card p-3 p-md-4 mb-3 donor-chat-form" style="display:none;">
-        <div class="question-form-title"><span id="donorQuestionCategoryIcon"><i class="bi bi-chat-dots"></i></span><div><small>ส่งให้ทีมช่วยดู</small><h4 id="donorQuestionCategoryLabel">คำถามผู้บริจาค</h4></div><button type="button" class="btn btn-soft btn-sm" onclick="resetDonorQuestionForm()">ยกเลิก</button></div>
-        <input type="hidden" id="donorQuestionCategory">
-        <div class="row g-3 mt-1">
-          <div class="col-md-6"><label class="form-label">ชื่อผู้ติดต่อ</label><input id="donorQuestionName" class="form-control" placeholder="ชื่อ-นามสกุล"></div>
-          <div class="col-md-6"><label class="form-label">เบอร์โทรศัพท์</label><input id="donorQuestionPhone" class="form-control" type="tel" inputmode="numeric" placeholder="เบอร์ที่ติดต่อได้"></div>
-          <div class="col-md-6"><label class="form-label">อีเมล <span class="text-muted">ถ้ามี</span></label><input id="donorQuestionEmail" class="form-control" type="email" placeholder="name@example.com"></div>
-          <div class="col-md-6"><label class="form-label">Donor ID <span class="text-muted">ถ้าทราบ</span></label><input id="donorQuestionDonorId" class="form-control" placeholder="เลขผู้บริจาค"></div>
-          <div id="donorQuestionDonationDateWrap" class="col-md-6" style="display:none;"><label class="form-label">วันที่บริจาคล่าสุดที่เกี่ยวข้อง</label><input id="donorQuestionDonationDate" class="form-control" type="date"></div>
-          <div id="donorQuestionSymptomWrap" class="col-md-6" style="display:none;"><label class="form-label">อาการหลัก</label><select id="donorQuestionSymptom" class="form-select"><option value="">เลือกอาการ</option><option>เวียนหัว / หน้ามืด / อ่อนเพลีย</option><option>ช้ำ / ปวดแขน</option><option>เลือดซึมจากแผลเจาะ</option><option>บวม / ชา / ปวดมาก</option><option>มีไข้หรือไม่สบายหลังบริจาค</option><option>อื่น ๆ</option></select></div>
-          <div class="col-12"><label class="form-label">พิมพ์ข้อความถึงทีม</label><textarea id="donorQuestionMessage" class="form-control" rows="4" placeholder="เล่าให้สั้นแต่ครบ เช่น กินยาอะไรอยู่ / มีอาการอะไร / เริ่มเมื่อไหร่"></textarea></div>
-        </div>
-        <div class="question-privacy-note"><i class="bi bi-shield-check"></i><span>ข้อมูลใช้เพื่อประเมินและติดต่อกลับเท่านั้น การแจ้งเตือนบนหน้าจอล็อกจะไม่แสดงรายละเอียดสุขภาพ</span></div>
-        <button type="button" id="btnSubmitDonorQuestion" class="btn btn-search w-100 mt-3" onclick="submitDonorQuestion()"><i class="bi bi-send"></i> ส่งข้อความ</button>
-      </div>
-
-      <div id="donorQuestionSuccess" class="card main-card p-3 p-md-4 mb-3 question-success" style="display:none;"></div>
-
-      <div id="donorChatThreadCard" class="card main-card p-3 p-md-4 mb-3 donor-thread-card" style="display:none;">
-        <div class="donor-thread-head"><div><small>บทสนทนาของฉัน</small><h4 id="donorChatThreadTitle">คำถามผู้บริจาค</h4></div><span id="donorChatThreadStatus" class="question-status-pill">ใหม่</span></div>
-        <div id="donorChatThreadMessages" class="donor-thread-messages"></div>
-        <div class="donor-thread-compose">
-          <textarea id="donorChatFollowupText" class="form-control" rows="2" placeholder="พิมพ์ข้อความเพิ่มเติม..."></textarea>
-          <button type="button" class="btn btn-search" onclick="sendDonorQuestionFollowup()"><i class="bi bi-send"></i><span>ส่ง</span></button>
-        </div>
-        <small class="donor-thread-hint"><i class="bi bi-phone"></i> ถ้าเปิดจากเครื่องนี้ครั้งหน้า ระบบจะพยายามเปิดบทสนทนาล่าสุดให้อัตโนมัติ</small>
       </div>
 
       <details class="card main-card p-3 p-md-4 donor-question-lookup-card">
@@ -770,13 +761,13 @@
             <div class="staff-page-head"><div><span>DONOR QUESTION INBOX</span><h3>คำถามผู้บริจาค</h3><p>รวมคำถามที่ต้องให้คนช่วยตอบไว้ที่เดียว เรื่องหลังบริจาคและผลตรวจจะถูกทำเครื่องหมายว่าต้องให้แพทย์/ผู้รับผิดชอบดู</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffQuestions()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div></div>
 
             <div class="card main-card staff-card p-4 mb-3 push-settings-card">
-              <div class="staff-section-head"><div><h5><i class="bi bi-bell"></i> แจ้งเตือนบนโทรศัพท์เครื่องนี้</h5><small>เปิดครั้งเดียว แล้วข้อความใหม่สามารถเด้งบนหน้าจอได้แม้ไม่ได้เปิดหน้าเว็บค้างไว้</small></div><span id="pushSupportStatus" class="status-pill neutral">กำลังตรวจสอบ</span></div>
+              <div class="staff-section-head"><div><h5><i class="bi bi-bell"></i> แจ้งเตือนบนโทรศัพท์เครื่องนี้</h5><small>เปิดครั้งเดียว เมื่อมีคำถามใหม่จะเด้งบนโทรศัพท์ และแตะแจ้งเตือนเพื่อเปิดบทสนทนานั้นได้ทันที</small></div><span id="pushSupportStatus" class="status-pill neutral">กำลังตรวจสอบ</span></div>
               <div class="push-setting-grid mt-3">
                 <label class="push-check"><input type="checkbox" id="pushNotifyGeneral" checked><span><b>คำถามทั่วไป</b><small>คิวคำถามใหม่ที่ Staff ควรรู้</small></span></label>
                 <label class="push-check doctor"><input type="checkbox" id="pushNotifyDoctor"><span><b>คำถามที่ต้องให้แพทย์ดู</b><small>เหมาะกับเครื่องของแพทย์/ผู้รับผิดชอบทางการแพทย์</small></span></label>
                 <button type="button" id="btnEnablePush" class="btn btn-search" onclick="enableStaffPushNotifications()"><i class="bi bi-bell-fill"></i> เปิดแจ้งเตือนเครื่องนี้</button>
               </div>
-              <div class="push-help mt-2"><i class="bi bi-info-circle"></i><span>iPhone/iPad: ต้องเพิ่มเว็บนี้ไว้ที่ Home Screen ก่อน แล้วเปิดจากไอคอนที่ติดตั้ง จึงจะเปิด Web Push ได้</span></div>
+              <div class="push-help mt-2"><i class="bi bi-info-circle"></i><span>iPhone/iPad: ต้องเพิ่มเว็บไว้ที่ Home Screen และเปิดจากไอคอนที่ติดตั้งก่อน จึงจะรับแจ้งเตือนแบบแอพและแตะเข้าเคสได้โดยตรง</span></div>
             </div>
 
             <div class="card main-card staff-card p-4 mb-3">
@@ -1075,6 +1066,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.16"></script>
+  <script src="app.js?v=15.17"></script>
 </body>
 </html>
