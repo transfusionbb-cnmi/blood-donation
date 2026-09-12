@@ -1,15 +1,18 @@
-const CACHE_NAME = "cnmi-donor-v15-26";
+const CACHE_NAME = "cnmi-donor-v15-27";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css?v=15.26",
-  "./app.js?v=15.26",
+  "./app.js?v=15.27",
   "./config.js?v=15.5",
   "./manifest.webmanifest",
-  "./manifest-staff.webmanifest",
+  "./manifest-staff.webmanifest?v=15.27",
   "./staff.html",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./icons/staff-icon-180-v15-27.png",
+  "./icons/staff-icon-192-v15-27.png",
+  "./icons/staff-icon-512-v15-27.png"
 ];
 
 self.addEventListener("install", function(event) {
@@ -39,7 +42,10 @@ self.addEventListener("fetch", function(event) {
   }).catch(function() {
     return caches.match(request).then(function(cached) {
       if (cached) return cached;
-      if (request.mode === "navigate") return caches.match("./index.html");
+      if (request.mode === "navigate") {
+        if (/\/staff\.html$/i.test(url.pathname || "")) return caches.match("./staff.html");
+        return caches.match("./index.html");
+      }
       return Response.error();
     });
   }));
@@ -51,7 +57,7 @@ self.addEventListener("push", function(event) {
   const title = payload.title || "CNMI Donor";
   const options = {
     body: payload.body || "มีรายการใหม่ในระบบ",
-    icon: payload.icon || "./icons/icon-192.png",
+    icon: payload.icon || "./icons/staff-icon-192-v15-27.png",
     badge: payload.badge || "./icons/icon-192.png",
     tag: payload.tag || "cnmi-donor-notification",
     data: { url:payload.url || "./staff.html#/staff/questions", extra:payload.data || {} },
