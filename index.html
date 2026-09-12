@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.17" rel="stylesheet">
+  <link href="styles.css?v=15.19" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -521,6 +521,29 @@
         </div>
       </div>
 
+      <div class="donor-chat-top-actions mb-3">
+        <button type="button" class="btn btn-search" onclick="startNewDonorChat()"><i class="bi bi-plus-lg"></i> ถามคำถามใหม่</button>
+        <button type="button" class="btn btn-soft" onclick="toggleDonorMyQuestions()"><i class="bi bi-clock-history"></i> คำถามของฉัน</button>
+        <span><i class="bi bi-phone"></i> ใช้ผ่านเว็บได้เลย ไม่ต้องติดตั้งแอป · รีเฟรชแล้วบทสนทนายังอยู่บนอุปกรณ์นี้</span>
+      </div>
+
+      <div id="donorMyQuestionsPanel" class="card main-card donor-my-questions-panel mb-3" style="display:none;">
+        <div class="donor-my-questions-head">
+          <div><b>คำถามของฉัน</b><small>คำถามที่เคยส่งให้ทีมจาก Browser นี้</small></div>
+          <button type="button" class="icon-close-soft" onclick="toggleDonorMyQuestions(false)" aria-label="ปิด"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div id="donorMyQuestionList" class="donor-my-question-list"></div>
+        <details class="donor-question-crossdevice">
+          <summary><i class="bi bi-phone-flip"></i><span><b>เปิดจากเครื่องอื่น</b><small>ใช้เลขคำถาม + เบอร์โทร 4 ตัวท้าย</small></span></summary>
+          <div class="question-track-grid mt-3">
+            <input id="donorQuestionLookupCode" class="form-control" placeholder="เช่น Q260912-1234" autocomplete="off">
+            <input id="donorQuestionLookupPhone" class="form-control" placeholder="เบอร์โทร 4 ตัวท้าย" inputmode="numeric" maxlength="4">
+            <button type="button" class="btn btn-search" onclick="lookupDonorQuestion()"><i class="bi bi-search"></i> เปิดบทสนทนา</button>
+          </div>
+          <div id="donorQuestionLookupResult" class="mt-3"></div>
+        </details>
+      </div>
+
       <div class="card main-card donor-chat-shell mb-3">
         <div class="donor-chat-head">
           <div class="donor-chat-avatar"><i class="bi bi-droplet-fill"></i></div>
@@ -528,8 +551,16 @@
           <span class="donor-chat-online"><i></i> พร้อมช่วย</span>
         </div>
         <div id="donorChatMessages" class="donor-chat-messages" aria-live="polite">
-          <div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>สวัสดีค่ะ ต้องการสอบถามเรื่องอะไรคะ?</b><span>เรื่องที่มีคำตอบอยู่แล้วกดดูได้ทันที หรือเลือกเรื่องที่ต้องให้เจ้าหน้าที่ช่วยดูได้เลย</span></div></div>
+          <div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>สวัสดีค่ะ ต้องการสอบถามเรื่องอะไรคะ?</b><span>พิมพ์ถามได้เลยค่ะ คำถามทั่วไปที่มีคำตอบจากข้อมูลของหน่วย ระบบจะตอบให้ทันที ส่วนเรื่องที่ต้องประเมินจะส่งต่อให้เจ้าหน้าที่หรือแพทย์</span></div></div>
         </div>
+        <div id="donorChatSmartComposer" class="donor-chat-smart-composer">
+          <div class="donor-chat-smart-title"><span><i class="bi bi-stars"></i> ลองพิมพ์คำถามได้เลย</span><small>คำตอบอัตโนมัติใช้เฉพาะข้อมูลที่หน่วยกำหนด</small></div>
+          <div class="donor-chat-input-row">
+            <input id="donorChatSmartInput" class="form-control" autocomplete="off" placeholder="เช่น วันนี้เปิดไหม / จองเกล็ดเลือดยังไง / เพิ่งถอนฟันบริจาคได้ไหม" onkeydown="if(event.key==='Enter'){event.preventDefault();submitDonorSmartQuestion();}">
+            <button type="button" class="btn btn-search donor-chat-send" onclick="submitDonorSmartQuestion()" aria-label="ส่งคำถาม"><i class="bi bi-send-fill"></i></button>
+          </div>
+        </div>
+        <div class="donor-chat-divider donor-chat-faq-divider"><span>คำถามที่ถามบ่อย</span></div>
         <div id="donorChatQuickChoices" class="donor-chat-choices">
           <button type="button" onclick="showDonorChatQuickAnswer('hours')"><i class="bi bi-clock"></i> วันนี้เปิดไหม</button>
           <button type="button" onclick="showDonorChatQuickAnswer('next')"><i class="bi bi-calendar-heart"></i> ครั้งหน้าบริจาคเมื่อไหร่</button>
@@ -538,7 +569,7 @@
           <button type="button" onclick="showDonorChatQuickAnswer('donate')"><i class="bi bi-heart-pulse"></i> บริจาคแบบไหน</button>
           <button type="button" onclick="showDonorChatQuickAnswer('contact')"><i class="bi bi-geo-alt"></i> ติดต่อ / แผนที่</button>
         </div>
-        <div class="donor-chat-divider"><span>หรือให้ทีมช่วยดู</span></div>
+        <div class="donor-chat-divider donor-chat-human-divider"><span>หรือให้ทีมช่วยดู</span></div>
         <div class="donor-chat-human-choices">
           <button type="button" onclick="selectDonorQuestionCategory('eligibility')"><i class="bi bi-capsule"></i><span><b>ยา / วัคซีน / เพิ่งป่วย</b><small>ไม่แน่ใจว่าบริจาคได้หรือยัง</small></span></button>
           <button type="button" class="medical" onclick="selectDonorQuestionCategory('post_donation')"><i class="bi bi-heart-pulse-fill"></i><span><b>อาการผิดปกติหลังบริจาค</b><small>ส่งต่อผู้รับผิดชอบทางการแพทย์</small></span></button>
@@ -571,15 +602,6 @@
         <div><b>ถ้าอาการรุนแรง ไม่ต้องรอคำตอบในแอพ</b><span>หากหมดสติ หายใจลำบาก เจ็บหน้าอก เลือดออกมากไม่หยุด หรืออาการแย่ลงรวดเร็ว ให้ไปห้องฉุกเฉินหรือโทร 1669 ทันที</span></div>
       </div>
 
-      <details class="card main-card p-3 p-md-4 donor-question-lookup-card">
-        <summary><i class="bi bi-clock-history"></i><span><b>เปิดคำถามเดิมจากอีกเครื่อง</b><small>ใช้เลขคำถาม + เบอร์โทร 4 ตัวท้าย</small></span></summary>
-        <div class="question-track-grid mt-3">
-          <input id="donorQuestionLookupCode" class="form-control" placeholder="เช่น Q260912-1234" autocomplete="off">
-          <input id="donorQuestionLookupPhone" class="form-control" placeholder="เบอร์โทร 4 ตัวท้าย" inputmode="numeric" maxlength="4">
-          <button type="button" class="btn btn-search" onclick="lookupDonorQuestion()"><i class="bi bi-search"></i> เปิดบทสนทนา</button>
-        </div>
-        <div id="donorQuestionLookupResult" class="mt-3"></div>
-      </details>
     </div>
 
     <div id="pageStaffLogin" class="app-page">
@@ -1066,6 +1088,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.17"></script>
+  <script src="app.js?v=15.19"></script>
 </body>
 </html>

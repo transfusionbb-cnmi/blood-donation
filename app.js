@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.17 */
+/* CNMI Blood Donation Supabase Frontend v15.19 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -38,7 +38,18 @@ let currentDonorChatAccessToken = "";
 let currentDonorChatPublicCode = "";
 let currentDonorChatPhoneLast4 = "";
 let donorChatIntakeState = null;
+let donorChatLocalTranscript = [];
+let donorChatPendingEscalationMessage = "";
+let donorChatRestoringLocalDraft = false;
 let pendingStaffQuestionCode = "";
+
+const DONOR_CHAT_STORAGE = {
+  token:"cnmiDonorChatToken",
+  code:"cnmiDonorChatCode",
+  phone4:"cnmiDonorChatPhone4",
+  draft:"cnmiDonorChatDraftV1",
+  history:"cnmiDonorChatThreadsV1"
+};
 
 const PAGE_ROUTE_MAP = {
   home: "#/home",
@@ -4437,7 +4448,46 @@ function donorQuestionCategoryIcon(category) {
   return map[category] || "bi-chat-dots";
 }
 
-function appendDonorChatBubble(role, content, isHtml) {
+function donorChatReadJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed == null ? fallback : parsed;
+  } catch (e) { return fallback; }
+}
+
+function donorChatWriteJson(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
+}
+
+function donorChatInitialGreetingHtml() {
+  return '<div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>สวัสดีค่ะ ต้องการสอบถามเรื่องอะไรคะ?</b><span>พิมพ์ถามได้เลยค่ะ คำถามทั่วไปที่มีคำตอบจากข้อมูลของหน่วย ระบบจะตอบให้ทันที ส่วนเรื่องที่ต้องประเมินจะส่งต่อให้เจ้าหน้าที่หรือแพทย์</span></div></div>';
+}
+
+function donorChatPersistDraft() {
+  if (donorChatRestoringLocalDraft || currentDonorChatAccessToken || currentDonorChatPublicCode) return;
+  const hasContent = donorChatLocalTranscript.length || donorChatIntakeState || donorChatPendingEscalationMessage;
+  try {
+    if (!hasContent) { localStorage.removeItem(DONOR_CHAT_STORAGE.draft); return; }
+  } catch (e) {}
+  donorChatWriteJson(DONOR_CHAT_STORAGE.draft, {
+    version:1,
+    updatedAt:new Date().toISOString(),
+    transcript:donorChatLocalTranscript.slice(-80),
+    intake:donorChatIntakeState || null,
+    pendingMessage:donorChatPendingEscalationMessage || ""
+  });
+}
+
+function donorChatClearDraft() {
+  donorChatLocalTranscript = [];
+  donorChatPendingEscalationMessage = "";
+  try { localStorage.removeItem(DONOR_CHAT_STORAGE.draft); } catch (e) {}
+}
+
+function appendDonorChatBubble(role, content, isHtml, options) {
+  options = options || {};
   const box = $("donorChatMessages");
   if (!box) return;
   const row = document.createElement("div");
@@ -4445,10 +4495,46 @@ function appendDonorChatBubble(role, content, isHtml) {
   if (role !== "user") row.innerHTML = '<div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"></div>';
   else row.innerHTML = '<div class="chat-bubble"></div>';
   const bubble = row.querySelector('.chat-bubble');
-  if (isHtml) bubble.innerHTML = content;
+  if (isHtml) bubble.innerHTML = String(content || "");
   else bubble.textContent = String(content || "");
   box.appendChild(row);
-  setTimeout(function(){ row.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 20);
+  if (!options.skipPersist && !donorChatRestoringLocalDraft && !currentDonorChatAccessToken && !currentDonorChatPublicCode) {
+    donorChatLocalTranscript.push({ role:role === "user" ? "user" : "bot", content:String(content || ""), isHtml:!!isHtml });
+    donorChatPersistDraft();
+  }
+  if (!options.noScroll) setTimeout(function(){ row.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 20);
+}
+
+function restoreDonorChatLocalDraft() {
+  const saved = donorChatReadJson(DONOR_CHAT_STORAGE.draft, null);
+  if (!saved || !Array.isArray(saved.transcript) || (!saved.transcript.length && !saved.intake)) return false;
+  const box = $("donorChatMessages");
+  if (!box) return false;
+  donorChatRestoringLocalDraft = true;
+  try {
+    box.innerHTML = donorChatInitialGreetingHtml();
+    donorChatLocalTranscript = saved.transcript.slice(-80);
+    donorChatPendingEscalationMessage = String(saved.pendingMessage || "");
+    donorChatLocalTranscript.forEach(function(item){
+      appendDonorChatBubble(item?.role === "user" ? "user" : "bot", item?.content || "", !!item?.isHtml, { skipPersist:true, noScroll:true });
+    });
+    donorChatIntakeState = saved.intake && typeof saved.intake === "object" ? saved.intake : null;
+    if (donorChatIntakeState) {
+      donorChatSetTopicChoicesVisible(false);
+      if ($("donorChatSmartComposer")) $("donorChatSmartComposer").style.display = "none";
+      if ($("donorChatThreadComposer")) $("donorChatThreadComposer").style.display = "none";
+      donorChatRenderStep();
+    } else {
+      donorChatSetTopicChoicesVisible(true);
+      if ($("donorChatSmartComposer")) $("donorChatSmartComposer").style.display = "block";
+      if ($("donorChatIntakeComposer")) $("donorChatIntakeComposer").style.display = "none";
+      if ($("donorChatThreadComposer")) $("donorChatThreadComposer").style.display = "none";
+    }
+    setTimeout(function(){ box.scrollTop = box.scrollHeight; }, 30);
+    return true;
+  } finally {
+    donorChatRestoringLocalDraft = false;
+  }
 }
 
 function donorChatActionButton(label, page, icon) {
@@ -4472,47 +4558,147 @@ async function donorChatHoursAnswer() {
       else normal = '<b>วันนี้มีประกาศพิเศษ</b>' + (ev.title ? '<br>' + escapeHtml(ev.title) : '') + (ev.time ? '<br>' + escapeHtml(ev.time) : '') + (ev.note ? '<br><small>' + escapeHtml(ev.note) + '</small>' : '');
     }
   } catch (e) { console.warn('chat hours', e); }
-  appendDonorChatBubble('bot', normal + '<div class="chat-inline-actions">' + donorChatActionButton('ดูปฏิทินทั้งเดือน','roomCalendar','bi-calendar-event') + '</div>', true);
+  appendDonorAutoAnswer(normal + '<div class="chat-inline-actions">' + donorChatActionButton('ดูปฏิทินทั้งเดือน','roomCalendar','bi-calendar-event') + '</div>');
+}
+
+function donorChatAutoBadge() {
+  return '<span class="chat-auto-badge"><i class="bi bi-stars"></i> คำตอบอัตโนมัติ</span>';
+}
+
+function appendDonorAutoAnswer(content) {
+  appendDonorChatBubble('bot', donorChatAutoBadge() + content, true);
+}
+
+function donorChatCategoryButton(label, category, icon) {
+  return '<button type="button" class="chat-inline-action" onclick="selectDonorQuestionCategory(\'' + category + '\')"><i class="bi ' + (icon || 'bi-chat-dots') + '"></i> ' + escapeHtml(label) + '</button>';
+}
+
+function donorChatNormalizeText(value) {
+  return String(value || '').toLowerCase().replace(/[\u200b-\u200d\ufeff]/g, '').replace(/[!?？。、,.\-_/()\[\]{}:;]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function donorChatHasAny(text, words) {
+  return words.some(function(word){ return text.indexOf(word) !== -1; });
+}
+
+function donorChatDetectIntent(rawText) {
+  const t = donorChatNormalizeText(rawText);
+  if (!t) return 'empty';
+  if (donorChatHasAny(t, ['หมดสติ','หายใจลำบาก','เจ็บหน้าอก','เลือดออกไม่หยุด','เลือดออกมาก','อาการแย่ลง','ชัก'])) return 'post_donation_urgent';
+  if (donorChatHasAny(t, ['ผลตรวจ','ผลเลือด','แจ้งให้ติดต่อ','โทรกลับเรื่องผล','ผลติดเชื้อ','ผลผิดปกติ'])) return 'test_result';
+  if (donorChatHasAny(t, ['หลังบริจาค','บริจาคแล้วเวียนหัว','บริจาคแล้วหน้ามืด','บริจาคแล้วช้ำ','ปวดแขนหลังบริจาค','เลือดซึม','เวียนหัวหลัง','หน้ามืดหลัง'])) return 'post_donation';
+  if (donorChatHasAny(t, ['ถอนฟัน','ผ่าฟันคุด','ทำฟัน'])) return 'dental';
+  if (donorChatHasAny(t, ['ยาปฏิชีวนะ','แผลอักเสบ','แผลติดเชื้อ'])) return 'antibiotic';
+  if (donorChatHasAny(t, ['ตั้งครรภ์','หลังคลอด','ให้นม'])) return 'pregnancy';
+  if (donorChatHasAny(t, ['วัคซีน','ฉีดวัคซีน','ยา','กินยา','ทานยา','ความดัน','เบาหวาน','โรคประจำตัว','เพิ่งป่วย','เป็นหวัด','มีไข้','ไอ','เจ็บคอ'])) return 'eligibility';
+  if (donorChatHasAny(t, ['เปิดไหม','ปิดไหม','เปิดกี่โมง','ปิดกี่โมง','เวลาเปิด','เวลาปิด','เวลาทำการ','วันนี้เปิด','วันนี้ปิด','วันหยุด'])) return 'hours';
+  if (donorChatHasAny(t, ['ครั้งหน้าบริจาค','ครั้งต่อไป','บริจาคอีกที','บริจาคได้อีก','วันบริจาคครั้งถัดไป','เช็กสิทธิ์'])) return 'next';
+  if (donorChatHasAny(t, ['donor id','donorid','เลขผู้บริจาค','รหัสผู้บริจาค','ลืม donor','ลืมเลข'])) return 'donor_id';
+  if (donorChatHasAny(t, ['ยกเลิกคิว','ยกเลิกนัด','เลื่อนนัด','ดูนัด','เช็กนัด','รายละเอียดนัด'])) return 'manage_booking';
+  if (donorChatHasAny(t, ['เกล็ดเลือด','platelet','จองเกล็ด'])) return 'platelet';
+  if (donorChatHasAny(t, ['หมู่คณะ','เป็นกลุ่ม','กลุ่มบริจาค','มากกว่า 10 คน'])) return 'group';
+  if (donorChatHasAny(t, ['ออกหน่วย','นอกสถานที่','รถรับบริจาค','40 คน'])) return 'mobile_unit';
+  if (donorChatHasAny(t, ['เตรียมตัว','ก่อนบริจาค','นอนกี่ชั่วโมง','พักผ่อน','ดื่มน้ำ','กินข้าว','อาหาร','แอลกอฮอล์','เหล้า','เบียร์'])) return 'prepare';
+  if (donorChatHasAny(t, ['ที่ไหน','อยู่ไหน','แผนที่','เบอร์โทร','โทรศัพท์','ติดต่อ','สถานที่'])) return 'contact';
+  if (donorChatHasAny(t, ['บริจาคแบบไหน','เลือดแดง','บริจาคเลือดธรรมดา','walk in','walk-in'])) return 'donate';
+  return 'unknown';
+}
+
+async function donorChatRespondToKind(kind) {
+  if (kind === 'hours') { await donorChatHoursAnswer(); return true; }
+  if (kind === 'next') {
+    appendDonorAutoAnswer('<b>เช็กวันบริจาคครั้งถัดไปจากประวัติของคุณได้เลยค่ะ</b><span>ใช้ Donor ID + วันเกิด + เบอร์โทร เพื่อยืนยันข้อมูล</span><div class="chat-inline-actions">' + donorChatActionButton('เช็กครั้งถัดไป','check','bi-calendar-heart') + '</div>'); return true;
+  }
+  if (kind === 'donor_id') {
+    appendDonorAutoAnswer('<b>ลืม Donor ID ก็ยังเช็กข้อมูลได้ค่ะ</b><span>ที่หน้าเช็กครั้งถัดไป ระบบมีตัวช่วยค้นหา Donor ID จากข้อมูลยืนยันตัวตนของผู้บริจาค</span><div class="chat-inline-actions">' + donorChatActionButton('ไปหน้าเช็กครั้งถัดไป','check','bi-person-vcard') + '</div>'); return true;
+  }
+  if (kind === 'platelet') {
+    appendDonorAutoAnswer('<b>บริจาคเกล็ดเลือดต้องจองล่วงหน้าค่ะ</b><span>เปิดวันจันทร์–ศุกร์ รอบ 09:00 และ 13:00 น. รอบละ 2 คน และต้องจองล่วงหน้าอย่างน้อย 24 ชั่วโมง</span><div class="chat-inline-actions">' + donorChatActionButton('ดูคิว / จองเกล็ดเลือด','screening','bi-droplet-half') + '</div>'); return true;
+  }
+  if (kind === 'prepare') {
+    appendDonorAutoAnswer('<b>ก่อนบริจาค</b><span>• พักผ่อนให้พอ อย่างน้อยประมาณ 5 ชั่วโมง<br>• รับประทานอาหารตามปกติ และเลี่ยงอาหารไขมันสูง<br>• ดื่มน้ำประมาณ 300–500 มล. ก่อนบริจาคราว 30 นาที<br>• งดแอลกอฮอล์อย่างน้อย 24 ชั่วโมง</span><div class="chat-inline-actions">' + donorChatActionButton('ดูวิธีเตรียมตัวทั้งหมด','prepare','bi-cup-straw') + '</div>'); return true;
+  }
+  if (kind === 'donate') {
+    appendDonorAutoAnswer('<b>เลือกได้ตามนี้ค่ะ</b><span>• เลือดแดง: Walk-in ได้ในวันเปิดทำการ<br>• หมู่คณะมากกว่า 10 คน: แจ้งนัดหมายล่วงหน้า<br>• ขอออกหน่วยนอกสถานที่: สำหรับประมาณ 40 คนขึ้นไป</span><div class="chat-inline-actions">' + donorChatActionButton('เลือกประเภทการบริจาค','donationChoice','bi-heart-pulse') + '</div>'); return true;
+  }
+  if (kind === 'group') {
+    appendDonorAutoAnswer('<b>ถ้ามาเป็นหมู่คณะมากกว่า 10 คน สามารถแจ้งนัดหมายล่วงหน้าได้ค่ะ</b><span>ระบบมีแบบฟอร์มสำหรับแจ้งวันและจำนวนผู้บริจาค เพื่อให้ทีมเตรียมความพร้อม</span><div class="chat-inline-actions">' + donorChatActionButton('แจ้งนัดหมู่คณะ','groupBooking','bi-people') + '</div>'); return true;
+  }
+  if (kind === 'mobile_unit') {
+    appendDonorAutoAnswer('<b>สามารถส่งคำขอออกหน่วยรับบริจาคโลหิตนอกสถานที่ได้ค่ะ</b><span>เหมาะสำหรับหน่วยงานหรือชุมชนที่คาดว่าจะมีผู้บริจาคประมาณ 40 คนขึ้นไป ทีมจะตรวจสอบรายละเอียดก่อนยืนยัน</span><div class="chat-inline-actions">' + donorChatActionButton('ส่งคำขอออกหน่วย','mobileUnitRequest','bi-truck') + '</div>'); return true;
+  }
+  if (kind === 'manage_booking') {
+    appendDonorAutoAnswer('<b>ดูรายละเอียดนัดหรือยกเลิกคิวได้จากเมนูจัดการนัดค่ะ</b><span>ใช้ข้อมูลนัดหมายที่ระบบออกให้หลังจอง เพื่อเปิดรายการของคุณ</span><div class="chat-inline-actions">' + donorChatActionButton('ดู / จัดการนัด','manage','bi-ticket-perforated') + '</div>'); return true;
+  }
+  if (kind === 'contact') {
+    appendDonorAutoAnswer('<b>ติดต่อห้องบริจาคโลหิต</b><span>โทร 02-839-6050<br>โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์</span><div class="chat-inline-actions">' + donorChatActionButton('ดูแผนที่และรายละเอียด','info','bi-geo-alt') + '</div>'); return true;
+  }
+  if (kind === 'dental') {
+    appendDonorAutoAnswer('<b>ถ้าถอนฟัน ผ่าฟันคุด หรือทำหัตถการทางทันตกรรมภายใน 7 วันที่ผ่านมา</b><span>กรุณาให้เจ้าหน้าที่ช่วยประเมินระยะเวลาที่เหมาะสมก่อนบริจาคค่ะ</span><div class="chat-inline-actions">' + donorChatCategoryButton('ให้ทีมช่วยประเมิน','eligibility','bi-person-check') + '</div>'); return true;
+  }
+  if (kind === 'antibiotic') {
+    appendDonorAutoAnswer('<b>ถ้ามีแผลอักเสบ ติดเชื้อ หรือกำลังรับประทานยาปฏิชีวนะ</b><span>ควรให้เจ้าหน้าที่ประเมินก่อนจองหรือก่อนมาบริจาคค่ะ</span><div class="chat-inline-actions">' + donorChatCategoryButton('ส่งรายละเอียดให้ทีม','eligibility','bi-capsule') + '</div>'); return true;
+  }
+  if (kind === 'pregnancy') {
+    appendDonorAutoAnswer('<b>กรณีตั้งครรภ์ หลังคลอด หรืออยู่ระหว่างให้นมบุตร</b><span>ต้องประเมินความพร้อมเป็นรายกรณีค่ะ ผู้ช่วยจะไม่ฟันธงจากข้อความสั้น ๆ</span><div class="chat-inline-actions">' + donorChatCategoryButton('ให้ทีมช่วยประเมิน','eligibility','bi-person-check') + '</div>'); return true;
+  }
+  return false;
+}
+
+async function submitDonorSmartQuestion() {
+  const input = $('donorChatSmartInput');
+  const raw = String(input?.value || '').trim();
+  if (!raw) return;
+  if (input) input.value = '';
+  donorChatPendingEscalationMessage = '';
+  appendDonorChatBubble('user', raw);
+  const intent = donorChatDetectIntent(raw);
+  if (["dental","antibiotic","pregnancy","eligibility","post_donation","post_donation_urgent","test_result","unknown"].includes(intent)) {
+    donorChatPendingEscalationMessage = raw;
+    donorChatPersistDraft();
+  }
+  if (await donorChatRespondToKind(intent)) return;
+
+  if (intent === 'eligibility') {
+    appendDonorAutoAnswer('<b>เรื่องยา วัคซีน โรคประจำตัว หรือเพิ่งป่วย ต้องดูรายละเอียดแต่ละกรณีค่ะ</b><span>กดส่งให้ทีมได้เลย ระบบจะใช้คำถามที่พิมพ์ไว้แล้ว ไม่ต้องพิมพ์ซ้ำ</span><div class="chat-inline-actions">' + donorChatCategoryButton('ส่งให้ทีมช่วยประเมิน','eligibility','bi-capsule') + '</div>');
+    return;
+  }
+  if (intent === 'post_donation' || intent === 'post_donation_urgent') {
+    if (intent === 'post_donation_urgent') appendDonorChatBubble('bot','<span class="chat-medical-alert"><b>ถ้าอาการรุนแรง ไม่ต้องรอคำตอบในแอพ</b><br>หากหมดสติ หายใจลำบาก เจ็บหน้าอก เลือดออกมากไม่หยุด หรืออาการแย่ลงรวดเร็ว ให้ไปห้องฉุกเฉินหรือโทร 1669 ทันที</span>',true);
+    appendDonorAutoAnswer('<b>อาการหลังบริจาคควรให้ผู้รับผิดชอบทางการแพทย์ช่วยดูค่ะ</b><span>กดส่งต่อ แล้วระบบจะถามเฉพาะข้อมูลที่จำเป็นจริง ๆ</span><div class="chat-inline-actions">' + donorChatCategoryButton('ส่งอาการให้ทีม','post_donation','bi-heart-pulse-fill') + '</div>');
+    return;
+  }
+  if (intent === 'test_result') {
+    appendDonorAutoAnswer('<b>เรื่องผลตรวจต้องตรวจสอบข้อมูลจริงก่อนตอบค่ะ</b><span>กดส่งให้ทีมได้เลย ไม่ต้องพิมพ์คำถามซ้ำ</span><div class="chat-inline-actions">' + donorChatCategoryButton('ส่งให้ทีมตรวจสอบ','test_result','bi-file-medical') + '</div>');
+    return;
+  }
+
+  appendDonorAutoAnswer('<b>คำถามนี้ระบบยังไม่ควรเดาคำตอบค่ะ</b><span>กดส่งให้เจ้าหน้าที่ได้เลย ระบบจะเก็บคำถามที่พิมพ์ไว้ให้ ไม่ต้องกรอกใหม่</span><div class="chat-inline-actions">' + donorChatCategoryButton('ส่งให้เจ้าหน้าที่','other','bi-chat-square-text') + '</div>');
 }
 
 function showDonorChatQuickAnswer(kind) {
   const labels = { hours:'วันนี้เปิดไหม', next:'ครั้งหน้าบริจาคเมื่อไหร่', platelet:'จองเกล็ดเลือด', prepare:'เตรียมตัวยังไง', donate:'บริจาคแบบไหน', contact:'ติดต่อ / แผนที่' };
   appendDonorChatBubble('user', labels[kind] || 'สอบถามข้อมูล');
-  if (kind === 'hours') { donorChatHoursAnswer(); return; }
-  if (kind === 'next') {
-    appendDonorChatBubble('bot','<b>เช็กวันบริจาคครั้งถัดไปจากประวัติของคุณได้เลยค่ะ</b><br><span>ใช้ Donor ID + วันเกิด + เบอร์โทร เพื่อยืนยันข้อมูล</span><div class="chat-inline-actions">' + donorChatActionButton('เช็กครั้งถัดไป','check','bi-calendar-heart') + '</div>',true); return;
-  }
-  if (kind === 'platelet') {
-    appendDonorChatBubble('bot','<b>บริจาคเกล็ดเลือดต้องจองล่วงหน้าค่ะ</b><br>เปิดวันจันทร์–ศุกร์ รอบ 09:00 และ 13:00 น. รอบละ 2 คน และต้องจองล่วงหน้าอย่างน้อย 24 ชั่วโมง<div class="chat-inline-actions">' + donorChatActionButton('ดูคิว / จองเกล็ดเลือด','screening','bi-droplet-half') + '</div>',true); return;
-  }
-  if (kind === 'prepare') {
-    appendDonorChatBubble('bot','<b>ก่อนบริจาค</b><br>• พักผ่อนให้พอ อย่างน้อยประมาณ 5 ชั่วโมง<br>• รับประทานอาหารตามปกติ และเลี่ยงอาหารไขมันสูง<br>• ดื่มน้ำประมาณ 300–500 มล. ก่อนบริจาคราว 30 นาที<br>• งดแอลกอฮอล์อย่างน้อย 24 ชั่วโมง<div class="chat-inline-actions">' + donorChatActionButton('ดูวิธีเตรียมตัวทั้งหมด','prepare','bi-cup-straw') + '</div>',true); return;
-  }
-  if (kind === 'donate') {
-    appendDonorChatBubble('bot','<b>เลือกได้ตามนี้ค่ะ</b><br>• เลือดแดง: Walk-in ได้ในวันเปิดทำการ<br>• หมู่คณะมากกว่า 10 คน: แจ้งนัดหมายล่วงหน้า<br>• ขอออกหน่วยนอกสถานที่: สำหรับประมาณ 40 คนขึ้นไป<div class="chat-inline-actions">' + donorChatActionButton('เลือกประเภทการบริจาค','donationChoice','bi-heart-pulse') + '</div>',true); return;
-  }
-  if (kind === 'contact') {
-    appendDonorChatBubble('bot','<b>ติดต่อห้องบริจาคโลหิต</b><br>โทร 02-839-6050<br>โรงพยาบาลรามาธิบดีจักรีนฤบดินทร์<div class="chat-inline-actions">' + donorChatActionButton('ดูแผนที่และรายละเอียด','info','bi-geo-alt') + '</div>',true); return;
-  }
+  donorChatRespondToKind(kind);
 }
 
 function donorChatSetTopicChoicesVisible(visible) {
-  ["donorChatQuickChoices"].forEach(function(id){ if ($(id)) $(id).style.display = visible ? "grid" : "none"; });
+  ["donorChatQuickChoices"].forEach(function(id){ if ($(id)) $(id).style.display = visible ? "" : "none"; });
   document.querySelectorAll(".donor-chat-divider,.donor-chat-human-choices").forEach(function(el){ el.style.display = visible ? "" : "none"; });
 }
 
 function donorChatBuildIntakeSteps(category) {
   const steps = [];
   const detailPrompt = category === "post_donation"
-    ? "เล่าอาการที่เกิดขึ้นให้ฟังหน่อยค่ะ เริ่มมีอาการเมื่อไหร่ และตอนนี้ยังเป็นอยู่ไหม?"
+    ? "เล่าอาการที่เกิดขึ้นสั้น ๆ ได้เลยค่ะ ตอนนี้ยังมีอาการอยู่ไหม?"
     : category === "test_result"
-      ? "เล่าให้ฟังหน่อยค่ะว่าได้รับแจ้งเรื่องผลตรวจอย่างไร หรือต้องการสอบถามเรื่องไหน?"
+      ? "ได้รับแจ้งเรื่องผลตรวจอย่างไร หรือต้องการสอบถามเรื่องไหนคะ?"
       : category === "eligibility"
-        ? "เล่าให้ฟังหน่อยค่ะ เช่น กำลังกินยาอะไร เพิ่งฉีดวัคซีนอะไร หรือเพิ่งหายจากอาการอะไร?"
+        ? "พิมพ์เรื่องที่อยากให้ช่วยประเมินได้เลยค่ะ เช่น ชื่อยา วัคซีน หรืออาการที่เพิ่งหาย"
         : "พิมพ์เรื่องที่อยากสอบถามได้เลยค่ะ";
   steps.push({ key:"message", type:"textarea", prompt:detailPrompt, placeholder:"พิมพ์รายละเอียด...", required:true });
   if (category === "post_donation") {
-    steps.push({ key:"symptom_type", type:"choices", prompt:"อาการหลักที่ใกล้เคียงที่สุดคือข้อไหนคะ?", required:false, choices:[
+    steps.push({ key:"symptom_type", type:"choices", prompt:"อาการหลักใกล้เคียงข้อไหนคะ?", required:false, choices:[
       ["เวียนหัว / หน้ามืด / อ่อนเพลีย","เวียนหัว / หน้ามืด"],
       ["ช้ำ / ปวดแขน","ช้ำ / ปวดแขน"],
       ["เลือดซึมจากแผลเจาะ","เลือดซึม"],
@@ -4521,14 +4707,15 @@ function donorChatBuildIntakeSteps(category) {
       ["อื่น ๆ","อื่น ๆ"]
     ]});
   }
-  if (category === "post_donation" || category === "test_result") {
-    steps.push({ key:"donation_date", type:"date", prompt:"ถ้าจำได้ บริจาคครั้งที่เกี่ยวข้องวันที่เท่าไหร่คะ?", optional:true });
+  if (category === "post_donation") {
+    steps.push({ key:"donation_date", type:"date", prompt:"ถ้าจำได้ บริจาควันที่เท่าไหร่คะ?", optional:true });
   }
-  steps.push({ key:"donor_name", type:"text", prompt:"ขอชื่อ-นามสกุลของผู้บริจาคหรือผู้ติดต่อค่ะ", placeholder:"ชื่อ-นามสกุล", required:true });
+  steps.push({ key:"donor_name", type:"text", prompt:"ขอชื่อ-นามสกุลสำหรับให้ทีมตรวจสอบค่ะ", placeholder:"ชื่อ-นามสกุล", required:true });
   steps.push({ key:"phone", type:"tel", prompt:"ขอเบอร์โทรที่ติดต่อกลับได้ค่ะ", placeholder:"เช่น 0812345678", required:true });
-  steps.push({ key:"donor_id", type:"text", prompt:"ถ้าทราบ Donor ID พิมพ์มาได้เลยค่ะ ถ้าไม่ทราบกด “ข้าม” ได้", placeholder:"Donor ID", optional:true });
-  steps.push({ key:"email", type:"email", prompt:"ถ้ามีอีเมลสำหรับรับการติดต่อกลับ พิมพ์ได้เลยค่ะ หรือกด “ข้าม”", placeholder:"name@example.com", optional:true });
-  steps.push({ key:"confirm", type:"confirm", prompt:"ข้อมูลครบแล้วค่ะ ต้องการส่งให้ทีมช่วยดูตอนนี้เลยไหม?" });
+  if (["eligibility","post_donation","test_result"].includes(category)) {
+    steps.push({ key:"donor_id", type:"text", prompt:"ถ้าทราบ Donor ID ใส่ได้เลยค่ะ ไม่ทราบกดข้ามได้", placeholder:"Donor ID (ไม่บังคับ)", optional:true });
+  }
+  steps.push({ key:"confirm", type:"confirm", prompt:"เรียบร้อยค่ะ ต้องการส่งให้ทีมช่วยดูเลยไหม?" });
   return steps;
 }
 
@@ -4600,6 +4787,7 @@ function donorChatRenderStep() {
       setTimeout(function(){ input.focus(); }, 60);
     }
   }
+  donorChatPersistDraft();
   composer.scrollIntoView({ behavior:"smooth", block:"nearest" });
 }
 
@@ -4658,34 +4846,50 @@ function chooseDonorChatReply(value, label) {
 function startNewDonorChat() {
   donorChatIntakeState = null;
   clearDonorChatResume();
+  donorChatClearDraft();
   const messages = $("donorChatMessages");
-  if (messages) messages.innerHTML = '<div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>สวัสดีค่ะ ต้องการสอบถามเรื่องอะไรคะ?</b><span>เลือกหัวข้อด้านล่างได้เลย เรื่องที่ตอบได้ทันทีเราจะตอบตรงนี้ ส่วนเรื่องที่ต้องใช้คนช่วยจะส่งให้ทีมค่ะ</span></div></div>';
+  if (messages) messages.innerHTML = donorChatInitialGreetingHtml();
   donorChatSetTopicChoicesVisible(true);
+  if ($("donorChatSmartComposer")) $("donorChatSmartComposer").style.display = "block";
+  if ($("donorChatSmartInput")) $("donorChatSmartInput").value = "";
   if ($("donorChatIntakeComposer")) $("donorChatIntakeComposer").style.display = "none";
   if ($("donorChatThreadComposer")) $("donorChatThreadComposer").style.display = "none";
   if ($("donorQuestionEmergency")) $("donorQuestionEmergency").style.display = "none";
+  toggleDonorMyQuestions(false);
 }
 
 function selectDonorQuestionCategory(category) {
   const label = donorQuestionCategoryLabel(category);
-  appendDonorChatBubble("user", label);
+  const initialMessage = String(donorChatPendingEscalationMessage || "").trim();
+  donorChatPendingEscalationMessage = "";
+  if ($("donorChatSmartComposer")) $("donorChatSmartComposer").style.display = "none";
+  if (!initialMessage) appendDonorChatBubble("user", label);
   donorChatSetTopicChoicesVisible(false);
   if ($("donorChatThreadComposer")) $("donorChatThreadComposer").style.display = "none";
   const helper = category === "post_donation"
-    ? "ได้ค่ะ เรื่องอาการหลังบริจาคจะส่งให้ผู้รับผิดชอบทางการแพทย์ช่วยดู เราจะถามทีละข้อนะคะ"
+    ? "ได้ค่ะ จะถามเฉพาะข้อมูลที่จำเป็น แล้วส่งให้ผู้รับผิดชอบทางการแพทย์ช่วยดูนะคะ"
     : category === "test_result"
-      ? "ได้ค่ะ เรื่องผลตรวจควรตรวจสอบข้อมูลจริงก่อนตอบ เราจะถามข้อมูลที่จำเป็นทีละข้อนะคะ"
-      : "ได้เลยค่ะ เราจะถามทีละข้อ แล้วส่งให้ทีมช่วยดูให้";
+      ? "ได้ค่ะ เรื่องผลตรวจจะส่งให้ทีมตรวจสอบข้อมูลจริงก่อนตอบนะคะ"
+      : initialMessage
+        ? "ได้เลยค่ะ ใช้คำถามที่พิมพ์ไว้แล้ว ขอข้อมูลติดต่ออีกนิดเดียวเพื่อส่งให้ทีมค่ะ"
+        : "ได้เลยค่ะ ขอข้อมูลที่จำเป็นสั้น ๆ แล้วส่งให้ทีมช่วยดูค่ะ";
   appendDonorChatBubble("bot", helper);
   if (category === "post_donation") {
     appendDonorChatBubble("bot", '<span class="chat-medical-alert"><b>ถ้าอาการรุนแรง ไม่ต้องรอคำตอบในแอพ</b><br>หากหมดสติ หายใจลำบาก เจ็บหน้าอก เลือดออกมากไม่หยุด หรืออาการแย่ลงรวดเร็ว ให้ไปห้องฉุกเฉินหรือโทร 1669 ทันที</span>', true);
   }
+  let steps = donorChatBuildIntakeSteps(category);
+  const data = { category:category, subject:label };
+  if (initialMessage) {
+    data.message = initialMessage;
+    steps = steps.filter(function(step){ return step.key !== "message"; });
+  }
   donorChatIntakeState = {
     category:category,
     stepIndex:0,
-    data:{ category:category, subject:label },
-    steps:donorChatBuildIntakeSteps(category)
+    data:data,
+    steps:steps
   };
+  donorChatPersistDraft();
   donorChatRenderStep();
 }
 
@@ -4702,7 +4906,7 @@ async function submitDonorChatIntake() {
       p_subject:donorQuestionCategoryLabel(donorChatIntakeState.category),
       p_donor_name:d.donor_name || "",
       p_phone:d.phone || "",
-      p_email:d.email || null,
+      p_email:null,
       p_donor_id:d.donor_id || null,
       p_donation_date:d.donation_date || null,
       p_symptom_type:d.symptom_type || null,
@@ -4711,8 +4915,13 @@ async function submitDonorChatIntake() {
     if (error) throw error;
     const result = data || {};
     if (!result.ok) throw new Error(result.message || "ส่งคำถามไม่สำเร็จ");
-    saveDonorChatResume(result.access_token || "", result.public_code || "", String(d.phone || "").slice(-4));
+    saveDonorChatResume(result.access_token || "", result.public_code || "", String(d.phone || "").slice(-4), {
+      category:donorChatIntakeState.category,
+      message:d.message || "",
+      status:"ใหม่"
+    });
     donorChatIntakeState = null;
+    donorChatClearDraft();
     if (composer) { composer.style.display = "none"; composer.classList.remove("sending"); }
     try { await sb.functions.invoke("donor-question-notify", { body:{ action:"send_new", publicCode:result.public_code } }); } catch (notifyErr) { console.warn("question notify failed", notifyErr); }
     const ok = await loadDonorQuestionByToken(result.access_token || "", false);
@@ -4729,21 +4938,105 @@ async function submitDonorChatIntake() {
 // compatibility: ปุ่ม/โค้ดเก่าที่เรียก submitDonorQuestion จะใช้ flow chat ใหม่
 async function submitDonorQuestion() { return submitDonorChatIntake(); }
 
-function saveDonorChatResume(accessToken, publicCode, phoneLast4) {
+function getDonorChatHistory() {
+  const rows = donorChatReadJson(DONOR_CHAT_STORAGE.history, []);
+  return Array.isArray(rows) ? rows.filter(function(row){ return row && (row.accessToken || row.publicCode); }).slice(0,10) : [];
+}
+
+function saveDonorChatHistoryEntry(entry) {
+  if (!entry || (!entry.accessToken && !entry.publicCode)) return;
+  const rows = getDonorChatHistory();
+  const token = String(entry.accessToken || "");
+  const code = String(entry.publicCode || "").toUpperCase();
+  const next = rows.filter(function(row){
+    if (token && row.accessToken === token) return false;
+    if (code && String(row.publicCode || "").toUpperCase() === code) return false;
+    return true;
+  });
+  next.unshift({
+    accessToken:token,
+    publicCode:code,
+    phoneLast4:String(entry.phoneLast4 || "").slice(-4),
+    category:String(entry.category || ""),
+    message:String(entry.message || "").slice(0,180),
+    status:String(entry.status || ""),
+    updatedAt:entry.updatedAt || new Date().toISOString()
+  });
+  donorChatWriteJson(DONOR_CHAT_STORAGE.history, next.slice(0,10));
+  renderDonorMyQuestions();
+}
+
+function saveDonorChatResume(accessToken, publicCode, phoneLast4, meta) {
   currentDonorChatAccessToken = String(accessToken || "");
   currentDonorChatPublicCode = String(publicCode || "");
   currentDonorChatPhoneLast4 = String(phoneLast4 || "");
   try {
-    if (currentDonorChatAccessToken) localStorage.setItem('cnmiDonorChatToken', currentDonorChatAccessToken);
-    if (currentDonorChatPublicCode) localStorage.setItem('cnmiDonorChatCode', currentDonorChatPublicCode);
+    if (currentDonorChatAccessToken) localStorage.setItem(DONOR_CHAT_STORAGE.token, currentDonorChatAccessToken);
+    else localStorage.removeItem(DONOR_CHAT_STORAGE.token);
+    if (currentDonorChatPublicCode) localStorage.setItem(DONOR_CHAT_STORAGE.code, currentDonorChatPublicCode);
+    else localStorage.removeItem(DONOR_CHAT_STORAGE.code);
+    if (currentDonorChatPhoneLast4) localStorage.setItem(DONOR_CHAT_STORAGE.phone4, currentDonorChatPhoneLast4);
+    else localStorage.removeItem(DONOR_CHAT_STORAGE.phone4);
   } catch (e) {}
+  if (currentDonorChatAccessToken || currentDonorChatPublicCode) {
+    saveDonorChatHistoryEntry(Object.assign({}, meta || {}, {
+      accessToken:currentDonorChatAccessToken,
+      publicCode:currentDonorChatPublicCode,
+      phoneLast4:currentDonorChatPhoneLast4
+    }));
+  }
 }
 
 function clearDonorChatResume() {
   currentDonorChatAccessToken = "";
   currentDonorChatPublicCode = "";
   currentDonorChatPhoneLast4 = "";
-  try { localStorage.removeItem('cnmiDonorChatToken'); localStorage.removeItem('cnmiDonorChatCode'); } catch (e) {}
+  try { localStorage.removeItem(DONOR_CHAT_STORAGE.token); localStorage.removeItem(DONOR_CHAT_STORAGE.code); localStorage.removeItem(DONOR_CHAT_STORAGE.phone4); } catch (e) {}
+}
+
+function toggleDonorMyQuestions(force) {
+  const panel = $("donorMyQuestionsPanel");
+  if (!panel) return;
+  const next = typeof force === "boolean" ? force : panel.style.display === "none";
+  panel.style.display = next ? "block" : "none";
+  if (next) renderDonorMyQuestions();
+}
+
+function renderDonorMyQuestions() {
+  const box = $("donorMyQuestionList");
+  if (!box) return;
+  const rows = getDonorChatHistory();
+  if (!rows.length) {
+    box.innerHTML = '<div class="donor-my-question-empty"><i class="bi bi-chat-heart"></i><span>ยังไม่มีคำถามที่ส่งให้ทีมจากอุปกรณ์นี้</span></div>';
+    return;
+  }
+  box.innerHTML = rows.map(function(row, index){
+    const title = donorQuestionCategoryLabel(row.category || "other");
+    const detail = row.message ? escapeHtml(row.message) : "แตะเพื่อเปิดบทสนทนา";
+    const code = escapeHtml(row.publicCode || "คำถามของฉัน");
+    const status = row.status ? '<span class="question-status-pill ' + questionStatusClass(row.status) + '">' + escapeHtml(row.status) + '</span>' : '';
+    return '<button type="button" class="donor-my-question-item" onclick="openSavedDonorQuestion(' + index + ')"><span class="donor-my-question-icon"><i class="bi ' + donorQuestionCategoryIcon(row.category || "other") + '"></i></span><span class="donor-my-question-copy"><b>' + escapeHtml(title) + '</b><small>' + detail + '</small><em>' + code + '</em></span>' + status + '<i class="bi bi-chevron-right"></i></button>';
+  }).join('');
+}
+
+async function openSavedDonorQuestion(index) {
+  const row = getDonorChatHistory()[Number(index)];
+  if (!row) return;
+  toggleDonorMyQuestions(false);
+  if (row.accessToken) {
+    const ok = await loadDonorQuestionByToken(row.accessToken, false);
+    if (ok) return;
+  }
+  if (row.publicCode && String(row.phoneLast4 || "").length === 4) {
+    const { data, error } = await sb.rpc("lookup_donor_question", { p_public_code:row.publicCode, p_phone_last4:row.phoneLast4 });
+    if (!error && data?.ok) {
+      saveDonorChatResume("", row.publicCode, row.phoneLast4, { category:data.question?.category, message:data.question?.message, status:data.question?.status });
+      renderDonorQuestionThread(data.question || {}, Array.isArray(data.replies) ? data.replies : [], { publicCode:row.publicCode, phoneLast4:row.phoneLast4 });
+      return;
+    }
+  }
+  showModal({title:"เปิดคำถามไม่ได้",message:"รายการนี้อาจไม่อยู่ในอุปกรณ์แล้ว กรุณาใช้เลขคำถาม + เบอร์โทร 4 ตัวท้ายด้านล่าง",iconText:"!"});
+  toggleDonorMyQuestions(true);
 }
 
 function renderDonorQuestionThread(q, replies, context) {
@@ -4754,7 +5047,10 @@ function renderDonorQuestionThread(q, replies, context) {
   if (context.accessToken) currentDonorChatAccessToken = context.accessToken;
   if (context.phoneLast4) currentDonorChatPhoneLast4 = context.phoneLast4;
   donorChatIntakeState = null;
+  donorChatLocalTranscript = [];
+  donorChatPendingEscalationMessage = "";
   donorChatSetTopicChoicesVisible(false);
+  if ($("donorChatSmartComposer")) $("donorChatSmartComposer").style.display = "none";
   if ($("donorChatIntakeComposer")) $("donorChatIntakeComposer").style.display = "none";
   if ($("donorQuestionEmergency")) $("donorQuestionEmergency").style.display = "none";
 
@@ -4781,6 +5077,15 @@ function renderDonorQuestionThread(q, replies, context) {
     const composeRow = threadComposer.querySelector(".donor-chat-input-row");
     if (composeRow) composeRow.style.display = status === "ปิดเรื่อง" ? "none" : "flex";
   }
+  saveDonorChatHistoryEntry({
+    accessToken:currentDonorChatAccessToken,
+    publicCode:currentDonorChatPublicCode,
+    phoneLast4:currentDonorChatPhoneLast4,
+    category:q.category,
+    message:q.message,
+    status:status,
+    updatedAt:q.updated_at || q.created_at
+  });
   setTimeout(function(){ box.scrollTop = box.scrollHeight; box.lastElementChild?.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 40);
 }
 
@@ -4795,7 +5100,15 @@ async function loadDonorQuestionByToken(token, scroll) {
   if (!token) return false;
   const { data, error } = await sb.rpc('lookup_donor_question_token', { p_access_token:token });
   if (error || !data?.ok) return false;
-  saveDonorChatResume(token, data.question?.public_code || '', '');
+  donorChatClearDraft();
+  const remembered = getDonorChatHistory().find(function(row){ return row.accessToken === token; });
+  const rememberedPhone4 = currentDonorChatPhoneLast4 || remembered?.phoneLast4 || "";
+  saveDonorChatResume(token, data.question?.public_code || '', rememberedPhone4, {
+    category:data.question?.category,
+    message:data.question?.message,
+    status:data.question?.status,
+    updatedAt:data.question?.updated_at || data.question?.created_at
+  });
   renderDonorQuestionThread(data.question || {}, Array.isArray(data.replies) ? data.replies : [], { accessToken:token });
   if (scroll === false) return true;
   return true;
@@ -4803,11 +5116,33 @@ async function loadDonorQuestionByToken(token, scroll) {
 
 async function restoreDonorChatConversation() {
   if (!$("donorChatMessages")) return;
+  if ($("donorChatThreadComposer")?.style.display === 'block') return;
   let token = currentDonorChatAccessToken;
-  try { token = token || localStorage.getItem('cnmiDonorChatToken') || ''; } catch (e) {}
-  if (!token || $("donorChatThreadComposer")?.style.display === 'block') return;
-  const ok = await loadDonorQuestionByToken(token, false);
-  if (!ok) clearDonorChatResume();
+  let code = currentDonorChatPublicCode;
+  let phone4 = currentDonorChatPhoneLast4;
+  try {
+    token = token || localStorage.getItem(DONOR_CHAT_STORAGE.token) || '';
+    code = code || localStorage.getItem(DONOR_CHAT_STORAGE.code) || '';
+    phone4 = phone4 || localStorage.getItem(DONOR_CHAT_STORAGE.phone4) || '';
+  } catch (e) {}
+  if (token) {
+    const ok = await loadDonorQuestionByToken(token, false);
+    if (ok) return;
+    clearDonorChatResume();
+    code = '';
+    phone4 = '';
+  }
+  if (code && String(phone4).length === 4) {
+    const { data, error } = await sb.rpc("lookup_donor_question", { p_public_code:code, p_phone_last4:phone4 });
+    if (!error && data?.ok) {
+      saveDonorChatResume("", code, phone4, { category:data.question?.category, message:data.question?.message, status:data.question?.status, updatedAt:data.question?.updated_at || data.question?.created_at });
+      renderDonorQuestionThread(data.question || {}, Array.isArray(data.replies) ? data.replies : [], { publicCode:code, phoneLast4:phone4 });
+      return;
+    }
+    clearDonorChatResume();
+  }
+  restoreDonorChatLocalDraft();
+  renderDonorMyQuestions();
 }
 
 async function lookupDonorQuestion() {
@@ -4818,8 +5153,13 @@ async function lookupDonorQuestion() {
   if (box) box.innerHTML = '<div class="staff-result">กำลังเปิดบทสนทนา...</div>';
   const { data, error } = await sb.rpc("lookup_donor_question", { p_public_code:code, p_phone_last4:last4 });
   if (error || !data?.ok) { if (box) box.innerHTML = '<div class="staff-result fail">' + escapeHtml(error?.message || data?.message || "ไม่พบรายการ") + '</div>'; return; }
-  currentDonorChatPublicCode = code;
-  currentDonorChatPhoneLast4 = last4;
+  donorChatClearDraft();
+  saveDonorChatResume("", code, last4, {
+    category:data.question?.category,
+    message:data.question?.message,
+    status:data.question?.status,
+    updatedAt:data.question?.updated_at || data.question?.created_at
+  });
   renderDonorQuestionThread(data.question || {}, Array.isArray(data.replies) ? data.replies : [], { publicCode:code, phoneLast4:last4 });
   if (box) box.innerHTML = '<div class="compact-notice success"><i class="bi bi-check2-circle"></i><span>เปิดบทสนทนาแล้ว คุณสามารถพิมพ์ข้อความต่อได้ด้านบน</span></div>';
 }
