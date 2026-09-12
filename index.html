@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.11" rel="stylesheet">
+  <link href="styles.css?v=15.12" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -42,40 +42,37 @@
         <button type="button" class="btn btn-sm btn-soft" onclick="showPage('roomCalendar')">ดูปฏิทิน</button>
       </div>
 
-      <div class="action-stack">
-        <button type="button" class="home-menu-card primary-menu" onclick="showPage('check')">
-          <div class="menu-symbol"><i class="bi bi-droplet-half"></i></div>
-          <div class="menu-copy">
-            <div class="menu-title">เช็กว่าบริจาคได้หรือยัง</div>
-            <div class="menu-subtitle">ดูวันที่บริจาคครั้งถัดไป และประวัติของคุณ</div>
-          </div>
+      <section class="home-popular-section mb-3">
+        <div class="home-section-title"><div><small>เมนูที่ถามบ่อย</small><b>กดแล้วไปคำตอบได้เลย</b></div></div>
+        <div class="home-quick-grid">
+          <button type="button" class="home-quick-card next-donation" onclick="showPage('check')">
+            <span class="home-quick-icon"><i class="bi bi-calendar-heart"></i></span>
+            <span><b>ครั้งหน้าบริจาคเมื่อไหร่?</b><small>เช็กวันบริจาคครั้งถัดไป</small></span>
+          </button>
+          <button type="button" class="home-quick-card platelet" onclick="showPage('screening')">
+            <span class="home-quick-icon"><i class="bi bi-droplet-half"></i></span>
+            <span><b>จองเกล็ดเลือด</b><small>ทำคัดกรองแล้วเลือกคิว</small></span>
+          </button>
+          <button type="button" class="home-quick-card prepare" onclick="showPage('prepare')">
+            <span class="home-quick-icon"><i class="bi bi-cup-straw"></i></span>
+            <span><b>เตรียมตัวยังไง?</b><small>ก่อนและหลังบริจาค</small></span>
+          </button>
+          <button type="button" class="home-quick-card hours" onclick="showRoomCalendarPublic()">
+            <span class="home-quick-icon"><i class="bi bi-clock-history"></i></span>
+            <span><b>วันนี้เปิดไหม?</b><small>ดูวันเปิด–ปิดและเวลา</small></span>
+          </button>
+        </div>
+      </section>
+
+      <div class="home-more-actions">
+        <button type="button" class="home-more-card" onclick="showDonationChoice()">
+          <div class="menu-symbol"><i class="bi bi-heart-pulse"></i></div>
+          <div class="menu-copy"><div class="menu-title">บริการบริจาคอื่น ๆ</div><div class="menu-subtitle">เลือดแดง · หมู่คณะ · ขอออกหน่วย</div></div>
           <i class="bi bi-chevron-right menu-arrow"></i>
         </button>
-
-        <button type="button" class="home-menu-card" onclick="showDonationChoice()">
-          <div class="menu-symbol"><i class="bi bi-calendar2-check"></i></div>
-          <div class="menu-copy">
-            <div class="menu-title">บริจาคเกล็ดเลือด / เลือดแดง</div>
-            <div class="menu-subtitle">เกล็ดเลือดจองคิว · เลือดแดง Walk-in ได้</div>
-          </div>
-          <i class="bi bi-chevron-right menu-arrow"></i>
-        </button>
-
-        <button type="button" class="home-menu-card calendar-menu" onclick="showRoomCalendarPublic()">
-          <div class="menu-symbol"><i class="bi bi-calendar-event"></i></div>
-          <div class="menu-copy">
-            <div class="menu-title">ปฏิทินห้องบริจาคโลหิต</div>
-            <div class="menu-subtitle">ดูวันเปิด–ปิด ออกหน่วย และกิจกรรมประจำเดือน</div>
-          </div>
-          <i class="bi bi-chevron-right menu-arrow"></i>
-        </button>
-
-        <button type="button" class="home-menu-card" onclick="showPage('info')">
-          <div class="menu-symbol"><i class="bi bi-geo-alt"></i></div>
-          <div class="menu-copy">
-            <div class="menu-title">เวลารับลงทะเบียนและติดต่อ</div>
-            <div class="menu-subtitle">เวลารับลงทะเบียน เบอร์โทร สถานที่ และแผนที่</div>
-          </div>
+        <button type="button" class="home-more-card" onclick="showPage('info')">
+          <div class="menu-symbol"><i class="bi bi-chat-dots"></i></div>
+          <div class="menu-copy"><div class="menu-title">ติดต่อเจ้าหน้าที่</div><div class="menu-subtitle">เบอร์โทร สถานที่ และแผนที่</div></div>
           <i class="bi bi-chevron-right menu-arrow"></i>
         </button>
       </div>
@@ -191,6 +188,54 @@
         </div>
       </div>
     </div>
+
+    <div id="pagePrepare" class="app-page">
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')" aria-label="กลับหน้าหลัก"><i class="bi bi-arrow-left"></i></button>
+        <div>
+          <div class="page-kicker">เตรียมตัวก่อนบริจาค</div>
+          <h2 class="page-title">เตรียมตัวแบบสั้น ๆ ทำตามได้เลย</h2>
+          <p class="page-subtitle">รวมสิ่งที่ควรรู้ก่อนมา และการดูแลตัวเองหลังบริจาค</p>
+        </div>
+      </div>
+
+      <div class="prepare-highlight mb-3">
+        <div class="prepare-highlight-icon"><i class="bi bi-heart-pulse"></i></div>
+        <div><b>ถ้าวันนี้ไม่สบาย หรือมียาที่กำลังรับประทาน</b><span>แจ้งเจ้าหน้าที่คัดกรองทุกครั้ง เพื่อประเมินความพร้อมก่อนบริจาค</span></div>
+      </div>
+
+      <div class="prepare-grid mb-3">
+        <section class="card main-card prepare-card p-3 p-md-4">
+          <div class="prepare-card-head before"><span><i class="bi bi-sunrise"></i></span><div><small>ก่อนมา</small><h3>เตรียมตัวก่อนบริจาค</h3></div></div>
+          <div class="prepare-check-list">
+            <div><i class="bi bi-moon-stars"></i><span><b>นอนให้พอ</b><small>พักผ่อนอย่างน้อยประมาณ 5 ชั่วโมง</small></span></div>
+            <div><i class="bi bi-egg-fried"></i><span><b>กินมื้อปกติก่อนมา</b><small>ไม่ควรงดอาหาร และหลีกเลี่ยงอาหารไขมันสูงประมาณ 6 ชั่วโมงก่อนบริจาค</small></span></div>
+            <div><i class="bi bi-cup-straw"></i><span><b>ดื่มน้ำก่อนบริจาค</b><small>ประมาณ 300–500 มล. ก่อนบริจาคราว 30 นาที</small></span></div>
+            <div><i class="bi bi-cup-hot"></i><span><b>งดแอลกอฮอล์</b><small>อย่างน้อย 24 ชั่วโมงก่อนบริจาค</small></span></div>
+            <div><i class="bi bi-wind"></i><span><b>งดสูบบุหรี่</b><small>ก่อนและหลังบริจาคอย่างน้อย 1 ชั่วโมง</small></span></div>
+          </div>
+        </section>
+
+        <section class="card main-card prepare-card p-3 p-md-4">
+          <div class="prepare-card-head after"><span><i class="bi bi-shield-check"></i></span><div><small>หลังบริจาค</small><h3>ดูแลตัวเองหลังบริจาค</h3></div></div>
+          <div class="prepare-check-list">
+            <div><i class="bi bi-person-arms-up"></i><span><b>พักก่อนลุก</b><small>พักบนเตียงประมาณ 5 นาที แล้วนั่งพักต่อ 10–15 นาที</small></span></div>
+            <div><i class="bi bi-droplet"></i><span><b>ดื่มน้ำให้มากขึ้น</b><small>ดื่มน้ำมากกว่าปกติในช่วง 24 ชั่วโมงหลังบริจาค</small></span></div>
+            <div><i class="bi bi-hand-index-thumb"></i><span><b>ถนอมแขนข้างที่เจาะ</b><small>หลีกเลี่ยงใช้งานหนักด้วยแขนข้างนั้นประมาณ 24 ชั่วโมง</small></span></div>
+            <div><i class="bi bi-activity"></i><span><b>งดออกกำลังหนัก</b><small>หลีกเลี่ยงกิจกรรมที่ทำให้เสียเหงื่อมากประมาณ 24 ชั่วโมง</small></span></div>
+            <div><i class="bi bi-exclamation-circle"></i><span><b>ถ้ามีอาการผิดปกติ ให้รีบพัก</b><small>นั่งหรือนอนลง และแจ้งเจ้าหน้าที่หากยังอยู่ในห้องบริจาค</small></span></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="card main-card prepare-cta-card p-3 p-md-4 mb-3">
+        <div><small>จะมาบริจาคแล้วใช่ไหม?</small><h4>เช็กวันครั้งถัดไป หรือจองเกล็ดเลือดต่อได้เลย</h4></div>
+        <div class="prepare-cta-actions"><button type="button" class="btn btn-soft" onclick="showPage('check')"><i class="bi bi-calendar-heart"></i> เช็กครั้งถัดไป</button><button type="button" class="btn btn-search" onclick="showPage('screening')"><i class="bi bi-calendar2-check"></i> จองเกล็ดเลือด</button></div>
+      </div>
+
+      <div class="source-note mb-4"><i class="bi bi-bookmark-check"></i><span>แนวทางการเตรียมตัวอ้างอิงจากศูนย์บริการโลหิตแห่งชาติ สภากาชาดไทย</span><a href="https://thaibloodcentre.redcross.or.th/good-practice-for-pre-and-post-donation/" target="_blank" rel="noopener">อ่านรายละเอียด</a></div>
+    </div>
+
     <div id="pageDonationChoice" class="app-page">
       <div class="page-head mb-3">
         <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
@@ -901,6 +946,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.11"></script>
+  <script src="app.js?v=15.12"></script>
 </body>
 </html>

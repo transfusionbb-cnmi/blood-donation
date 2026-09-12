@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.11 */
+/* CNMI Blood Donation Supabase Frontend v15.12 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -33,15 +33,16 @@ let suppressRouteSync = false;
 
 const PAGE_ROUTE_MAP = {
   home: "#/home",
-  check: "#/check",
+  check: "#/next",
+  prepare: "#/prepare",
   donationChoice: "#/donate",
-  screening: "#/platelet/screening",
+  screening: "#/platelet",
   booking: "#/platelet/booking",
   bookingSuccess: "#/platelet/success",
   groupBooking: "#/group-booking",
   mobileUnitRequest: "#/mobile-unit",
   manage: "#/manage",
-  roomCalendar: "#/calendar",
+  roomCalendar: "#/hours",
   info: "#/contact",
   staffLogin: "#/staff/login",
   staffChangePassword: "#/staff/password",
@@ -108,11 +109,11 @@ function parseHashRoute() {
   const path = hash.split("?")[0].replace(/^#\/?/, "").replace(/^\/+|\/+$/g, "");
   if (!path) return { page:"home" };
   const map = {
-    home:"home", check:"check", donate:"donationChoice", "group-booking":"groupBooking",
-    "mobile-unit":"mobileUnitRequest", manage:"manage", calendar:"roomCalendar", contact:"info"
+    home:"home", check:"check", next:"check", prepare:"prepare", donate:"donationChoice", "group-booking":"groupBooking",
+    "mobile-unit":"mobileUnitRequest", manage:"manage", calendar:"roomCalendar", hours:"roomCalendar", contact:"info"
   };
   if (map[path]) return { page:map[path] };
-  if (path === "platelet/screening") return { page:"screening" };
+  if (path === "platelet" || path === "platelet/screening") return { page:"screening" };
   if (path === "platelet/booking") return { page:"booking" };
   if (path === "platelet/success") return { page:"bookingSuccess" };
   if (path === "staff" || path.startsWith("staff/")) {
@@ -201,7 +202,7 @@ function modalSecondaryClick() { closeModal(); if (modalSecondaryCallback) { con
 function showPage(page, options) {
   options = options || {};
   const pages = {
-    home:"pageHome", check:"pageCheck", donationChoice:"pageDonationChoice", groupBooking:"pageGroupBooking",
+    home:"pageHome", check:"pageCheck", prepare:"pagePrepare", donationChoice:"pageDonationChoice", groupBooking:"pageGroupBooking",
     mobileUnitRequest:"pageMobileUnitRequest",
     screening:"pageScreening", booking:"pageBooking", bookingSuccess:"pageBookingSuccess", manage:"pageManage",
     roomCalendar:"pageRoomCalendar", info:"pageInfo",
