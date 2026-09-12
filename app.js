@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.22 */
+/* CNMI Blood Donation Supabase Frontend v15.23 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -4694,6 +4694,8 @@ function restoreDonorChatLocalDraft() {
       appendDonorChatBubble(item?.role === "user" ? "user" : "bot", item?.content || "", !!item?.isHtml, { skipPersist:true, noScroll:true });
     });
     donorChatIntakeState = saved.intake && typeof saved.intake === "object" ? saved.intake : null;
+    if (donorChatIntakeState?.trackingCode) donorChatSetTrackingBanner(donorChatIntakeState.trackingCode, "กรุณาจดหรือแคปหน้าจอไว้");
+    else donorChatSetTrackingBanner("");
     if (donorChatIntakeState) {
       donorChatSetTopicChoicesVisible(false);
       if ($("donorChatSmartComposer")) $("donorChatSmartComposer").style.display = "none";
@@ -4930,6 +4932,49 @@ function donorChatSetTopicChoicesVisible(visible) {
   document.querySelectorAll(".donor-chat-divider,.donor-chat-human-choices").forEach(function(el){ el.style.display = visible ? "" : "none"; });
 }
 
+function donorChatTrackingCardHtml(code) {
+  code = String(code || "").trim().toUpperCase();
+  if (!code) return "";
+  return '<div class="chat-tracking-card">' +
+    '<span class="chat-tracking-eyebrow"><i class="bi bi-bookmark-check-fill"></i> รหัสติดตามคำถามสำหรับให้เจ้าหน้าที่ช่วยดู</span>' +
+    '<strong>' + escapeHtml(code) + '</strong>' +
+    '<p><b>กรุณาจดหรือแคปหน้าจอรหัสนี้ไว้</b><br>หลังส่งข้อมูลให้ทีมแล้ว ใช้รหัสนี้กลับมาดูคำถามและคำตอบได้จากโทรศัพท์หรือคอมเครื่องอื่นค่ะ</p>' +
+    '<button type="button" class="chat-tracking-copy" onclick="copyTextValue(' + JSON.stringify(code) + ')"><i class="bi bi-copy"></i> คัดลอกรหัส</button>' +
+  '</div>';
+}
+
+function donorChatSetTrackingBanner(code, statusText) {
+  const banner = $("donorChatTrackingBanner");
+  const codeEl = $("donorChatTrackingCode");
+  const statusEl = $("donorChatTrackingStatus");
+  code = String(code || "").trim().toUpperCase();
+  if (!banner) return;
+  if (!code) {
+    banner.style.display = "none";
+    if (codeEl) codeEl.textContent = "-";
+    return;
+  }
+  if (codeEl) codeEl.textContent = code;
+  if (statusEl) statusEl.textContent = statusText || "จดหรือแคปหน้าจอไว้ เพื่อกลับมาดูคำถามนี้ภายหลัง";
+  banner.style.display = "flex";
+}
+
+function copyCurrentDonorTrackingCode() {
+  copyTextValue($("donorChatTrackingCode")?.textContent || currentDonorChatPublicCode || donorChatIntakeState?.trackingCode || "");
+}
+
+async function reserveDonorQuestionTracking(category) {
+  try {
+    const { data, error } = await sb.rpc("reserve_donor_question_tracking_code", { p_category:category });
+    if (error) throw error;
+    if (!data?.ok || !data?.public_code || !data?.reservation_token) throw new Error(data?.message || "สร้างรหัสติดตามไม่สำเร็จ");
+    return { ok:true, publicCode:String(data.public_code), reservationToken:String(data.reservation_token) };
+  } catch (e) {
+    console.warn("reserve tracking code failed", e);
+    return { ok:false, error:e };
+  }
+}
+
 function donorChatBuildIntakeSteps(category) {
   const steps = [];
   const detailPrompt = category === "post_donation"
@@ -5087,6 +5132,7 @@ function chooseDonorChatReply(value, label) {
 }
 
 function showDonorAskEntry() {
+  donorChatSetTrackingBanner("");
   const entry = $("donorAskEntry");
   const panel = $("donorMyQuestionsPanel");
   const shell = $("donorChatShell");
@@ -5127,6 +5173,7 @@ function toggleDonorCrossDeviceLookup(force) {
 function startNewDonorChat() {
   showDonorAskChat();
   donorChatIntakeState = null;
+  donorChatSetTrackingBanner("");
   clearDonorChatResume();
   donorChatClearDraft();
   const messages = $("donorChatMessages");
@@ -5140,7 +5187,7 @@ function startNewDonorChat() {
   toggleDonorMyQuestions(false);
 }
 
-function selectDonorQuestionCategory(category) {
+async function selectDonorQuestionCategory(category) {
   const label = donorQuestionCategoryLabel(category);
   const initialMessage = String(donorChatPendingEscalationMessage || "").trim();
   donorChatPendingEscalationMessage = "";
@@ -5148,13 +5195,24 @@ function selectDonorQuestionCategory(category) {
   if (!initialMessage) appendDonorChatBubble("user", label);
   donorChatSetTopicChoicesVisible(false);
   if ($("donorChatThreadComposer")) $("donorChatThreadComposer").style.display = "none";
+
+  appendDonorChatBubble("bot", '<span class="chat-code-preparing"><i class="bi bi-hourglass-split"></i> กำลังสร้างรหัสติดตามคำถามให้ค่ะ…</span>', true);
+  const reserved = await reserveDonorQuestionTracking(category);
+  if (reserved.ok) {
+    donorChatSetTrackingBanner(reserved.publicCode, "กรุณาจดหรือแคปหน้าจอไว้");
+    appendDonorChatBubble("bot", donorChatTrackingCardHtml(reserved.publicCode), true);
+  } else {
+    donorChatSetTrackingBanner("");
+    appendDonorChatBubble("bot", '<span class="chat-code-warning"><i class="bi bi-exclamation-circle"></i> ตอนนี้ยังสร้างรหัสล่วงหน้าไม่ได้ แต่ยังกรอกข้อมูลและส่งให้ทีมได้ตามปกติค่ะ ระบบจะแจ้งรหัสให้อีกครั้งหลังส่งสำเร็จ</span>', true);
+  }
+
   const helper = category === "post_donation"
-    ? "ได้ค่ะ จะถามเฉพาะข้อมูลที่จำเป็น แล้วส่งให้ผู้รับผิดชอบทางการแพทย์ช่วยดูนะคะ"
+    ? "ต่อไปขอถามเฉพาะข้อมูลที่จำเป็น แล้วส่งให้ผู้รับผิดชอบทางการแพทย์ช่วยดูนะคะ"
     : category === "test_result"
-      ? "ได้ค่ะ เรื่องผลตรวจจะส่งให้ทีมตรวจสอบข้อมูลจริงก่อนตอบนะคะ"
+      ? "ต่อไปขอข้อมูลสั้น ๆ เพื่อให้ทีมตรวจสอบผลจริงก่อนตอบค่ะ"
       : initialMessage
-        ? "ได้เลยค่ะ ใช้คำถามที่พิมพ์ไว้แล้ว ขอข้อมูลติดต่ออีกนิดเดียวเพื่อส่งให้ทีมค่ะ"
-        : "ได้เลยค่ะ ขอข้อมูลที่จำเป็นสั้น ๆ แล้วส่งให้ทีมช่วยดูค่ะ";
+        ? "ใช้คำถามที่พิมพ์ไว้แล้วค่ะ ขอข้อมูลติดต่ออีกนิดเดียวเพื่อส่งให้ทีม"
+        : "ต่อไปขอข้อมูลที่จำเป็นสั้น ๆ เพื่อส่งให้ทีมช่วยดูค่ะ";
   appendDonorChatBubble("bot", helper);
   if (category === "post_donation") {
     appendDonorChatBubble("bot", '<span class="chat-medical-alert"><b>ถ้าอาการรุนแรง ไม่ต้องรอคำตอบในแอพ</b><br>หากหมดสติ หายใจลำบาก เจ็บหน้าอก เลือดออกมากไม่หยุด หรืออาการแย่ลงรวดเร็ว ให้ไปห้องฉุกเฉินหรือโทร 1669 ทันที</span>', true);
@@ -5169,7 +5227,9 @@ function selectDonorQuestionCategory(category) {
     category:category,
     stepIndex:0,
     data:data,
-    steps:steps
+    steps:steps,
+    trackingCode:reserved.ok ? reserved.publicCode : "",
+    reservationToken:reserved.ok ? reserved.reservationToken : ""
   };
   donorChatPersistDraft();
   donorChatRenderStep();
@@ -5183,7 +5243,7 @@ async function submitDonorChatIntake() {
   appendDonorChatBubble("user", "ส่งให้ทีมเลย");
   appendDonorChatBubble("bot", "กำลังส่งให้ทีมค่ะ…");
   try {
-    const { data, error } = await sb.rpc("submit_donor_question", {
+    const submitArgs = {
       p_category:donorChatIntakeState.category,
       p_subject:donorQuestionCategoryLabel(donorChatIntakeState.category),
       p_donor_name:d.donor_name || "",
@@ -5193,7 +5253,14 @@ async function submitDonorChatIntake() {
       p_donation_date:d.donation_date || null,
       p_symptom_type:d.symptom_type || null,
       p_message:d.message || ""
-    });
+    };
+    let response;
+    if (donorChatIntakeState.reservationToken) {
+      response = await sb.rpc("submit_donor_question_reserved", Object.assign({ p_reservation_token:donorChatIntakeState.reservationToken }, submitArgs));
+    } else {
+      response = await sb.rpc("submit_donor_question", submitArgs);
+    }
+    const { data, error } = response;
     if (error) throw error;
     const result = data || {};
     if (!result.ok) throw new Error(result.message || "ส่งคำถามไม่สำเร็จ");
@@ -5202,13 +5269,14 @@ async function submitDonorChatIntake() {
       message:d.message || "",
       status:"ใหม่"
     });
+    donorChatSetTrackingBanner(result.public_code || donorChatIntakeState.trackingCode || "", "ส่งให้ทีมแล้ว · ใช้รหัสนี้กลับมาดูคำตอบได้");
     donorChatIntakeState = null;
     donorChatClearDraft();
     if (composer) { composer.style.display = "none"; composer.classList.remove("sending"); }
     try { await sb.functions.invoke("donor-question-notify", { body:{ action:"send_new", publicCode:result.public_code } }); } catch (notifyErr) { console.warn("question notify failed", notifyErr); }
     const ok = await loadDonorQuestionByToken(result.access_token || "", false);
     if (!ok) {
-      appendDonorChatBubble("bot", '<b>ส่งให้ทีมแล้วค่ะ</b><br>เลขอ้างอิง <strong>' + escapeHtml(result.public_code || "-") + '</strong><br>เมื่อทีมตอบสามารถกลับมาเปิดบทสนทนานี้ได้', true);
+      appendDonorChatBubble("bot", '<b>ส่งให้ทีมแล้วค่ะ</b><br>รหัสติดตามคำถาม <strong>' + escapeHtml(result.public_code || "-") + '</strong><br>เมื่อทีมตอบสามารถกลับมาเปิดบทสนทนานี้ได้', true);
     }
   } catch (err) {
     if (composer) composer.classList.remove("sending");
@@ -5303,7 +5371,7 @@ function renderDonorMyQuestions() {
   box.innerHTML = rows.map(function(row, index){
     const title = donorQuestionCategoryLabel(row.category || "other");
     const detail = row.message ? escapeHtml(row.message) : "แตะเพื่อเปิดบทสนทนา";
-    const code = escapeHtml(row.publicCode || "คำถามของฉัน");
+    const code = row.publicCode ? ('รหัสติดตาม ' + escapeHtml(row.publicCode)) : 'คำถามของฉัน';
     const status = row.status ? '<span class="question-status-pill ' + questionStatusClass(row.status) + '">' + escapeHtml(row.status) + '</span>' : '';
     return '<button type="button" class="donor-my-question-item" onclick="openSavedDonorQuestion(' + index + ')"><span class="donor-my-question-icon"><i class="bi ' + donorQuestionCategoryIcon(row.category || "other") + '"></i></span><span class="donor-my-question-copy"><b>' + escapeHtml(title) + '</b><small>' + detail + '</small><em>' + code + '</em></span>' + status + '<i class="bi bi-chevron-right"></i></button>';
   }).join('');
@@ -5325,7 +5393,7 @@ async function openSavedDonorQuestion(index) {
       return;
     }
   }
-  showModal({title:"เปิดคำถามไม่ได้",message:"หากเคยถามจากเครื่องอื่น สามารถใช้เลขคำถามและเบอร์โทร 4 ตัวท้ายเพื่อเปิดได้ค่ะ",iconText:"!"});
+  showModal({title:"เปิดคำถามไม่ได้",message:"หากเคยถามจากเครื่องอื่น สามารถใช้รหัสติดตามคำถามและเบอร์โทร 4 ตัวท้ายเพื่อเปิดได้ค่ะ",iconText:"!"});
   openDonorQuestionHistory();
 }
 
@@ -5346,6 +5414,7 @@ function renderDonorQuestionThread(q, replies, context) {
   if ($("donorQuestionEmergency")) $("donorQuestionEmergency").style.display = "none";
 
   const status = q.status || "ใหม่";
+  donorChatSetTrackingBanner(currentDonorChatPublicCode, status === "ตอบแล้ว" ? "มีคำตอบแล้ว · ใช้รหัสนี้เปิดจากเครื่องอื่นได้" : (status === "ปิดเรื่อง" ? "ปิดเรื่องแล้ว · รหัสนี้ยังใช้เปิดประวัติได้" : "ส่งให้ทีมแล้ว · ใช้รหัสนี้กลับมาดูคำตอบได้"));
   const category = donorQuestionCategoryLabel(q.category);
   let html = '';
   html += '<div class="chat-thread-meta"><span><i class="bi bi-chat-dots"></i> ' + escapeHtml(q.public_code || "") + '</span><b class="question-status-pill ' + questionStatusClass(status) + '">' + escapeHtml(status) + '</b></div>';
@@ -5452,7 +5521,7 @@ async function lookupDonorQuestion() {
   const code = String($("donorQuestionLookupCode")?.value || "").trim().toUpperCase();
   const last4 = onlyDigits($("donorQuestionLookupPhone")?.value || "").slice(-4);
   const box = $("donorQuestionLookupResult");
-  if (!code || last4.length !== 4) { showModal({title:"กรอกข้อมูลให้ครบ",message:"กรุณากรอกเลขคำถาม และเบอร์โทร 4 ตัวท้ายที่ใช้ตอนส่งคำถาม",iconText:"!"}); return; }
+  if (!code || last4.length !== 4) { showModal({title:"กรอกข้อมูลให้ครบ",message:"กรุณากรอกรหัสติดตามคำถาม และเบอร์โทร 4 ตัวท้ายที่ใช้ตอนส่งคำถาม",iconText:"!"}); return; }
   if (box) box.innerHTML = '<div class="staff-result">กำลังเปิดบทสนทนา...</div>';
   const { data, error } = await sb.rpc("lookup_donor_question", { p_public_code:code, p_phone_last4:last4 });
   if (error || !data?.ok) { if (box) box.innerHTML = '<div class="staff-result fail">' + escapeHtml(error?.message || data?.message || "ไม่พบรายการ") + '</div>'; return; }
@@ -5477,7 +5546,7 @@ async function sendDonorQuestionFollowup() {
   } else if (currentDonorChatPublicCode && currentDonorChatPhoneLast4) {
     ({ data, error } = await sb.rpc('donor_add_question_reply', { p_public_code:currentDonorChatPublicCode, p_phone_last4:currentDonorChatPhoneLast4, p_message:message }));
   } else {
-    showModal({title:'เปิดบทสนทนาก่อน',message:'กรุณาเปิดคำถามเดิมด้วยเลขคำถามและเบอร์โทร 4 ตัวท้ายก่อนส่งข้อความเพิ่ม',iconText:'!'}); return;
+    showModal({title:'เปิดบทสนทนาก่อน',message:'กรุณาเปิดคำถามเดิมด้วยรหัสติดตามคำถามและเบอร์โทร 4 ตัวท้ายก่อนส่งข้อความเพิ่ม',iconText:'!'}); return;
   }
   if (error || !data?.ok) { showModal({title:'ส่งข้อความไม่ได้',message:error?.message || data?.message || 'กรุณาลองใหม่',iconText:'!'}); return; }
   if (input) input.value = '';
@@ -6341,7 +6410,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.22").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.23").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
