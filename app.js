@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.19 */
+/* CNMI Blood Donation Supabase Frontend v15.20 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -42,6 +42,11 @@ let donorChatLocalTranscript = [];
 let donorChatPendingEscalationMessage = "";
 let donorChatRestoringLocalDraft = false;
 let pendingStaffQuestionCode = "";
+let donorKnowledgeCache = [];
+let donorKnowledgeLoadedAt = 0;
+let currentKnowledgeId = null;
+let currentKnowledgeSourceQuestionId = null;
+let staffKnowledgeRows = [];
 
 const DONOR_CHAT_STORAGE = {
   token:"cnmiDonorChatToken",
@@ -77,6 +82,7 @@ const STAFF_TAB_ROUTE_MAP = {
   importLogs: "import-logs",
   notifications: "notifications",
   questions: "questions",
+  knowledge: "knowledge-base",
   slots: "platelet-calendar",
   bookings: "platelet-bookings",
   groupSlots: "group-calendar",
@@ -90,7 +96,7 @@ const STAFF_TAB_ROUTE_MAP = {
 };
 
 const STAFF_TAB_GROUP_MAP = {
-  overview:"today", notifications:"today", questions:"today", bookings:"today",
+  overview:"today", notifications:"today", questions:"today", knowledge:"today", bookings:"today",
   donorImport:"donorData", infectiousImport:"donorData", importLogs:"donorData",
   slots:"appointments", groupSlots:"appointments", groups:"appointments", mobileUnits:"appointments", roomCalendar:"appointments",
   screeningQuestions:"screening", screeningQuestionHistory:"screening",
@@ -1808,6 +1814,7 @@ function showStaffTab(tab, options) {
   if (tab === "importLogs") loadImportLogHistory(1);
   if (tab === "notifications") loadStaffNotifications();
   if (tab === "questions") { loadStaffQuestions(); loadPushSubscriptionState(); }
+  if (tab === "knowledge") loadStaffKnowledgeBase();
   if (tab === "slots") loadPlateletMonthAdmin();
   if (tab === "bookings") loadStaffBookings();
   if (tab === "groupSlots") loadGroupBookingMonthAdmin();
@@ -4645,6 +4652,73 @@ async function donorChatRespondToKind(kind) {
   return false;
 }
 
+
+function donorKnowledgeCategoryLabel(category) {
+  const map = {
+    general:"ข้อมูลทั่วไป",
+    booking:"การจอง / นัดหมาย",
+    eligibility:"คุณสมบัติ / ยา / วัคซีน / เพิ่งป่วย",
+    post_donation:"อาการหลังบริจาค",
+    test_result:"ผลตรวจ / ติดต่อกลับ",
+    other:"อื่น ๆ"
+  };
+  return map[category] || "อื่น ๆ";
+}
+
+async function loadPublicDonorKnowledge(force) {
+  const now = Date.now();
+  if (!force && donorKnowledgeCache.length && (now - donorKnowledgeLoadedAt) < 60 * 1000) return donorKnowledgeCache;
+  try {
+    const { data, error } = await sb.rpc("public_donor_knowledge");
+    if (error) throw error;
+    donorKnowledgeCache = Array.isArray(data) ? data : [];
+    donorKnowledgeLoadedAt = now;
+  } catch (e) {
+    console.warn("knowledge base unavailable", e);
+    donorKnowledgeCache = [];
+    donorKnowledgeLoadedAt = now;
+  }
+  return donorKnowledgeCache;
+}
+
+function donorKnowledgeKeywordList(item) {
+  const raw = Array.isArray(item?.keywords) ? item.keywords : [];
+  return raw.map(function(x){ return donorChatNormalizeText(x); }).filter(function(x){ return x.length >= 2; });
+}
+
+function donorKnowledgeMatch(rawText, items) {
+  const text = donorChatNormalizeText(rawText);
+  if (!text || text.length < 3) return null;
+  let best = null;
+  let bestScore = 0;
+  (items || []).forEach(function(item){
+    const q = donorChatNormalizeText(item?.question || "");
+    if (!q) return;
+    let score = 0;
+    if (text === q) score = 100;
+    else if (text.length >= 8 && q.length >= 8 && (text.includes(q) || q.includes(text))) score = 88;
+    const keys = donorKnowledgeKeywordList(item);
+    let hit = 0;
+    keys.forEach(function(k){ if (text.includes(k)) hit += 1; });
+    // keywords are curated by Staff; one specific keyword is enough to be a strong match.
+    if (hit) score = Math.max(score, Math.min(92, 82 + (hit - 1) * 5));
+    // For medical topics require a stronger match. Staff can improve matching by adding keyword phrases.
+    const medical = ["eligibility","post_donation","test_result"].includes(item?.category);
+    const threshold = medical ? 78 : 66;
+    if (score >= threshold && score > bestScore) { best = item; bestScore = score; }
+  });
+  return best;
+}
+
+async function donorChatAnswerFromKnowledge(rawText) {
+  const items = await loadPublicDonorKnowledge(false);
+  const match = donorKnowledgeMatch(rawText, items);
+  if (!match) return false;
+  const forwardCategory = ["eligibility","post_donation","test_result"].includes(match.category) ? match.category : "other";
+  appendDonorChatBubble('bot', '<span class="chat-auto-badge knowledge"><i class="bi bi-journal-check"></i> คำตอบจากคลังของหน่วย</span><b>' + escapeHtml(match.question || 'คำตอบที่เกี่ยวข้อง') + '</b><span>' + escapeHtml(match.answer || '').replace(/\n/g,'<br>') + '</span><small class="chat-knowledge-note">คำตอบนี้เป็นข้อความมาตรฐานที่เจ้าหน้าที่ของหน่วยบันทึกไว้ หากรายละเอียดของคุณต่างจากกรณีนี้ สามารถส่งให้เจ้าหน้าที่ช่วยดูเพิ่มเติมได้ค่ะ</small><div class="chat-inline-actions">' + donorChatCategoryButton('ส่งรายละเอียดให้เจ้าหน้าที่', forwardCategory, 'bi-person-check') + '</div>', true);
+  return true;
+}
+
 async function submitDonorSmartQuestion() {
   const input = $('donorChatSmartInput');
   const raw = String(input?.value || '').trim();
@@ -4652,6 +4726,7 @@ async function submitDonorSmartQuestion() {
   if (input) input.value = '';
   donorChatPendingEscalationMessage = '';
   appendDonorChatBubble('user', raw);
+  if (await donorChatAnswerFromKnowledge(raw)) return;
   const intent = donorChatDetectIntent(raw);
   if (["dental","antibiotic","pregnancy","eligibility","post_donation","post_donation_urgent","test_result","unknown"].includes(intent)) {
     donorChatPendingEscalationMessage = raw;
@@ -5276,6 +5351,11 @@ async function openStaffQuestionDetail(id) {
     (q.donation_date ? '<div><small>วันที่บริจาคที่เกี่ยวข้อง</small><b>' + escapeHtml(isoToThaiDate(q.donation_date, true)) + '</b></div>' : '') +
     (q.symptom_type ? '<div><small>อาการหลัก</small><b>' + escapeHtml(q.symptom_type) + '</b></div>' : '') + '</div>' +
     '<div class="question-detail-message"><small>รายละเอียดจากผู้บริจาค</small><p>' + escapeHtml(q.message || "") + '</p></div>' + replyHistory;
+  const saveToKnowledgeBtn = $("staffQuestionSaveKnowledgeBtn");
+  if (saveToKnowledgeBtn) {
+    saveToKnowledgeBtn.style.display = q.last_reply ? "inline-flex" : "none";
+    saveToKnowledgeBtn.disabled = !q.last_reply;
+  }
   if ($("staffQuestionReplyText")) $("staffQuestionReplyText").value = "";
   if ($("staffQuestionDetailCard")) { $("staffQuestionDetailCard").style.display = "block"; $("staffQuestionDetailCard").scrollIntoView({ behavior:"smooth", block:"start" }); }
 }
@@ -5299,6 +5379,190 @@ async function updateStaffQuestion(status, notifyDoctor) {
   const currentId = currentStaffQuestion.id;
   await loadStaffQuestions();
   await openStaffQuestionDetail(currentId);
+}
+
+
+function knowledgeCategoryFromDonorQuestion(category) {
+  if (["eligibility","post_donation","test_result"].includes(category)) return category;
+  return "other";
+}
+
+function knowledgeSuggestedKeywords(question) {
+  const text = donorChatNormalizeText(question);
+  const known = [
+    "ไวรัสตับอักเสบ","hepatitis b","hep b","hbv","ยาปฏิชีวนะ","ความดัน","เบาหวาน",
+    "ถอนฟัน","ผ่าฟันคุด","ทำฟัน","เป็นหวัด","เจ็บคอ","ตั้งครรภ์","หลังคลอด","ให้นม",
+    "เวียนหัวหลังบริจาค","หน้ามืดหลังบริจาค","ปวดแขนหลังบริจาค","ผลตรวจ","ผลเลือด","เกล็ดเลือด","donor id","วันเปิด","เวลาเปิด"
+  ];
+  const picked = known.filter(function(k){ return text.includes(k); });
+  const words = text.split(/\s+/).filter(function(w){ return w.length >= 4 && !["บริจาค","โลหิต","เลือด","ไหมคะ","ไหมครับ","หรือไม่","ได้ไหม"].includes(w); });
+  words.slice(0,5).forEach(function(w){ if (!picked.includes(w)) picked.push(w); });
+  return picked.slice(0,8).join(', ');
+}
+
+function resetKnowledgeForm() {
+  currentKnowledgeId = null;
+  currentKnowledgeSourceQuestionId = null;
+  if ($("knowledgeFormTitle")) $("knowledgeFormTitle").innerText = "เพิ่มคำตอบมาตรฐาน";
+  if ($("knowledgeQuestion")) $("knowledgeQuestion").value = "";
+  if ($("knowledgeAnswer")) $("knowledgeAnswer").value = "";
+  if ($("knowledgeCategory")) $("knowledgeCategory").value = "general";
+  if ($("knowledgeKeywords")) $("knowledgeKeywords").value = "";
+  if ($("knowledgeActive")) $("knowledgeActive").checked = true;
+  if ($("knowledgeAutoAnswer")) $("knowledgeAutoAnswer").checked = true;
+  if ($("knowledgeHistoryBox")) { $("knowledgeHistoryBox").style.display = "none"; $("knowledgeHistoryBox").innerHTML = ""; }
+  if ($("knowledgeEditorCard")) $("knowledgeEditorCard").style.display = "block";
+}
+
+function startNewKnowledgeEntry() {
+  resetKnowledgeForm();
+  $("knowledgeEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(function(){ $("knowledgeQuestion")?.focus(); },120);
+}
+
+function editKnowledgeEntry(id) {
+  const row = staffKnowledgeRows.find(function(x){ return x.id === id; });
+  if (!row) return;
+  currentKnowledgeId = row.id;
+  currentKnowledgeSourceQuestionId = row.source_question_id || null;
+  if ($("knowledgeFormTitle")) $("knowledgeFormTitle").innerText = "แก้ไขคำตอบมาตรฐาน";
+  if ($("knowledgeQuestion")) $("knowledgeQuestion").value = row.canonical_question || "";
+  if ($("knowledgeAnswer")) $("knowledgeAnswer").value = row.answer_text || "";
+  if ($("knowledgeCategory")) $("knowledgeCategory").value = row.category || "other";
+  if ($("knowledgeKeywords")) $("knowledgeKeywords").value = Array.isArray(row.keywords) ? row.keywords.join(', ') : "";
+  if ($("knowledgeActive")) $("knowledgeActive").checked = !!row.is_active;
+  if ($("knowledgeAutoAnswer")) $("knowledgeAutoAnswer").checked = !!row.auto_answer_enabled;
+  if ($("knowledgeEditorCard")) $("knowledgeEditorCard").style.display = "block";
+  loadKnowledgeHistory(row.id);
+  $("knowledgeEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+async function saveKnowledgeEntry() {
+  if (!currentStaffProfile) return;
+  const question = String($("knowledgeQuestion")?.value || "").trim();
+  const answer = String($("knowledgeAnswer")?.value || "").trim();
+  const category = $("knowledgeCategory")?.value || "other";
+  const keywords = String($("knowledgeKeywords")?.value || "").split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  if (question.length < 3 || answer.length < 3) { showModal({title:"ข้อมูลยังไม่ครบ",message:"กรุณากรอกทั้งคำถามและคำตอบมาตรฐาน",iconText:"!"}); return; }
+  const btn = $("knowledgeSaveBtn");
+  showBusy(btn,true,currentKnowledgeId ? "บันทึกการแก้ไข" : "เพิ่มเข้าคลัง","กำลังบันทึก...");
+  const { data, error } = await sb.rpc("staff_upsert_donor_knowledge", {
+    p_id: currentKnowledgeId || null,
+    p_question: question,
+    p_answer: answer,
+    p_category: category,
+    p_keywords: keywords,
+    p_is_active: !!$("knowledgeActive")?.checked,
+    p_auto_answer_enabled: !!$("knowledgeAutoAnswer")?.checked,
+    p_source_question_id: currentKnowledgeSourceQuestionId || null
+  });
+  showBusy(btn,false,currentKnowledgeId ? "บันทึกการแก้ไข" : "เพิ่มเข้าคลัง","กำลังบันทึก...");
+  if (error || !data?.ok) { showModal({title:"บันทึกไม่สำเร็จ",message:error?.message || data?.message || "กรุณาลองใหม่",iconText:"!"}); return; }
+  donorKnowledgeLoadedAt = 0;
+  showToastMessage(currentKnowledgeId ? "อัปเดตคำตอบมาตรฐานแล้ว" : "เพิ่มเข้าคลังคำตอบแล้ว");
+  currentKnowledgeId = data.id || currentKnowledgeId;
+  await loadStaffKnowledgeBase();
+  if (currentKnowledgeId) editKnowledgeEntry(currentKnowledgeId);
+}
+
+async function toggleKnowledgeEntry(id, active, autoAnswer) {
+  const { data, error } = await sb.rpc("staff_toggle_donor_knowledge", { p_id:id, p_is_active:!!active, p_auto_answer_enabled:!!autoAnswer });
+  if (error || !data?.ok) { showModal({title:"ปรับสถานะไม่สำเร็จ",message:error?.message || data?.message || "กรุณาลองใหม่",iconText:"!"}); return; }
+  donorKnowledgeLoadedAt = 0;
+  await loadStaffKnowledgeBase();
+}
+
+async function loadKnowledgeHistory(id) {
+  const box = $("knowledgeHistoryBox"); if (!box) return;
+  box.style.display = "block";
+  box.innerHTML = '<div class="staff-result">กำลังโหลดประวัติ...</div>';
+  const { data, error } = await sb.rpc("staff_donor_knowledge_history", { p_id:id, p_limit:20 });
+  if (error) { box.innerHTML = '<div class="staff-result fail">โหลดประวัติไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>'; return; }
+  const rows = Array.isArray(data) ? data : [];
+  if (!rows.length) { box.innerHTML = '<div class="staff-result">ยังไม่มีประวัติการแก้ไข</div>'; return; }
+  box.innerHTML = '<div class="knowledge-history-list">' + rows.map(function(r){
+    const n = r.new_data || {};
+    return '<div class="knowledge-history-item"><div><b>' + escapeHtml(r.action === 'create' ? 'สร้างคำตอบ' : (r.action === 'toggle' ? 'เปลี่ยนสถานะ' : 'แก้ไขคำตอบ')) + '</b><span>' + escapeHtml(r.actor_name || 'เจ้าหน้าที่') + '</span></div><small>' + escapeHtml(formatBangkokLogTime(r.created_at,true)) + '</small>' + (n.answer_text ? '<p>' + escapeHtml(String(n.answer_text).slice(0,180)) + (String(n.answer_text).length>180?'…':'') + '</p>' : '') + '</div>';
+  }).join('') + '</div>';
+}
+
+async function loadStaffKnowledgeBase() {
+  if (!currentStaffProfile) return;
+  const list = $("knowledgeList");
+  const candidates = $("knowledgeCandidateList");
+  if (list) list.innerHTML = '<div class="staff-result">กำลังโหลดคลังคำตอบ...</div>';
+  if (candidates) candidates.innerHTML = '<div class="staff-result">กำลังโหลดคำถามที่เคยตอบ...</div>';
+  const [{ data:kb, error:kbErr }, { data:answered, error:qErr }] = await Promise.all([
+    sb.from("donor_knowledge_base").select("*").order("updated_at",{ascending:false}).limit(200),
+    sb.from("donor_questions").select("id,public_code,category,message,last_reply,replied_by_name,replied_at,status").not("last_reply","is",null).order("replied_at",{ascending:false}).limit(60)
+  ]);
+  if (kbErr) { if (list) list.innerHTML = '<div class="staff-result fail">ยังใช้คลังคำตอบไม่ได้<br>' + escapeHtml(kbErr.message) + '<br><small>หากเพิ่งอัปเดต v15.20 กรุณา Run SQL upgrade ก่อน</small></div>'; return; }
+  staffKnowledgeRows = Array.isArray(kb) ? kb : [];
+  renderKnowledgeList();
+  if (qErr) { if (candidates) candidates.innerHTML = '<div class="staff-result fail">โหลดคำถามเดิมไม่สำเร็จ<br>' + escapeHtml(qErr.message) + '</div>'; return; }
+  renderKnowledgeCandidates(Array.isArray(answered) ? answered : []);
+}
+
+function renderKnowledgeList() {
+  const list = $("knowledgeList"); if (!list) return;
+  const query = donorChatNormalizeText($("knowledgeSearch")?.value || "");
+  const cat = $("knowledgeFilterCategory")?.value || "all";
+  let rows = staffKnowledgeRows.filter(function(r){
+    if (cat !== "all" && r.category !== cat) return false;
+    if (!query) return true;
+    return donorChatNormalizeText((r.canonical_question||"") + " " + (r.answer_text||"") + " " + (Array.isArray(r.keywords)?r.keywords.join(' '):'')).includes(query);
+  });
+  if ($("knowledgeCountAll")) $("knowledgeCountAll").innerText = staffKnowledgeRows.length;
+  if ($("knowledgeCountAuto")) $("knowledgeCountAuto").innerText = staffKnowledgeRows.filter(function(r){return r.is_active && r.auto_answer_enabled;}).length;
+  if ($("knowledgeCountPaused")) $("knowledgeCountPaused").innerText = staffKnowledgeRows.filter(function(r){return !r.is_active || !r.auto_answer_enabled;}).length;
+  if (!rows.length) { list.innerHTML = '<div class="staff-result">ยังไม่มีคำตอบมาตรฐานในตัวกรองนี้</div>'; return; }
+  list.innerHTML = '<div class="knowledge-list">' + rows.map(function(r){
+    const active = !!r.is_active;
+    const auto = !!r.auto_answer_enabled;
+    return '<article class="knowledge-card ' + (!active?'is-paused':'') + '"><div class="knowledge-card-main"><div class="knowledge-card-tags"><span>' + escapeHtml(donorKnowledgeCategoryLabel(r.category)) + '</span>' + (auto&&active?'<b class="kb-auto"><i class="bi bi-stars"></i> ตอบอัตโนมัติ</b>':'<b class="kb-paused">ไม่ตอบอัตโนมัติ</b>') + '</div><h5>' + escapeHtml(r.canonical_question || '') + '</h5><p>' + escapeHtml(String(r.answer_text||'').slice(0,260)) + (String(r.answer_text||'').length>260?'…':'') + '</p><small>แก้ล่าสุด ' + escapeHtml(r.updated_by_name || r.created_by_name || 'เจ้าหน้าที่') + ' · ' + escapeHtml(formatBangkokLogTime(r.updated_at,true)) + '</small></div><div class="knowledge-card-actions"><button type="button" class="btn btn-soft btn-sm" onclick="editKnowledgeEntry(\'' + escapeHtml(r.id) + '\')"><i class="bi bi-pencil-square"></i> แก้ไข</button><button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleKnowledgeEntry(\'' + escapeHtml(r.id) + '\',' + (!active) + ',' + auto + ')">' + (active?'พักใช้':'เปิดใช้') + '</button><button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleKnowledgeEntry(\'' + escapeHtml(r.id) + '\',' + active + ',' + (!auto) + ')">' + (auto?'หยุดตอบเอง':'ให้ตอบเอง') + '</button></div></article>';
+  }).join('') + '</div>';
+}
+
+function renderKnowledgeCandidates(rows) {
+  const box = $("knowledgeCandidateList"); if (!box) return;
+  const used = new Set(staffKnowledgeRows.map(function(k){return k.source_question_id;}).filter(Boolean));
+  const filtered = rows.filter(function(q){ return !used.has(q.id); });
+  if (!filtered.length) { box.innerHTML = '<div class="staff-result">คำถามที่ตอบแล้วล่าสุดถูกนำเข้าคลังครบแล้ว หรือยังไม่มีคำถามที่ตอบแล้ว</div>'; return; }
+  box.innerHTML = '<div class="knowledge-candidate-list">' + filtered.slice(0,30).map(function(q){
+    return '<article class="knowledge-candidate"><div><span>' + escapeHtml(q.public_code || '') + ' · ' + escapeHtml(donorQuestionCategoryLabel(q.category)) + '</span><b>' + escapeHtml(String(q.message||'').slice(0,180)) + '</b><p>' + escapeHtml(String(q.last_reply||'').slice(0,220)) + '</p><small>ตอบโดย ' + escapeHtml(q.replied_by_name || 'เจ้าหน้าที่') + ' · ' + escapeHtml(formatBangkokLogTime(q.replied_at,true)) + '</small></div><button type="button" class="btn btn-soft btn-sm" onclick="prepareKnowledgeFromPastQuestion(\'' + escapeHtml(q.id) + '\')"><i class="bi bi-bookmark-plus"></i> นำเข้าคลัง</button></article>';
+  }).join('') + '</div>';
+}
+
+async function prepareKnowledgeFromPastQuestion(questionId) {
+  const { data:q, error } = await sb.from("donor_questions").select("id,category,message,last_reply").eq("id",questionId).maybeSingle();
+  if (error || !q || !q.last_reply) { showModal({title:"นำเข้าไม่ได้",message:error?.message || "ยังไม่พบคำตอบของคำถามนี้",iconText:"!"}); return; }
+  resetKnowledgeForm();
+  currentKnowledgeSourceQuestionId = q.id;
+  $("knowledgeQuestion").value = q.message || "";
+  $("knowledgeAnswer").value = q.last_reply || "";
+  $("knowledgeCategory").value = knowledgeCategoryFromDonorQuestion(q.category);
+  $("knowledgeKeywords").value = knowledgeSuggestedKeywords(q.message || "");
+  const medical = ["eligibility","post_donation","test_result"].includes(q.category);
+  $("knowledgeAutoAnswer").checked = !medical;
+  $("knowledgeEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"});
+  showToastMessage(medical ? "นำคำถามมาแล้ว · ตรวจคำตอบก่อนเปิดตอบอัตโนมัติ" : "นำคำถามมาแล้ว · ตรวจแล้วกดบันทึกได้เลย");
+}
+
+function addCurrentQuestionToKnowledge() {
+  if (!currentStaffQuestion || !currentStaffQuestion.last_reply) { showModal({title:"ยังไม่มีคำตอบ",message:"ต้องส่งคำตอบให้ผู้บริจาคก่อน จึงจะนำคำถามนี้เข้าคลังได้",iconText:"!"}); return; }
+  const q = currentStaffQuestion;
+  showStaffTab("knowledge");
+  setTimeout(function(){
+    resetKnowledgeForm();
+    currentKnowledgeSourceQuestionId = q.id;
+    $("knowledgeQuestion").value = q.message || "";
+    $("knowledgeAnswer").value = q.last_reply || "";
+    $("knowledgeCategory").value = knowledgeCategoryFromDonorQuestion(q.category);
+    $("knowledgeKeywords").value = knowledgeSuggestedKeywords(q.message || "");
+    const medical = ["eligibility","post_donation","test_result"].includes(q.category);
+    $("knowledgeAutoAnswer").checked = !medical;
+    $("knowledgeEditorCard")?.scrollIntoView({behavior:"smooth",block:"start"});
+  },180);
 }
 
 function base64UrlToUint8Array(base64String) {

@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.19" rel="stylesheet">
+  <link href="styles.css?v=15.20" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -655,6 +655,7 @@
                 <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')"><i class="bi bi-grid-1x2"></i><span>ภาพรวม</span></button>
                 <button type="button" class="staff-tab notification-tab" data-staff-tab="notifications" onclick="showStaffTab('notifications')"><i class="bi bi-bell"></i><span>แจ้งเตือน</span><b id="staffNotificationBadge" class="staff-notification-badge" style="display:none;">0</b></button>
                 <button type="button" class="staff-tab notification-tab" data-staff-tab="questions" onclick="showStaffTab('questions')"><i class="bi bi-chat-heart"></i><span>คำถามผู้บริจาค</span><b id="staffQuestionBadge" class="staff-notification-badge" style="display:none;">0</b></button>
+                <button type="button" class="staff-tab" data-staff-tab="knowledge" onclick="showStaffTab('knowledge')"><i class="bi bi-journal-check"></i><span>คลังคำตอบ</span></button>
                 <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>คิวเกล็ดเลือด</span></button>
               </div>
             </div>
@@ -812,9 +813,50 @@
                   <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('รับเรื่องแล้ว')"><i class="bi bi-person-check"></i> รับเรื่อง</button>
                   <button type="button" class="btn btn-warning-soft" onclick="updateStaffQuestion('รอแพทย์', true)"><i class="bi bi-stethoscope"></i> ส่งให้แพทย์</button>
                   <button type="button" class="btn btn-search" onclick="updateStaffQuestion('ตอบแล้ว')"><i class="bi bi-send-check"></i> ส่งคำตอบ</button>
+                  <button type="button" id="staffQuestionSaveKnowledgeBtn" class="btn btn-soft" style="display:none;" onclick="addCurrentQuestionToKnowledge()"><i class="bi bi-journal-plus"></i> เก็บเป็นคำตอบมาตรฐาน</button>
                   <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('ปิดเรื่อง')"><i class="bi bi-check2-circle"></i> ปิดเรื่อง</button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div id="staffTab_knowledge" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>DONOR KNOWLEDGE BASE</span><h3>คลังคำถาม–คำตอบของหน่วย</h3><p>เก็บคำตอบที่เจ้าหน้าที่เคยตอบไว้เป็นมาตรฐาน ทุก Staff แก้ไขได้ และเลือกได้ว่าข้อไหนให้ระบบตอบผู้บริจาคอัตโนมัติ</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffKnowledgeBase()"><i class="bi bi-arrow-clockwise"></i> Refresh</button><button type="button" class="btn btn-search btn-sm" onclick="startNewKnowledgeEntry()"><i class="bi bi-plus-circle"></i> เพิ่มคำตอบ</button></div></div>
+
+            <div class="knowledge-summary-grid mb-3">
+              <div class="knowledge-summary"><span>ทั้งหมด</span><b id="knowledgeCountAll">0</b></div>
+              <div class="knowledge-summary auto"><span>ตอบอัตโนมัติ</span><b id="knowledgeCountAuto">0</b></div>
+              <div class="knowledge-summary paused"><span>พักใช้ / ไม่ตอบเอง</span><b id="knowledgeCountPaused">0</b></div>
+            </div>
+
+            <div id="knowledgeEditorCard" class="card main-card staff-card p-4 mb-3" style="display:none;">
+              <div class="staff-section-head mb-3"><div><h5 id="knowledgeFormTitle">เพิ่มคำตอบมาตรฐาน</h5><small>คำตอบนี้จะเป็นแหล่งอ้างอิงกลางของหน่วย แก้ครั้งเดียว ผู้บริจาคที่ถามเรื่องเดิมจะได้คำตอบล่าสุด</small></div><button type="button" class="btn btn-soft btn-sm" onclick="resetKnowledgeForm(); document.getElementById('knowledgeEditorCard').style.display='none';"><i class="bi bi-x-lg"></i> ปิด</button></div>
+              <div class="staff-form-grid knowledge-form-grid">
+                <div class="field-block knowledge-question-field"><label class="form-label">คำถามมาตรฐาน</label><textarea id="knowledgeQuestion" class="form-control" rows="3" placeholder="เช่น ฉีดวัคซีนไวรัสตับอักเสบ B แล้วบริจาคได้ไหม"></textarea></div>
+                <div class="field-block knowledge-answer-field"><label class="form-label">คำตอบมาตรฐาน</label><textarea id="knowledgeAnswer" class="form-control" rows="5" placeholder="พิมพ์คำตอบที่ต้องการให้ผู้บริจาคเห็น"></textarea></div>
+                <div class="field-block"><label class="form-label">หมวด</label><select id="knowledgeCategory" class="form-select"><option value="general">ข้อมูลทั่วไป</option><option value="booking">การจอง / นัดหมาย</option><option value="eligibility">คุณสมบัติ / ยา / วัคซีน / เพิ่งป่วย</option><option value="post_donation">อาการหลังบริจาค</option><option value="test_result">ผลตรวจ / ติดต่อกลับ</option><option value="other">อื่น ๆ</option></select></div>
+                <div class="field-block"><label class="form-label">คำสำคัญ / คำเรียกอื่น</label><input id="knowledgeKeywords" class="form-control" placeholder="คั่นด้วย comma เช่น Hep B, HBV, วัคซีนไวรัสตับอักเสบ B"><small class="field-help">ใช้ช่วยจับคำถามที่เขียนไม่เหมือนกัน แต่หมายถึงเรื่องเดียวกัน</small></div>
+              </div>
+              <div class="knowledge-switches mt-3">
+                <label class="push-check"><input type="checkbox" id="knowledgeActive" checked><span><b>เปิดใช้งาน</b><small>เก็บคำตอบนี้ไว้ในคลังที่ใช้งานอยู่</small></span></label>
+                <label class="push-check"><input type="checkbox" id="knowledgeAutoAnswer" checked><span><b>ให้ระบบตอบอัตโนมัติ</b><small>เมื่อคำถามตรงกับคำถาม/คำสำคัญนี้ ระบบจะใช้คำตอบมาตรฐานทันที</small></span></label>
+              </div>
+              <div class="staff-action-row mt-3"><button type="button" id="knowledgeSaveBtn" class="btn btn-search flex-grow-1" onclick="saveKnowledgeEntry()"><i class="bi bi-save"></i> บันทึกเข้าคลัง</button></div>
+              <div id="knowledgeHistoryBox" class="knowledge-history-box mt-3" style="display:none;"></div>
+            </div>
+
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="staff-section-head mb-3"><div><h5><i class="bi bi-journal-check"></i> คำตอบมาตรฐานที่ใช้อยู่</h5><small>ค้นหา แก้ไข เปิด/ปิด หรือหยุดตอบอัตโนมัติได้ ทุกการแก้ไขมีประวัติว่าใครแก้และเมื่อไร</small></div></div>
+              <div class="knowledge-toolbar">
+                <div class="input-with-icon"><i class="bi bi-search"></i><input type="search" id="knowledgeSearch" class="form-control" placeholder="ค้นหาคำถาม คำตอบ หรือคำสำคัญ" oninput="renderKnowledgeList()"></div>
+                <select id="knowledgeFilterCategory" class="form-select" onchange="renderKnowledgeList()"><option value="all">ทุกหมวด</option><option value="general">ข้อมูลทั่วไป</option><option value="booking">การจอง / นัดหมาย</option><option value="eligibility">คุณสมบัติ / ยา / วัคซีน / เพิ่งป่วย</option><option value="post_donation">อาการหลังบริจาค</option><option value="test_result">ผลตรวจ / ติดต่อกลับ</option><option value="other">อื่น ๆ</option></select>
+              </div>
+              <div id="knowledgeList" class="mt-3"><div class="staff-result">กำลังโหลด...</div></div>
+            </div>
+
+            <div class="card main-card staff-card p-4">
+              <div class="staff-section-head mb-3"><div><h5><i class="bi bi-clock-history"></i> คำถามที่ผู้บริจาคเคยถามและเจ้าหน้าที่ตอบแล้ว</h5><small>ใช้เป็นรายการช่วยจำ ไม่ได้ถูกนำไปตอบอัตโนมัติจนกว่า Staff จะกด “นำเข้าคลัง” ตรวจคำตอบ และบันทึก</small></div></div>
+              <div id="knowledgeCandidateList"><div class="staff-result">กำลังโหลด...</div></div>
             </div>
           </div>
 
@@ -1064,7 +1106,7 @@
     <div class="staff-menu-launcher-card" role="dialog" aria-modal="true" aria-labelledby="staffMenuLauncherTitle">
       <div class="staff-menu-launcher-head"><div><span>STAFF MENU</span><h3 id="staffMenuLauncherTitle">เมนูทั้งหมด</h3><p>ถ้าหาเมนูไม่เจอ ให้เปิดจากตรงนี้ได้ทุกหน้า</p></div><button type="button" class="btn btn-soft btn-sm" onclick="closeStaffMenuLauncher()"><i class="bi bi-x-lg"></i> ปิด</button></div>
       <div class="staff-menu-launcher-grid">
-        <section><h4><i class="bi bi-sun"></i> งานวันนี้</h4><button onclick="goStaffMenu('overview')">ภาพรวม</button><button onclick="goStaffMenu('notifications')">แจ้งเตือน</button><button onclick="goStaffMenu('questions')">คำถามผู้บริจาค</button><button onclick="goStaffMenu('bookings')">คิวเกล็ดเลือด</button></section>
+        <section><h4><i class="bi bi-sun"></i> งานวันนี้</h4><button onclick="goStaffMenu('overview')">ภาพรวม</button><button onclick="goStaffMenu('notifications')">แจ้งเตือน</button><button onclick="goStaffMenu('questions')">คำถามผู้บริจาค</button><button onclick="goStaffMenu('knowledge')">คลังคำตอบ</button><button onclick="goStaffMenu('bookings')">คิวเกล็ดเลือด</button></section>
         <section><h4><i class="bi bi-person-vcard"></i> ข้อมูลผู้บริจาค</h4><button onclick="goStaffMenu('donorImport')">นำเข้าผู้บริจาค</button><button onclick="goStaffMenu('infectiousImport')">ผลติดเชื้อ</button><button onclick="goStaffMenu('importLogs')">ประวัตินำเข้า</button></section>
         <section><h4><i class="bi bi-calendar2-week"></i> นัดหมายและตาราง</h4><button onclick="goStaffMenu('slots')">ตารางเกล็ดเลือด</button><button onclick="goStaffMenu('groupSlots')">ตารางหมู่คณะ</button><button onclick="goStaffMenu('groups')">คำขอหมู่คณะ</button><button onclick="goStaffMenu('mobileUnits')">คำขอออกหน่วย</button><button onclick="goStaffMenu('roomCalendar')">เปิด–ปิดห้อง</button></section>
         <section><h4><i class="bi bi-ui-checks-grid"></i> คัดกรองเบื้องต้น</h4><button onclick="goStaffMenu('screeningQuestions')">คำถามคัดกรอง</button><button onclick="goStaffMenu('screeningQuestionHistory')">ประวัติการแก้ไข</button></section>
@@ -1088,6 +1130,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.19"></script>
+  <script src="app.js?v=15.20"></script>
 </body>
 </html>
