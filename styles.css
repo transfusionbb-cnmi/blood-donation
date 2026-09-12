@@ -1852,3 +1852,60 @@ body.staff-menu-open{overflow:hidden}
 .source-note{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:#f7f9fa;color:#64727a;font-size:.76rem}.source-note a{color:#b83a45;font-weight:700;text-decoration:none}.source-note a:hover{text-decoration:underline}
 @media(max-width:700px){.home-quick-grid{grid-template-columns:1fr 1fr}.home-more-actions{grid-template-columns:1fr}.prepare-grid{grid-template-columns:1fr}.prepare-cta-card{align-items:flex-start;flex-direction:column}.prepare-cta-actions{width:100%}.prepare-cta-actions .btn{flex:1}.home-quick-card{padding:13px;grid-template-columns:42px minmax(0,1fr);min-height:94px}.home-quick-card .home-quick-icon{width:42px;height:42px;border-radius:14px}.home-quick-card b{font-size:.88rem}.home-quick-card small{font-size:.7rem}}
 @media(max-width:390px){.home-quick-grid{grid-template-columns:1fr}.home-quick-card{min-height:auto}}
+/* v15.13 — Donor Question Hub + Staff Inbox + Web Push */
+.question-hub-card .menu-symbol{background:#fff3f5;color:#c94149}
+.question-section-head small{display:block;color:#c94149;font-weight:800;letter-spacing:.05em;margin-bottom:4px}
+.question-section-head h4{margin:0 0 5px;font-weight:850;color:#27343d}
+.question-section-head p{margin:0;color:#6c7982;line-height:1.65}
+.question-fast-grid,.question-topic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.question-fast-grid button,.question-topic-grid button{border:1px solid #e6eaed;background:#fff;border-radius:18px;padding:15px;display:flex;gap:13px;align-items:flex-start;text-align:left;transition:.16s ease;color:#2b3841}
+.question-fast-grid button:hover,.question-topic-grid button:hover{transform:translateY(-1px);border-color:#f2c9cd;box-shadow:0 10px 25px rgba(40,50,58,.06)}
+.question-fast-grid i,.question-topic-grid i{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#f6f8f9;color:#62717a;font-size:1.2rem;flex:0 0 auto}
+.question-fast-grid b,.question-topic-grid b{display:block;font-size:.98rem;line-height:1.45}
+.question-fast-grid small,.question-topic-grid small{display:block;color:#78858d;margin-top:3px;line-height:1.45}
+.question-topic-grid button.medical{background:#fff8f8;border-color:#f3d6d9}.question-topic-grid button.medical i{background:#fff0f2;color:#c94149}
+.question-emergency-banner{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:18px;background:#fff2f2;border:1px solid #efbfc4;color:#98323b}
+.question-emergency-banner>i{font-size:1.35rem;margin-top:2px}.question-emergency-banner b,.question-emergency-banner span{display:block}.question-emergency-banner span{margin-top:3px;line-height:1.6}
+.question-form-title{display:flex;gap:12px;align-items:center;padding-bottom:14px;border-bottom:1px solid #edf0f2}.question-form-title>span{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#fff0f2;color:#c94149;font-size:1.25rem}.question-form-title div{flex:1}.question-form-title small,.question-form-title h4{display:block;margin:0}.question-form-title small{color:#7d8991}.question-form-title h4{font-weight:850;margin-top:2px}
+.question-privacy-note{display:flex;gap:10px;padding:12px 14px;border-radius:14px;background:#f7faf9;color:#5f7069;margin-top:14px;font-size:.84rem;line-height:1.55}.question-privacy-note i{color:#2d7b58;font-size:1rem}
+.question-success{text-align:center;border-color:#d6ebdf;background:#f8fcfa}.question-success-icon{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;margin:0 auto 10px;background:#e9f6ef;color:#2d7b58;font-size:2rem}.question-code{display:inline-flex;padding:10px 16px;border-radius:14px;background:#fff;border:1px dashed #c4d9cc;font-size:1.35rem;font-weight:850;letter-spacing:.04em;margin:4px 0 10px}.question-medical-note{margin:10px auto 0;max-width:520px;padding:10px 12px;border-radius:12px;background:#fff4e8;color:#9a6320;font-size:.86rem}
+.question-track-grid{display:grid;grid-template-columns:1.4fr .8fr auto;gap:10px;margin-top:14px}.public-question-status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-radius:16px;background:#f8fafb;border:1px solid #e9edef}.public-question-status small,.public-question-status b{display:block}.public-question-status small{color:#89949b}.public-question-summary{padding:14px 2px}.public-question-summary small{font-weight:800;color:#c94149}.public-question-summary p{margin:5px 0 0;line-height:1.7}.public-question-reply{padding:14px;border-radius:16px;background:#f6faf7;border:1px solid #dfeee5;margin-top:10px}.public-question-reply b,.public-question-reply span,.public-question-reply small{display:block}.public-question-reply span{margin:5px 0;line-height:1.7}.public-question-reply small{color:#7e8a82}.question-waiting{padding:14px;border-radius:14px;background:#fafbfc;color:#718089}
+.question-status-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#eef2f4;color:#55646c;font-size:.78rem;font-weight:800;white-space:nowrap}.question-status-pill.new{background:#fff1f2;color:#c94149}.question-status-pill.doctor{background:#fff3df;color:#a66b13}.question-status-pill.answered{background:#eaf7ef;color:#2f7d59}.question-status-pill.closed{background:#eef1f3;color:#748189}.question-status-pill.working{background:#eef5ff;color:#466b99}
+.push-settings-card{background:linear-gradient(180deg,#fff,#fbfcff)}.push-setting-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:stretch}.push-check{display:flex;gap:11px;align-items:flex-start;padding:13px 14px;border:1px solid #e5e9ec;border-radius:16px;background:#fff;cursor:pointer}.push-check.doctor{background:#fffaf1;border-color:#f0dfbe}.push-check input{margin-top:4px}.push-check span,.push-check b,.push-check small{display:block}.push-check small{color:#7a878f;margin-top:2px;line-height:1.45}.push-help{display:flex;gap:8px;color:#75828a;font-size:.8rem;line-height:1.55}.btn-warning-soft{background:#fff3df;border:1px solid #eed7ab;color:#9a641d}.btn-warning-soft:hover{background:#ffedcc;color:#875719}
+.question-inbox-filters{display:flex;gap:9px;flex-wrap:wrap}.question-inbox-filters button{border:1px solid #e6eaed;background:#fff;border-radius:999px;padding:8px 12px;color:#66747c;font-weight:700}.question-inbox-filters button.active{background:#fff1f2;border-color:#f0c5c9;color:#c94149}.question-inbox-filters b{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:999px;background:#f1f4f6;margin-left:4px;font-size:.72rem}.question-inbox-filters button.active b{background:#fff;color:#c94149}
+.staff-question-list{display:flex;flex-direction:column;gap:11px}.staff-question-card{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:15px;border:1px solid #e8ecee;border-radius:18px;background:#fff}.staff-question-card.doctor{border-color:#f0d7aa;background:#fffdf8}.staff-question-card.new{border-left:4px solid #d44750}.staff-question-main{display:flex;gap:12px;min-width:0}.staff-question-icon{width:46px;height:46px;border-radius:14px;background:#f6f8f9;display:grid;place-items:center;color:#66757e;font-size:1.1rem;flex:0 0 auto}.staff-question-card.doctor .staff-question-icon{background:#fff2db;color:#a66b13}.staff-question-main h5{margin:4px 0;font-size:1rem;font-weight:820}.staff-question-main p{margin:0;color:#65737c;line-height:1.55}.staff-question-main small{color:#8b969d}.staff-question-tags{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.staff-question-tags>span{font-size:.72rem;font-weight:800;color:#a1444b;background:#fff0f2;padding:4px 7px;border-radius:999px}.question-medical-tag{background:#fff1d9!important;color:#956013!important}.staff-question-side{display:flex;gap:9px;align-items:center;flex:0 0 auto}
+.question-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.question-detail-grid>div{padding:12px 13px;border-radius:14px;background:#f8fafb;border:1px solid #ebeff1}.question-detail-grid small,.question-detail-grid b{display:block}.question-detail-grid small{color:#859199}.question-detail-grid b{margin-top:3px}.question-detail-message{margin-top:12px;padding:14px;border-radius:16px;background:#fff8f8;border:1px solid #f0d9dc}.question-detail-message small{font-weight:800;color:#c94149}.question-detail-message p{margin:5px 0 0;white-space:pre-wrap;line-height:1.7}.question-reply-history{margin-top:14px}.question-reply-history h6{font-weight:850}.question-reply-history>div{padding:12px 14px;background:#f7faf8;border-radius:14px;margin-top:8px}.question-reply-history b,.question-reply-history span,.question-reply-history small{display:block}.question-reply-history span{margin:4px 0}.question-reply-history small{color:#7d8a82}.question-reply-actions{display:flex;gap:8px;flex-wrap:wrap}.question-reply-actions .btn{flex:1;min-width:130px}
+@media(max-width:900px){.question-fast-grid,.question-topic-grid{grid-template-columns:1fr}.question-track-grid{grid-template-columns:1fr}.push-setting-grid{grid-template-columns:1fr}.staff-question-card{align-items:flex-start;flex-direction:column}.staff-question-side{width:100%;justify-content:space-between}.question-detail-grid{grid-template-columns:1fr}}
+
+/* v15.14 — mobile room calendar + Thai weekday colors + publication revision */
+.thai-day-mon{--thai-day-color:#b48c00;--thai-day-soft:#fff8cf}
+.thai-day-tue{--thai-day-color:#d95f83;--thai-day-soft:#fff0f5}
+.thai-day-wed{--thai-day-color:#2f8a5d;--thai-day-soft:#eef8f2}
+.thai-day-thu{--thai-day-color:#d98124;--thai-day-soft:#fff4e6}
+.thai-day-fri{--thai-day-color:#3f73b8;--thai-day-soft:#eef4fc}
+.thai-day-sat{--thai-day-color:#7656a7;--thai-day-soft:#f4effa}
+.thai-day-sun{--thai-day-color:#c94747;--thai-day-soft:#fff0f0}
+.room-calendar-head > div[class*="thai-day-"]{color:var(--thai-day-color);font-weight:850}
+.room-day-cell[class*="thai-day-"]{position:relative;overflow:hidden}
+.room-day-cell[class*="thai-day-"]::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--thai-day-color);opacity:.7}
+.room-day-cell.is-today{box-shadow:inset 0 0 0 2px rgba(211,62,73,.2)}
+.room-day-cell.is-today .room-day-number::after{content:"วันนี้";margin-left:4px;color:#cf3f49;font-size:.48rem;font-weight:800}
+.calendar-version-badge{display:inline-flex;margin-left:8px;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.72);color:#527564;font-size:.64rem;font-weight:700;vertical-align:middle}
+.room-calendar-mobile-note{display:none}
+
+@media(max-width:767px){
+  .room-calendar-mobile-note{display:flex;align-items:center;gap:6px;margin:0 0 8px;padding:8px 10px;border-radius:12px;background:#f8faf9;color:#708078;font-size:.68rem;line-height:1.35}
+  .room-calendar-head,.room-calendar-days{gap:5px}
+  .room-calendar-head > div{font-size:.68rem;padding:4px 0}
+  .room-day-cell.public-mode{min-height:76px;padding:8px 5px 6px;border-radius:13px;align-items:flex-start}
+  .room-day-cell.public-mode .room-day-number{font-size:.72rem;color:var(--thai-day-color)}
+  .room-day-cell.public-mode .room-day-state{margin-top:6px;gap:3px}
+  .room-day-cell.public-mode .room-day-state i{font-size:.7rem}
+  .room-day-cell.public-mode .room-day-state b{font-size:.62rem}
+  .room-day-cell.public-mode .room-day-hours{display:none!important}
+  .room-day-cell.public-mode .room-day-detail{font-size:.48rem;line-height:1.15;-webkit-line-clamp:1;max-width:100%}
+  .room-day-cell.public-mode.event-normal{justify-content:flex-start}
+  .room-day-cell.public-mode.event-normal .room-day-state{margin-top:auto;margin-bottom:auto}
+  .room-day-cell.public-mode.is-today .room-day-number::after{display:none}
+  .calendar-version-badge{display:flex;width:max-content;margin:5px 0 0 0;font-size:.6rem}
+}

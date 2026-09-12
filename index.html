@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.12" rel="stylesheet">
+  <link href="styles.css?v=15.14" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -70,8 +70,13 @@
           <div class="menu-copy"><div class="menu-title">บริการบริจาคอื่น ๆ</div><div class="menu-subtitle">เลือดแดง · หมู่คณะ · ขอออกหน่วย</div></div>
           <i class="bi bi-chevron-right menu-arrow"></i>
         </button>
+        <button type="button" class="home-more-card question-hub-card" onclick="showPage('question')">
+          <div class="menu-symbol"><i class="bi bi-chat-heart"></i></div>
+          <div class="menu-copy"><div class="menu-title">ถามห้องบริจาคโลหิต</div><div class="menu-subtitle">คำถามทั่วไป · คุณสมบัติ · อาการหลังบริจาค</div></div>
+          <i class="bi bi-chevron-right menu-arrow"></i>
+        </button>
         <button type="button" class="home-more-card" onclick="showPage('info')">
-          <div class="menu-symbol"><i class="bi bi-chat-dots"></i></div>
+          <div class="menu-symbol"><i class="bi bi-telephone"></i></div>
           <div class="menu-copy"><div class="menu-title">ติดต่อเจ้าหน้าที่</div><div class="menu-subtitle">เบอร์โทร สถานที่ และแผนที่</div></div>
           <i class="bi bi-chevron-right menu-arrow"></i>
         </button>
@@ -115,6 +120,7 @@
           <div class="field-block">
             <label class="form-label">เบอร์โทรศัพท์</label>
             <div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="phoneLast4Check" class="form-control" maxlength="10" placeholder="กรอกเต็ม หรือ 4 ตัวท้าย" inputmode="numeric" autocomplete="tel"></div>
+            <div class="form-text">ระบบยืนยันด้วยเบอร์โทรล่าสุดที่มีในข้อมูลผู้บริจาค เบอร์เก่าจะไม่ใช้ยืนยันแล้ว</div>
           </div>
 
           <button type="button" id="btnCheckSearch" class="btn btn-search w-100" onclick="runCheckSearch()">ตรวจสอบข้อมูล <i class="bi bi-arrow-right"></i></button>
@@ -136,6 +142,7 @@
           <div class="field-block">
             <label class="form-label">เบอร์โทรศัพท์</label>
             <div class="input-with-icon"><i class="bi bi-phone"></i><input type="tel" id="phoneLast4Forgot" class="form-control" maxlength="10" placeholder="กรอกเต็ม หรือ 4 ตัวท้าย" inputmode="numeric" autocomplete="tel"></div>
+            <div class="form-text">ใช้เบอร์โทรล่าสุดที่เคยให้ไว้กับห้องบริจาคโลหิต</div>
           </div>
           <button type="button" id="btnForgotSearch" class="btn btn-search w-100" onclick="runForgotSearch()">ค้นหา Donor ID <i class="bi bi-search"></i></button>
           <button type="button" class="clear-action mt-3" onclick="clearSearch()"><i class="bi bi-arrow-counterclockwise"></i> ล้างข้อมูล</button>
@@ -504,6 +511,72 @@
         <div class="contact-action-grid mt-2"><button type="button" class="btn btn-soft" onclick="showRoomCalendarPublic()"><i class="bi bi-calendar-event"></i> ดูปฏิทินเปิด–ปิด</button><a id="mapLink" class="btn btn-search" target="_blank" rel="noopener"><i class="bi bi-map"></i> เปิด Google Maps</a></div>
       </div>
     </div>
+    <div id="pageQuestion" class="app-page">
+      <div class="page-head mb-3">
+        <button type="button" class="icon-back" onclick="showPage('home')" aria-label="กลับหน้าหลัก"><i class="bi bi-arrow-left"></i></button>
+        <div>
+          <div class="page-kicker">ถามห้องบริจาคโลหิต</div>
+          <h2 class="page-title">มีเรื่องอยากถาม?</h2>
+          <p class="page-subtitle">เรื่องที่ตอบได้ทันที กดดูคำตอบได้เลย ส่วนเรื่องที่ต้องประเมิน เจ้าหน้าที่หรือแพทย์จะรับเรื่องต่อให้</p>
+        </div>
+      </div>
+
+      <div class="question-fast-card card main-card p-3 p-md-4 mb-3">
+        <div class="question-section-head"><div><small>คำถามที่เจอบ่อย</small><h4>ลองกดตรงนี้ก่อน อาจได้คำตอบทันที</h4></div></div>
+        <div class="question-fast-grid">
+          <button type="button" onclick="showPage('roomCalendar')"><i class="bi bi-clock"></i><span><b>วันนี้เปิดไหม?</b><small>วันเปิด–ปิดและเวลา</small></span></button>
+          <button type="button" onclick="showPage('check')"><i class="bi bi-calendar-heart"></i><span><b>ครั้งหน้าบริจาคเมื่อไหร่?</b><small>เช็กจากประวัติของคุณ</small></span></button>
+          <button type="button" onclick="showPage('screening')"><i class="bi bi-droplet-half"></i><span><b>จองเกล็ดเลือด</b><small>ดูคิวและเริ่มคัดกรอง</small></span></button>
+          <button type="button" onclick="showPage('prepare')"><i class="bi bi-cup-straw"></i><span><b>เตรียมตัวยังไง?</b><small>ก่อนและหลังบริจาค</small></span></button>
+          <button type="button" onclick="showDonationChoice()"><i class="bi bi-heart-pulse"></i><span><b>บริจาคแบบไหน?</b><small>เลือดแดง หมู่คณะ ออกหน่วย</small></span></button>
+          <button type="button" onclick="showPage('info')"><i class="bi bi-geo-alt"></i><span><b>ติดต่อ / แผนที่</b><small>เบอร์โทรและสถานที่</small></span></button>
+        </div>
+      </div>
+
+      <div class="card main-card p-3 p-md-4 mb-3">
+        <div class="question-section-head"><div><small>เรื่องที่อยากให้คนช่วยดู</small><h4>เลือกหัวข้อที่ใกล้เคียงที่สุด</h4><p>ระบบจะส่งให้ทีมที่เกี่ยวข้อง โดยไม่แสดงรายละเอียดสุขภาพบนหน้าจอแจ้งเตือนของโทรศัพท์</p></div></div>
+        <div class="question-topic-grid">
+          <button type="button" onclick="selectDonorQuestionCategory('eligibility')"><i class="bi bi-capsule"></i><span><b>คุณสมบัติ / ยา / วัคซีน / เพิ่งป่วย</b><small>เรื่องที่ไม่แน่ใจว่าบริจาคได้หรือยัง</small></span></button>
+          <button type="button" class="medical" onclick="selectDonorQuestionCategory('post_donation')"><i class="bi bi-heart-pulse-fill"></i><span><b>มีอาการผิดปกติหลังบริจาค</b><small>ส่งให้ทีมและแจ้งผู้รับผิดชอบทางการแพทย์</small></span></button>
+          <button type="button" class="medical" onclick="selectDonorQuestionCategory('test_result')"><i class="bi bi-file-medical"></i><span><b>ผลตรวจ / ได้รับแจ้งให้ติดต่อ</b><small>กรณีต้องการสอบถามผลหรือการนัดติดตาม</small></span></button>
+          <button type="button" onclick="selectDonorQuestionCategory('other')"><i class="bi bi-chat-square-text"></i><span><b>เรื่องอื่น ๆ</b><small>ถ้าไม่ตรงกับหัวข้อด้านบน</small></span></button>
+        </div>
+      </div>
+
+      <div id="donorQuestionEmergency" class="question-emergency-banner mb-3" style="display:none;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div><b>ถ้าอาการรุนแรง ไม่ต้องรอคำตอบในแอพ</b><span>หากหมดสติ หายใจลำบาก เจ็บหน้าอก เลือดออกมากไม่หยุด หรืออาการแย่ลงรวดเร็ว ให้ไปห้องฉุกเฉินหรือโทร 1669 ทันที</span></div>
+      </div>
+
+      <div id="donorQuestionFormCard" class="card main-card p-3 p-md-4 mb-3" style="display:none;">
+        <div class="question-form-title"><span id="donorQuestionCategoryIcon"><i class="bi bi-chat-dots"></i></span><div><small>หัวข้อที่เลือก</small><h4 id="donorQuestionCategoryLabel">คำถามผู้บริจาค</h4></div><button type="button" class="btn btn-soft btn-sm" onclick="resetDonorQuestionForm()">เปลี่ยนหัวข้อ</button></div>
+        <input type="hidden" id="donorQuestionCategory">
+        <div class="row g-3 mt-1">
+          <div class="col-md-6"><label class="form-label">ชื่อผู้ติดต่อ</label><input id="donorQuestionName" class="form-control" placeholder="ชื่อ-นามสกุล"></div>
+          <div class="col-md-6"><label class="form-label">เบอร์โทรศัพท์</label><input id="donorQuestionPhone" class="form-control" type="tel" inputmode="numeric" placeholder="เบอร์ที่ติดต่อได้"></div>
+          <div class="col-md-6"><label class="form-label">อีเมล <span class="text-muted">ถ้ามี</span></label><input id="donorQuestionEmail" class="form-control" type="email" placeholder="name@example.com"></div>
+          <div class="col-md-6"><label class="form-label">Donor ID <span class="text-muted">ถ้าทราบ</span></label><input id="donorQuestionDonorId" class="form-control" placeholder="เลขผู้บริจาค"></div>
+          <div id="donorQuestionDonationDateWrap" class="col-md-6" style="display:none;"><label class="form-label">วันที่บริจาคล่าสุดที่เกี่ยวข้อง</label><input id="donorQuestionDonationDate" class="form-control" type="date"></div>
+          <div id="donorQuestionSymptomWrap" class="col-md-6" style="display:none;"><label class="form-label">อาการหลัก</label><select id="donorQuestionSymptom" class="form-select"><option value="">เลือกอาการ</option><option>เวียนหัว / หน้ามืด / อ่อนเพลีย</option><option>ช้ำ / ปวดแขน</option><option>เลือดซึมจากแผลเจาะ</option><option>บวม / ชา / ปวดมาก</option><option>มีไข้หรือไม่สบายหลังบริจาค</option><option>อื่น ๆ</option></select></div>
+          <div class="col-12"><label class="form-label">รายละเอียดที่อยากถาม</label><textarea id="donorQuestionMessage" class="form-control" rows="5" placeholder="เล่าให้สั้นแต่ครบ เช่น กินยาอะไรอยู่ / มีอาการอะไร / เริ่มเมื่อไหร่"></textarea></div>
+        </div>
+        <div class="question-privacy-note"><i class="bi bi-shield-check"></i><span>ข้อมูลนี้ใช้สำหรับติดต่อกลับและประเมินคำถามเท่านั้น การแจ้งเตือนบนโทรศัพท์เจ้าหน้าที่จะแสดงแค่เลขเคสและประเภทเรื่อง ไม่แสดงรายละเอียดสุขภาพ</span></div>
+        <button type="button" id="btnSubmitDonorQuestion" class="btn btn-search w-100 mt-3" onclick="submitDonorQuestion()"><i class="bi bi-send"></i> ส่งคำถาม</button>
+      </div>
+
+      <div id="donorQuestionSuccess" class="card main-card p-4 mb-3 question-success" style="display:none;"></div>
+
+      <div class="card main-card p-3 p-md-4">
+        <div class="question-section-head"><div><small>ถามไว้แล้ว</small><h4>เช็กว่ามีคำตอบหรือยัง</h4><p>ใช้เลขคำถามที่ได้รับตอนส่ง + เบอร์โทร 4 ตัวท้าย</p></div></div>
+        <div class="question-track-grid">
+          <input id="donorQuestionLookupCode" class="form-control" placeholder="เช่น Q260912-1234" autocomplete="off">
+          <input id="donorQuestionLookupPhone" class="form-control" placeholder="เบอร์โทร 4 ตัวท้าย" inputmode="numeric" maxlength="4">
+          <button type="button" class="btn btn-search" onclick="lookupDonorQuestion()"><i class="bi bi-search"></i> เช็กคำตอบ</button>
+        </div>
+        <div id="donorQuestionLookupResult" class="mt-3"></div>
+      </div>
+    </div>
+
     <div id="pageStaffLogin" class="app-page">
       <div class="page-head mb-3">
         <button type="button" class="icon-back" onclick="showPage('home')"><i class="bi bi-arrow-left"></i></button>
@@ -554,6 +627,7 @@
               <div class="staff-nav-group-items">
                 <button type="button" class="staff-tab active" data-staff-tab="overview" onclick="showStaffTab('overview')"><i class="bi bi-grid-1x2"></i><span>ภาพรวม</span></button>
                 <button type="button" class="staff-tab notification-tab" data-staff-tab="notifications" onclick="showStaffTab('notifications')"><i class="bi bi-bell"></i><span>แจ้งเตือน</span><b id="staffNotificationBadge" class="staff-notification-badge" style="display:none;">0</b></button>
+                <button type="button" class="staff-tab notification-tab" data-staff-tab="questions" onclick="showStaffTab('questions')"><i class="bi bi-chat-heart"></i><span>คำถามผู้บริจาค</span><b id="staffQuestionBadge" class="staff-notification-badge" style="display:none;">0</b></button>
                 <button type="button" class="staff-tab" data-staff-tab="bookings" onclick="showStaffTab('bookings')"><i class="bi bi-card-checklist"></i><span>คิวเกล็ดเลือด</span></button>
               </div>
             </div>
@@ -678,6 +752,45 @@
             </div>
           </div>
 
+          <div id="staffTab_questions" class="staff-tab-page">
+            <div class="staff-page-head"><div><span>DONOR QUESTION INBOX</span><h3>คำถามผู้บริจาค</h3><p>รวมคำถามที่ต้องให้คนช่วยตอบไว้ที่เดียว เรื่องหลังบริจาคและผลตรวจจะถูกทำเครื่องหมายว่าต้องให้แพทย์/ผู้รับผิดชอบดู</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffQuestions()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div></div>
+
+            <div class="card main-card staff-card p-4 mb-3 push-settings-card">
+              <div class="staff-section-head"><div><h5><i class="bi bi-bell"></i> แจ้งเตือนบนโทรศัพท์เครื่องนี้</h5><small>เปิดครั้งเดียว แล้วข้อความใหม่สามารถเด้งบนหน้าจอได้แม้ไม่ได้เปิดหน้าเว็บค้างไว้</small></div><span id="pushSupportStatus" class="status-pill neutral">กำลังตรวจสอบ</span></div>
+              <div class="push-setting-grid mt-3">
+                <label class="push-check"><input type="checkbox" id="pushNotifyGeneral" checked><span><b>คำถามทั่วไป</b><small>คิวคำถามใหม่ที่ Staff ควรรู้</small></span></label>
+                <label class="push-check doctor"><input type="checkbox" id="pushNotifyDoctor"><span><b>คำถามที่ต้องให้แพทย์ดู</b><small>เหมาะกับเครื่องของแพทย์/ผู้รับผิดชอบทางการแพทย์</small></span></label>
+                <button type="button" id="btnEnablePush" class="btn btn-search" onclick="enableStaffPushNotifications()"><i class="bi bi-bell-fill"></i> เปิดแจ้งเตือนเครื่องนี้</button>
+              </div>
+              <div class="push-help mt-2"><i class="bi bi-info-circle"></i><span>iPhone/iPad: ต้องเพิ่มเว็บนี้ไว้ที่ Home Screen ก่อน แล้วเปิดจากไอคอนที่ติดตั้ง จึงจะเปิด Web Push ได้</span></div>
+            </div>
+
+            <div class="card main-card staff-card p-4 mb-3">
+              <div class="question-inbox-filters">
+                <button type="button" class="active" data-question-filter="all" onclick="setStaffQuestionFilter('all')">ทั้งหมด <b id="questionCountAll">0</b></button>
+                <button type="button" data-question-filter="ใหม่" onclick="setStaffQuestionFilter('ใหม่')">ใหม่ <b id="questionCountNew">0</b></button>
+                <button type="button" data-question-filter="doctor" onclick="setStaffQuestionFilter('doctor')">รอแพทย์ <b id="questionCountDoctor">0</b></button>
+                <button type="button" data-question-filter="answered" onclick="setStaffQuestionFilter('answered')">ตอบแล้ว <b id="questionCountAnswered">0</b></button>
+              </div>
+              <div id="staffQuestionList" class="mt-3"><div class="staff-result">กำลังโหลด...</div></div>
+            </div>
+
+            <div id="staffQuestionDetailCard" class="card main-card staff-card p-4" style="display:none;">
+              <div class="staff-section-head mb-3"><div><h5 id="staffQuestionDetailTitle">รายละเอียดคำถาม</h5><small id="staffQuestionDetailMeta"></small></div><button type="button" class="btn btn-soft btn-sm" onclick="closeStaffQuestionDetail()"><i class="bi bi-x-lg"></i> ปิด</button></div>
+              <div id="staffQuestionDetailBody"></div>
+              <div class="question-reply-box mt-3">
+                <label class="form-label">ข้อความตอบกลับ</label>
+                <textarea id="staffQuestionReplyText" class="form-control" rows="4" placeholder="พิมพ์คำตอบที่ต้องการให้ผู้บริจาคเห็น"></textarea>
+                <div class="question-reply-actions mt-3">
+                  <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('รับเรื่องแล้ว')"><i class="bi bi-person-check"></i> รับเรื่อง</button>
+                  <button type="button" class="btn btn-warning-soft" onclick="updateStaffQuestion('รอแพทย์', true)"><i class="bi bi-stethoscope"></i> ส่งให้แพทย์</button>
+                  <button type="button" class="btn btn-search" onclick="updateStaffQuestion('ตอบแล้ว')"><i class="bi bi-send-check"></i> ส่งคำตอบ</button>
+                  <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('ปิดเรื่อง')"><i class="bi bi-check2-circle"></i> ปิดเรื่อง</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div id="staffTab_slots" class="staff-tab-page">
             <div class="staff-page-head"><div><span>PLATELET BOOKING</span><h3>ตารางรับบริจาคเกล็ดเลือด</h3><p>วันธรรมดา 09:00 และ 13:00 รอบละ 2 คน · เปิดรอบเดือนถัดไปได้ตั้งแต่วันที่ 21</p></div></div>
 
@@ -774,10 +887,10 @@
           </div>
 
           <div id="staffTab_roomCalendar" class="staff-tab-page">
-            <div class="staff-page-head"><div><span>ROOM CALENDAR</span><h3>ปฏิทินเปิด–ปิดห้องบริจาคโลหิต</h3><p>บันทึกครั้งเดียว แล้วใช้เป็นปฏิทินสาธารณะและข้อความประกาศรายเดือน</p></div></div>
+            <div class="staff-page-head"><div><span>ROOM CALENDAR</span><h3>ปฏิทินเปิด–ปิดห้องบริจาคโลหิต</h3><p>เตรียมและเผยแพร่เดือนไหนล่วงหน้าก็ได้ตั้งแต่เดือนปัจจุบัน ข้อมูลชุดเดียวใช้ทั้งหน้าเว็บและข้อความประกาศ</p></div></div>
             <div class="card main-card staff-card p-4 mb-3">
               <div class="platelet-month-toolbar">
-                <div class="field-block mb-0"><label class="form-label">เดือนที่จัดการ</label><input type="month" id="roomAdminMonth" class="form-control"></div>
+                <div class="field-block mb-0"><label class="form-label">เดือนที่จัดการ</label><input type="month" id="roomAdminMonth" class="form-control"><small class="form-text">เลือกเดือนล่วงหน้าได้เลย เช่น รู้วันหยุดเดือนหน้า/ปลายปี ก็เตรียมและเผยแพร่ไว้ก่อนได้</small></div>
                 <div class="month-status-box"><span>สถานะประกาศ</span><b id="roomAdminMonthStatus">-</b><small id="roomAdminMonthHint">แก้ข้อมูลให้เรียบร้อยแล้วค่อยเผยแพร่</small></div>
                 <div class="platelet-month-actions">
                   <button type="button" class="btn btn-soft" onclick="prepareRoomCalendarMonth()"><i class="bi bi-calendar-plus"></i> เตรียมเดือน</button>
@@ -922,7 +1035,7 @@
     <div class="staff-menu-launcher-card" role="dialog" aria-modal="true" aria-labelledby="staffMenuLauncherTitle">
       <div class="staff-menu-launcher-head"><div><span>STAFF MENU</span><h3 id="staffMenuLauncherTitle">เมนูทั้งหมด</h3><p>ถ้าหาเมนูไม่เจอ ให้เปิดจากตรงนี้ได้ทุกหน้า</p></div><button type="button" class="btn btn-soft btn-sm" onclick="closeStaffMenuLauncher()"><i class="bi bi-x-lg"></i> ปิด</button></div>
       <div class="staff-menu-launcher-grid">
-        <section><h4><i class="bi bi-sun"></i> งานวันนี้</h4><button onclick="goStaffMenu('overview')">ภาพรวม</button><button onclick="goStaffMenu('notifications')">แจ้งเตือน</button><button onclick="goStaffMenu('bookings')">คิวเกล็ดเลือด</button></section>
+        <section><h4><i class="bi bi-sun"></i> งานวันนี้</h4><button onclick="goStaffMenu('overview')">ภาพรวม</button><button onclick="goStaffMenu('notifications')">แจ้งเตือน</button><button onclick="goStaffMenu('questions')">คำถามผู้บริจาค</button><button onclick="goStaffMenu('bookings')">คิวเกล็ดเลือด</button></section>
         <section><h4><i class="bi bi-person-vcard"></i> ข้อมูลผู้บริจาค</h4><button onclick="goStaffMenu('donorImport')">นำเข้าผู้บริจาค</button><button onclick="goStaffMenu('infectiousImport')">ผลติดเชื้อ</button><button onclick="goStaffMenu('importLogs')">ประวัตินำเข้า</button></section>
         <section><h4><i class="bi bi-calendar2-week"></i> นัดหมายและตาราง</h4><button onclick="goStaffMenu('slots')">ตารางเกล็ดเลือด</button><button onclick="goStaffMenu('groupSlots')">ตารางหมู่คณะ</button><button onclick="goStaffMenu('groups')">คำขอหมู่คณะ</button><button onclick="goStaffMenu('mobileUnits')">คำขอออกหน่วย</button><button onclick="goStaffMenu('roomCalendar')">เปิด–ปิดห้อง</button></section>
         <section><h4><i class="bi bi-ui-checks-grid"></i> คัดกรองเบื้องต้น</h4><button onclick="goStaffMenu('screeningQuestions')">คำถามคัดกรอง</button><button onclick="goStaffMenu('screeningQuestionHistory')">ประวัติการแก้ไข</button></section>
@@ -946,6 +1059,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.12"></script>
+  <script src="app.js?v=15.14"></script>
 </body>
 </html>

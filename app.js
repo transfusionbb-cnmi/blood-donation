@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.12 */
+/* CNMI Blood Donation Supabase Frontend v15.14 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -27,9 +27,13 @@ let screeningQuestionAuditCache = [];
 let currentManualSectionId = "manual-start";
 let currentGroupAdminDays = [];
 let currentRoomAdminEvents = [];
+let currentRoomAdminVersion = 0;
+let currentRoomAdminPublishedAt = null;
 let currentPublicRoomEvents = [];
 let pendingStaffRouteTab = "overview";
 let suppressRouteSync = false;
+let staffQuestionFilter = "all";
+let currentStaffQuestion = null;
 
 const PAGE_ROUTE_MAP = {
   home: "#/home",
@@ -44,6 +48,7 @@ const PAGE_ROUTE_MAP = {
   manage: "#/manage",
   roomCalendar: "#/hours",
   info: "#/contact",
+  question: "#/ask",
   staffLogin: "#/staff/login",
   staffChangePassword: "#/staff/password",
   staff: "#/staff/overview"
@@ -55,6 +60,7 @@ const STAFF_TAB_ROUTE_MAP = {
   infectiousImport: "infectious-import",
   importLogs: "import-logs",
   notifications: "notifications",
+  questions: "questions",
   slots: "platelet-calendar",
   bookings: "platelet-bookings",
   groupSlots: "group-calendar",
@@ -68,7 +74,7 @@ const STAFF_TAB_ROUTE_MAP = {
 };
 
 const STAFF_TAB_GROUP_MAP = {
-  overview:"today", notifications:"today", bookings:"today",
+  overview:"today", notifications:"today", questions:"today", bookings:"today",
   donorImport:"donorData", infectiousImport:"donorData", importLogs:"donorData",
   slots:"appointments", groupSlots:"appointments", groups:"appointments", mobileUnits:"appointments", roomCalendar:"appointments",
   screeningQuestions:"screening", screeningQuestionHistory:"screening",
@@ -110,7 +116,7 @@ function parseHashRoute() {
   if (!path) return { page:"home" };
   const map = {
     home:"home", check:"check", next:"check", prepare:"prepare", donate:"donationChoice", "group-booking":"groupBooking",
-    "mobile-unit":"mobileUnitRequest", manage:"manage", calendar:"roomCalendar", hours:"roomCalendar", contact:"info"
+    "mobile-unit":"mobileUnitRequest", manage:"manage", calendar:"roomCalendar", hours:"roomCalendar", contact:"info", ask:"question", question:"question"
   };
   if (map[path]) return { page:map[path] };
   if (path === "platelet" || path === "platelet/screening") return { page:"screening" };
@@ -205,7 +211,7 @@ function showPage(page, options) {
     home:"pageHome", check:"pageCheck", prepare:"pagePrepare", donationChoice:"pageDonationChoice", groupBooking:"pageGroupBooking",
     mobileUnitRequest:"pageMobileUnitRequest",
     screening:"pageScreening", booking:"pageBooking", bookingSuccess:"pageBookingSuccess", manage:"pageManage",
-    roomCalendar:"pageRoomCalendar", info:"pageInfo",
+    roomCalendar:"pageRoomCalendar", info:"pageInfo", question:"pageQuestion",
     staffLogin:"pageStaffLogin", staffChangePassword:"pageStaffChangePassword", staff:"pageStaff"
   };
   Object.keys(pages).forEach(function(key){ const el = $(pages[key]); if (el) el.classList.remove("active"); });
@@ -1757,6 +1763,7 @@ function showStaffTab(tab, options) {
   if (tab === "overview") loadStaffDashboard();
   if (tab === "importLogs") loadImportLogHistory(1);
   if (tab === "notifications") loadStaffNotifications();
+  if (tab === "questions") { loadStaffQuestions(); loadPushSubscriptionState(); }
   if (tab === "slots") loadPlateletMonthAdmin();
   if (tab === "bookings") loadStaffBookings();
   if (tab === "groupSlots") loadGroupBookingMonthAdmin();
@@ -2363,6 +2370,7 @@ async function loadStaffDashboard() {
     if ($("dashBookingsTomorrow")) $("dashBookingsTomorrow").innerText = bookingsTomorrow;
     if ($("dashNewRequests")) $("dashNewRequests").innerText = newRequests;
     updateStaffNotificationBadge(newRequests);
+    updateStaffQuestionBadge();
     if ($("dashSlotsToday")) $("dashSlotsToday").innerText = slotsToday;
     if ($("dashInfectious")) $("dashInfectious").innerText = infectiousCount;
     if ($("dashDonations")) $("dashDonations").innerText = donationCount;
@@ -2787,6 +2795,29 @@ function uniqueDonorRecords(records) {
   return { unique, duplicateInFile };
 }
 
+function latestDonorContactRows(records) {
+  const latest = new Map();
+  (records || []).forEach(function(record) {
+    const donorId = String(record.donor_id || "").trim();
+    const phone = normalizePhone(record.phone || "");
+    const donationDate = String(record.donation_date || "");
+    if (!donorId || phone.length < 9 || !donationDate) return;
+    const key = donorId.toUpperCase();
+    const prev = latest.get(key);
+    if (!prev || donationDate >= String(prev.donation_date || "")) {
+      latest.set(key, {
+        donor_id: donorId,
+        phone: phone,
+        full_name: record.full_name || "",
+        dob: record.dob || "",
+        id_document: record.id_document || "",
+        donation_date: donationDate
+      });
+    }
+  });
+  return Array.from(latest.values());
+}
+
 async function previewDonorFile() {
   const file = $("donorImportFile").files[0];
   const btn = $("btnPreviewDonor");
@@ -2878,6 +2909,15 @@ async function confirmImportDonorFile() {
       sent += chunk.length;
     }
 
+    const latestContacts = latestDonorContactRows(records);
+    for (let i = 0; i < latestContacts.length; i += chunkSize) {
+      const contactChunk = latestContacts.slice(i, i + chunkSize);
+      const { data:contactData, error:contactError } = await sb.rpc("upsert_donor_contacts_from_import", { p_rows: contactChunk });
+      if (contactError || !contactData || contactData.ok !== true) {
+        throw new Error(contactError?.message || contactData?.message || "อัปเดตเบอร์โทรปัจจุบันไม่สำเร็จ");
+      }
+    }
+
     await sb.from("import_logs").insert({
       import_type: "donor_import",
       imported_count: records.length,
@@ -2894,7 +2934,7 @@ async function confirmImportDonorFile() {
       "ข้าม เพราะบริจาคไม่ได้: " + (parsed.skippedCannotDonate || 0) + " รายการ\n" +
       "ข้าม เพราะข้อมูลสำคัญไม่ครบ: " + (parsed.skippedMissing || 0) + " รายการ\n" +
       "ข้อมูลซ้ำในไฟล์เดียวกัน: " + (pendingDonorImport.duplicateInFile || 0) + " รายการ\n\n" +
-      "หมายเหตุ: ข้อมูลที่ซ้ำกับฐานข้อมูลเดิมจะไม่เพิ่มซ้ำจาก key Donor ID + วันที่บริจาค + ชนิดบริจาค",
+      "หมายเหตุ: ประวัติเดิมที่ซ้ำจะไม่เพิ่มซ้ำ แต่เบอร์โทรปัจจุบันจะยึดจากข้อมูลวันที่ล่าสุดที่นำเข้า",
       true
     );
 
@@ -3588,11 +3628,18 @@ function roomHoursForEvent(dateIso, event) {
   return { show:true, text:regular.compact, full:regular.full, breakTime:regular.breakTime, custom:false };
 }
 
+function thaiWeekdayClass(dateIso) {
+  const parts = String(dateIso || "").split("-").map(Number);
+  if (parts.length !== 3) return "thai-day-mon";
+  const day = new Date(parts[0], parts[1]-1, parts[2], 12, 0, 0).getDay();
+  return ["thai-day-sun","thai-day-mon","thai-day-tue","thai-day-wed","thai-day-thu","thai-day-fri","thai-day-sat"][day] || "thai-day-mon";
+}
+
 function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
   const meta = event ? roomEventMeta(event.type) : null;
   const hours = roomHoursForEvent(iso, event);
   const regular = roomRegularHours(iso);
-  let className = "room-day-cell" + (regular.dayLabel === "เสาร์–อาทิตย์" ? " is-weekend" : "");
+  let className = "room-day-cell " + thaiWeekdayClass(iso) + (regular.dayLabel === "เสาร์–อาทิตย์" ? " is-weekend" : "") + (publicMode ? " public-mode" : "") + (iso === todayISO() ? " is-today" : "");
   let label = "";
   let icon = "";
   let detail = "";
@@ -3632,8 +3679,12 @@ function renderRoomCalendar(container, month, events, clickable, publicMode) {
   if (!container || !range) return;
   const eventMap = {};
   (events || []).forEach(e => eventMap[e.date] = e);
-  const headers = ["จ.","อ.","พ.","พฤ.","ศ.","ส.","อา."];
-  let html = '<div class="room-calendar-head">' + headers.map(h => '<div>' + h + '</div>').join('') + '</div><div class="room-calendar-days">';
+  const headers = [
+    {label:"จ.",cls:"thai-day-mon"},{label:"อ.",cls:"thai-day-tue"},{label:"พ.",cls:"thai-day-wed"},
+    {label:"พฤ.",cls:"thai-day-thu"},{label:"ศ.",cls:"thai-day-fri"},{label:"ส.",cls:"thai-day-sat"},{label:"อา.",cls:"thai-day-sun"}
+  ];
+  let html = (publicMode ? '<div class="room-calendar-mobile-note"><i class="bi bi-palette"></i> สีด้านบนใช้สีประจำวันแบบไทย · รายละเอียดวันพิเศษดูใต้ปฏิทิน</div>' : '') +
+    '<div class="room-calendar-head">' + headers.map(h => '<div class="' + h.cls + '">' + h.label + '</div>').join('') + '</div><div class="room-calendar-days">';
   const offset = calendarMonthOffset(range);
   for (let i=0;i<offset;i++) html += '<div class="room-day-cell empty"></div>';
   for (let day=1; day<=range.days; day++) {
@@ -3693,7 +3744,12 @@ async function loadPublicRoomCalendar(allowAutoNext) {
   }
 
   currentPublicRoomEvents = Array.isArray(data.events) ? data.events : [];
-  if (status) status.innerHTML = '<div class="published-banner"><i class="bi bi-check2-circle"></i><span><b>' + escapeHtml(thaiMonthLabel(month)) + '</b> · ตารางที่เผยแพร่แล้ว</span></div>';
+  if (status) {
+    const versionText = Number(data.version || 0) > 0 ? 'v.' + Number(data.version) : '';
+    const publishedText = data.publishedAt ? formatBangkokLogTime(data.publishedAt, true).replace(/:\d{2}(?=\s|$)/, '') : '';
+    status.innerHTML = '<div class="published-banner"><i class="bi bi-check2-circle"></i><span><b>' + escapeHtml(thaiMonthLabel(month)) + '</b> · ตารางที่เผยแพร่แล้ว' +
+      ((versionText || publishedText) ? '<small class="calendar-version-badge">' + escapeHtml([versionText, publishedText ? 'ประกาศ ' + publishedText : ''].filter(Boolean).join(' · ')) + '</small>' : '') + '</span></div>';
+  }
   renderRoomCalendar(calendar, month, currentPublicRoomEvents, false, true);
   renderRoomHighlights(highlights, currentPublicRoomEvents);
 }
@@ -3782,6 +3838,10 @@ function buildRoomAnnouncement(month, events) {
   const sorted = [...(events || [])].sort((a,b) => String(a.date).localeCompare(String(b.date)));
   const lines = [];
   lines.push("📅 ตารางห้องบริจาคโลหิต ประจำเดือน " + thaiMonthLabel(month));
+  if (currentRoomAdminVersion > 0) {
+    const publishedText = currentRoomAdminPublishedAt ? formatBangkokLogTime(currentRoomAdminPublishedAt, true).replace(/:\d{2}(?=\s|$)/, '') : "";
+    lines.push("ฉบับ v." + currentRoomAdminVersion + (publishedText ? " · ประกาศ " + publishedText : ""));
+  }
   lines.push("");
   lines.push("เวลารับลงทะเบียนปกติ");
   lines.push("• จันทร์–ศุกร์ 08:30–11:30 น. และ 13:00–15:30 น.");
@@ -3825,11 +3885,21 @@ async function loadRoomCalendarAdmin() {
   }
 
   currentRoomAdminEvents = Array.isArray(data.events) ? data.events : [];
+  currentRoomAdminVersion = Number(data.version || 0);
+  currentRoomAdminPublishedAt = data.publishedAt || null;
   if ($("roomAdminMonthStatus")) {
-    $("roomAdminMonthStatus").innerText = data.published ? "เผยแพร่แล้ว" : "ฉบับร่าง · ผู้บริจาคยังไม่เห็น";
+    const v = Number(data.version || 0);
+    $("roomAdminMonthStatus").innerText = data.published ? ("เผยแพร่แล้ว" + (v ? " · v." + v : "")) : "ฉบับร่าง · ผู้บริจาคยังไม่เห็น";
     $("roomAdminMonthStatus").className = data.published ? "published" : "draft";
   }
-  if ($("roomAdminMonthHint")) $("roomAdminMonthHint").innerText = data.published ? "หน้า Public ใช้ข้อมูลชุดนี้อยู่" : "ตรวจวันปิด/ออกหน่วยให้ครบก่อนเผยแพร่";
+  if ($("roomAdminMonthHint")) {
+    if (data.published) {
+      const publishedAt = data.publishedAt ? formatBangkokLogTime(data.publishedAt, true).replace(/:\d{2}(?=\s|$)/, '') : "";
+      $("roomAdminMonthHint").innerText = publishedAt ? ("ประกาศล่าสุด " + publishedAt + " · แก้ข้อมูลหลังเผยแพร่ ระบบจะขยับ revision ให้อัตโนมัติ") : "ผู้บริจาคเห็นข้อมูลชุดนี้แล้ว";
+    } else {
+      $("roomAdminMonthHint").innerText = "ตั้งเดือนไว้ล่วงหน้าได้ตั้งแต่เดือนปัจจุบันเป็นต้นไป · ตรวจวันหยุดให้ครบแล้วค่อยเผยแพร่";
+    }
+  }
 
   renderRoomCalendar(calendar, month, currentRoomAdminEvents, true, false);
   if ($("roomAnnouncementText")) $("roomAnnouncementText").innerText = buildRoomAnnouncement(month, currentRoomAdminEvents);
@@ -3936,6 +4006,15 @@ async function downloadRoomCalendarPoster() {
     ctx.fillStyle = "#69757c";
     ctx.font = '600 28px "Noto Sans Thai", sans-serif';
     ctx.fillText(thaiMonthLabel(month), 92, 215);
+    if (currentRoomAdminVersion > 0) {
+      const revText = "v." + currentRoomAdminVersion;
+      const publishedText = currentRoomAdminPublishedAt ? formatBangkokLogTime(currentRoomAdminPublishedAt, true).replace(/:\d{2}(?=\s|$)/, '') : "";
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#8b7376";
+      ctx.font = '600 20px "Noto Sans Thai", sans-serif';
+      ctx.fillText(revText + (publishedText ? " · " + publishedText : ""), 994, 211);
+      ctx.textAlign = "left";
+    }
 
     // Calendar frame
     const calX = 46, calY = 270, calW = 988;
@@ -4309,6 +4388,282 @@ async function loadStaffNotifications() {
   }).join('');
   await refreshStaffNotificationBadge();
 }
+
+function donorQuestionCategoryLabel(category) {
+  const map = {
+    eligibility:"คุณสมบัติ / ยา / วัคซีน / เพิ่งป่วย",
+    post_donation:"อาการผิดปกติหลังบริจาค",
+    test_result:"ผลตรวจ / ได้รับแจ้งให้ติดต่อ",
+    other:"เรื่องอื่น ๆ"
+  };
+  return map[category] || "คำถามผู้บริจาค";
+}
+
+function donorQuestionCategoryIcon(category) {
+  const map = { eligibility:"bi-capsule", post_donation:"bi-heart-pulse-fill", test_result:"bi-file-medical", other:"bi-chat-square-text" };
+  return map[category] || "bi-chat-dots";
+}
+
+function selectDonorQuestionCategory(category) {
+  const label = donorQuestionCategoryLabel(category);
+  if ($("donorQuestionCategory")) $("donorQuestionCategory").value = category;
+  if ($("donorQuestionCategoryLabel")) $("donorQuestionCategoryLabel").innerText = label;
+  if ($("donorQuestionCategoryIcon")) $("donorQuestionCategoryIcon").innerHTML = '<i class="bi ' + donorQuestionCategoryIcon(category) + '"></i>';
+  if ($("donorQuestionFormCard")) $("donorQuestionFormCard").style.display = "block";
+  const medical = category === "post_donation" || category === "test_result";
+  if ($("donorQuestionEmergency")) $("donorQuestionEmergency").style.display = category === "post_donation" ? "flex" : "none";
+  if ($("donorQuestionDonationDateWrap")) $("donorQuestionDonationDateWrap").style.display = medical ? "block" : "none";
+  if ($("donorQuestionSymptomWrap")) $("donorQuestionSymptomWrap").style.display = category === "post_donation" ? "block" : "none";
+  if ($("donorQuestionMessage")) {
+    const placeholders = {
+      eligibility:"เช่น กำลังกินยาชื่อ... / เพิ่งฉีดวัคซีน... / เพิ่งหายป่วย... อยากทราบว่าบริจาคได้เมื่อไหร่",
+      post_donation:"เช่น บริจาคเมื่อวาน ตอนนี้มีอาการช้ำและปวดแขน เริ่มเป็นตั้งแต่...",
+      test_result:"เช่น ได้รับโทรศัพท์/ข้อความให้ติดต่อเรื่องผลตรวจ ต้องการทราบว่าควรทำอย่างไรต่อ",
+      other:"พิมพ์รายละเอียดที่อยากสอบถาม"
+    };
+    $("donorQuestionMessage").placeholder = placeholders[category] || "พิมพ์รายละเอียดที่อยากสอบถาม";
+  }
+  setTimeout(function(){ $("donorQuestionFormCard")?.scrollIntoView({ behavior:"smooth", block:"start" }); }, 50);
+}
+
+function resetDonorQuestionForm() {
+  ["donorQuestionCategory","donorQuestionName","donorQuestionPhone","donorQuestionEmail","donorQuestionDonorId","donorQuestionDonationDate","donorQuestionMessage"].forEach(function(id){ if ($(id)) $(id).value = ""; });
+  if ($("donorQuestionSymptom")) $("donorQuestionSymptom").value = "";
+  if ($("donorQuestionFormCard")) $("donorQuestionFormCard").style.display = "none";
+  if ($("donorQuestionEmergency")) $("donorQuestionEmergency").style.display = "none";
+  if ($("donorQuestionSuccess")) $("donorQuestionSuccess").style.display = "none";
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+async function submitDonorQuestion() {
+  const category = String($("donorQuestionCategory")?.value || "");
+  const name = String($("donorQuestionName")?.value || "").trim();
+  const phone = onlyDigits($("donorQuestionPhone")?.value || "");
+  const email = String($("donorQuestionEmail")?.value || "").trim();
+  const donorId = String($("donorQuestionDonorId")?.value || "").trim();
+  const donationDate = $("donorQuestionDonationDate")?.value || null;
+  const symptom = $("donorQuestionSymptom")?.value || "";
+  const message = String($("donorQuestionMessage")?.value || "").trim();
+  if (!category) { showModal({title:"เลือกหัวข้อก่อน",message:"กรุณาเลือกว่าต้องการถามเรื่องอะไร",iconText:"!"}); return; }
+  if (name.length < 2 || phone.length < 9 || message.length < 3) { showModal({title:"กรอกข้อมูลให้ครบ",message:"กรุณากรอกชื่อ เบอร์โทร และรายละเอียดคำถามให้ครบ เพื่อให้ทีมติดต่อกลับได้",iconText:"!"}); return; }
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) { showModal({title:"ตรวจสอบอีเมล",message:"รูปแบบอีเมลยังไม่ถูกต้อง หรือเว้นว่างไว้ได้หากไม่สะดวกใช้",iconText:"!"}); return; }
+  const btn = $("btnSubmitDonorQuestion");
+  showBusy(btn, true, '<i class="bi bi-send"></i> ส่งคำถาม', "กำลังส่ง...");
+  try {
+    const { data, error } = await sb.rpc("submit_donor_question", {
+      p_category:category,
+      p_subject:donorQuestionCategoryLabel(category),
+      p_donor_name:name,
+      p_phone:phone,
+      p_email:email || null,
+      p_donor_id:donorId || null,
+      p_donation_date:donationDate,
+      p_symptom_type:symptom || null,
+      p_message:message
+    });
+    if (error) throw error;
+    const result = data || {};
+    if (!result.ok) throw new Error(result.message || "ส่งคำถามไม่สำเร็จ");
+    if ($("donorQuestionSuccess")) {
+      $("donorQuestionSuccess").style.display = "block";
+      $("donorQuestionSuccess").innerHTML = '<div class="question-success-icon"><i class="bi bi-check2-circle"></i></div><h4>ส่งคำถามแล้ว</h4>' +
+        '<p>เลขคำถามของคุณ</p><div class="question-code">' + escapeHtml(result.public_code || "-") + '</div>' +
+        '<p class="mb-2">เก็บเลขนี้ไว้ใช้เช็กคำตอบภายหลัง พร้อมเบอร์โทร 4 ตัวท้าย</p>' +
+        (result.needs_doctor ? '<div class="question-medical-note"><i class="bi bi-stethoscope"></i> รายการนี้ถูกทำเครื่องหมายให้แพทย์/ผู้รับผิดชอบทางการแพทย์เห็น</div>' : '') +
+        '<button type="button" class="btn btn-soft mt-3" onclick="copyTextValue(\'' + escapeHtml(result.public_code || "") + '\')"><i class="bi bi-copy"></i> คัดลอกเลขคำถาม</button>';
+      $("donorQuestionLookupCode").value = result.public_code || "";
+      $("donorQuestionLookupPhone").value = phone.slice(-4);
+      $("donorQuestionSuccess").scrollIntoView({ behavior:"smooth", block:"center" });
+    }
+    try { await sb.functions.invoke("donor-question-notify", { body:{ action:"send_new", publicCode:result.public_code } }); } catch (notifyErr) { console.warn("question notify failed", notifyErr); }
+  } catch (err) {
+    showModal({ title:"ยังส่งคำถามไม่ได้", message:err.message || String(err), iconText:"!" });
+  } finally {
+    showBusy(btn, false, '<i class="bi bi-send"></i> ส่งคำถาม', "กำลังส่ง...");
+  }
+}
+
+function copyTextValue(value) {
+  const text = String(value || "");
+  if (!text) return;
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(function(){ showToastMessage("คัดลอกแล้ว"); }).catch(function(){});
+}
+
+async function lookupDonorQuestion() {
+  const code = String($("donorQuestionLookupCode")?.value || "").trim().toUpperCase();
+  const last4 = onlyDigits($("donorQuestionLookupPhone")?.value || "").slice(-4);
+  const box = $("donorQuestionLookupResult");
+  if (!code || last4.length !== 4) { showModal({title:"กรอกข้อมูลให้ครบ",message:"กรุณากรอกเลขคำถามและเบอร์โทร 4 ตัวท้าย",iconText:"!"}); return; }
+  if (box) box.innerHTML = '<div class="staff-result">กำลังตรวจสอบ...</div>';
+  const { data, error } = await sb.rpc("lookup_donor_question", { p_public_code:code, p_phone_last4:last4 });
+  if (error || !data?.ok) { if (box) box.innerHTML = '<div class="staff-result fail">' + escapeHtml(error?.message || data?.message || "ไม่พบรายการ") + '</div>'; return; }
+  const q = data.question || {};
+  const replies = Array.isArray(data.replies) ? data.replies : [];
+  const replyHtml = replies.length ? replies.map(function(r){ return '<div class="public-question-reply"><b>' + escapeHtml(r.sender_type === "doctor" ? "แพทย์/ผู้รับผิดชอบ" : "เจ้าหน้าที่") + '</b><span>' + escapeHtml(r.message || "") + '</span><small>' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</small></div>'; }).join('') : '<div class="question-waiting"><i class="bi bi-hourglass-split"></i> ยังไม่มีคำตอบใหม่ ทีมงานจะติดต่อกลับเมื่อมีข้อมูลเพิ่มเติม</div>';
+  if (box) box.innerHTML = '<div class="public-question-status"><div><small>เลขคำถาม</small><b>' + escapeHtml(q.public_code || code) + '</b></div><span class="question-status-pill">' + escapeHtml(q.status || "ใหม่") + '</span></div>' +
+    '<div class="public-question-summary"><small>' + escapeHtml(donorQuestionCategoryLabel(q.category)) + '</small><p>' + escapeHtml(q.message || "") + '</p></div>' + replyHtml;
+}
+
+function questionStatusClass(status) {
+  if (status === "ใหม่") return "new";
+  if (status === "รอแพทย์") return "doctor";
+  if (status === "ตอบแล้ว") return "answered";
+  if (status === "ปิดเรื่อง") return "closed";
+  return "working";
+}
+
+function setStaffQuestionFilter(filter) {
+  staffQuestionFilter = filter || "all";
+  document.querySelectorAll('[data-question-filter]').forEach(function(btn){ btn.classList.toggle('active', btn.dataset.questionFilter === staffQuestionFilter); });
+  loadStaffQuestions();
+}
+
+async function loadStaffQuestions() {
+  if (!currentStaffProfile) return;
+  const box = $("staffQuestionList");
+  if (!box) return;
+  box.innerHTML = '<div class="staff-result">กำลังโหลดคำถาม...</div>';
+  const { data, error } = await sb.from("donor_questions").select("*").order("created_at", { ascending:false }).limit(100);
+  if (error) { box.innerHTML = '<div class="staff-result fail">โหลดคำถามไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>'; return; }
+  const rows = Array.isArray(data) ? data : [];
+  const counts = {
+    all:rows.filter(q => q.status !== "ปิดเรื่อง").length,
+    new:rows.filter(q => q.status === "ใหม่").length,
+    doctor:rows.filter(q => q.status === "รอแพทย์" || (q.needs_doctor && !["ตอบแล้ว","ปิดเรื่อง"].includes(q.status))).length,
+    answered:rows.filter(q => q.status === "ตอบแล้ว").length
+  };
+  if ($("questionCountAll")) $("questionCountAll").innerText = counts.all;
+  if ($("questionCountNew")) $("questionCountNew").innerText = counts.new;
+  if ($("questionCountDoctor")) $("questionCountDoctor").innerText = counts.doctor;
+  if ($("questionCountAnswered")) $("questionCountAnswered").innerText = counts.answered;
+  updateStaffQuestionBadge(counts.new + counts.doctor);
+
+  let filtered = rows;
+  if (staffQuestionFilter === "all") filtered = rows.filter(q => q.status !== "ปิดเรื่อง");
+  else if (staffQuestionFilter === "doctor") filtered = rows.filter(q => q.status === "รอแพทย์" || (q.needs_doctor && !["ตอบแล้ว","ปิดเรื่อง"].includes(q.status)));
+  else if (staffQuestionFilter === "answered") filtered = rows.filter(q => q.status === "ตอบแล้ว");
+  else filtered = rows.filter(q => q.status === staffQuestionFilter);
+
+  if (!filtered.length) { box.innerHTML = '<div class="staff-result">ยังไม่มีคำถามในหมวดนี้</div>'; return; }
+  box.innerHTML = '<div class="staff-question-list">' + filtered.map(function(q){
+    const medical = q.needs_doctor ? '<span class="question-medical-tag"><i class="bi bi-stethoscope"></i> ต้องให้แพทย์ดู</span>' : '';
+    return '<article class="staff-question-card ' + questionStatusClass(q.status) + '">' +
+      '<div class="staff-question-main"><div class="staff-question-icon"><i class="bi ' + donorQuestionCategoryIcon(q.category) + '"></i></div><div><div class="staff-question-tags"><span>' + escapeHtml(q.public_code) + '</span>' + medical + '</div><h5>' + escapeHtml(donorQuestionCategoryLabel(q.category)) + '</h5><p>' + escapeHtml(String(q.message || "").slice(0,180)) + (String(q.message || "").length > 180 ? '…' : '') + '</p><small>' + escapeHtml(formatBangkokLogTime(q.created_at, true)) + '</small></div></div>' +
+      '<div class="staff-question-side"><span class="question-status-pill ' + questionStatusClass(q.status) + '">' + escapeHtml(q.status) + '</span><button type="button" class="btn btn-soft btn-sm" onclick="openStaffQuestionDetail(\'' + escapeHtml(q.id) + '\')">ดูรายละเอียด</button></div>' +
+    '</article>';
+  }).join('') + '</div>';
+}
+
+async function updateStaffQuestionBadge(countOverride) {
+  const badge = $("staffQuestionBadge");
+  if (!badge || !currentStaffProfile) return;
+  let count = Number(countOverride);
+  if (!Number.isFinite(count)) {
+    const { count: newCount } = await sb.from("donor_questions").select("id", { count:"exact", head:true }).in("status", ["ใหม่","รอแพทย์"]);
+    count = Number(newCount || 0);
+  }
+  badge.innerText = count > 99 ? "99+" : String(count);
+  badge.style.display = count > 0 ? "inline-flex" : "none";
+}
+
+async function openStaffQuestionDetail(id) {
+  const { data:q, error } = await sb.from("donor_questions").select("*").eq("id", id).maybeSingle();
+  if (error || !q) { showModal({title:"ไม่พบรายการ",message:error?.message || "คำถามนี้อาจถูกลบหรือเปลี่ยนแปลงแล้ว",iconText:"!"}); return; }
+  const { data: replies } = await sb.from("donor_question_replies").select("*").eq("question_id", id).order("created_at", { ascending:true });
+  currentStaffQuestion = q;
+  if ($("staffQuestionDetailTitle")) $("staffQuestionDetailTitle").innerText = q.public_code + " · " + donorQuestionCategoryLabel(q.category);
+  if ($("staffQuestionDetailMeta")) $("staffQuestionDetailMeta").innerText = formatBangkokLogTime(q.created_at, true) + " · สถานะ " + q.status;
+  const replyHistory = (replies || []).length ? '<div class="question-reply-history"><h6>คำตอบที่ส่งไปแล้ว</h6>' + replies.map(function(r){ return '<div><b>' + escapeHtml(r.sender_type === "doctor" ? "แพทย์/ผู้รับผิดชอบ" : "เจ้าหน้าที่") + '</b><span>' + escapeHtml(r.message) + '</span><small>' + escapeHtml(r.sender_name || "") + ' · ' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</small></div>'; }).join('') + '</div>' : '';
+  if ($("staffQuestionDetailBody")) $("staffQuestionDetailBody").innerHTML = '<div class="question-detail-grid">' +
+    '<div><small>ชื่อ</small><b>' + escapeHtml(q.donor_name || "-") + '</b></div><div><small>โทร</small><b><a href="tel:' + escapeHtml(q.phone || "") + '">' + escapeHtml(q.phone || "-") + '</a></b></div>' +
+    '<div><small>อีเมล</small><b>' + (q.email ? '<a href="mailto:' + escapeHtml(q.email) + '">' + escapeHtml(q.email) + '</a>' : '-') + '</b></div><div><small>Donor ID</small><b>' + escapeHtml(q.donor_id || "-") + '</b></div>' +
+    (q.donation_date ? '<div><small>วันที่บริจาคที่เกี่ยวข้อง</small><b>' + escapeHtml(isoToThaiDate(q.donation_date, true)) + '</b></div>' : '') +
+    (q.symptom_type ? '<div><small>อาการหลัก</small><b>' + escapeHtml(q.symptom_type) + '</b></div>' : '') + '</div>' +
+    '<div class="question-detail-message"><small>รายละเอียดจากผู้บริจาค</small><p>' + escapeHtml(q.message || "") + '</p></div>' + replyHistory;
+  if ($("staffQuestionReplyText")) $("staffQuestionReplyText").value = "";
+  if ($("staffQuestionDetailCard")) { $("staffQuestionDetailCard").style.display = "block"; $("staffQuestionDetailCard").scrollIntoView({ behavior:"smooth", block:"start" }); }
+}
+
+function closeStaffQuestionDetail() {
+  currentStaffQuestion = null;
+  if ($("staffQuestionDetailCard")) $("staffQuestionDetailCard").style.display = "none";
+}
+
+async function updateStaffQuestion(status, notifyDoctor) {
+  if (!currentStaffQuestion) return;
+  const reply = String($("staffQuestionReplyText")?.value || "").trim();
+  if (status === "ตอบแล้ว" && !reply) { showModal({title:"ยังไม่มีข้อความตอบ",message:"กรุณาพิมพ์คำตอบก่อนกดส่งคำตอบ",iconText:"!"}); return; }
+  const senderType = status === "ตอบแล้ว" && currentStaffQuestion.needs_doctor ? "doctor" : "staff";
+  const { error } = await sb.rpc("staff_update_donor_question", { p_question_id:currentStaffQuestion.id, p_status:status, p_reply:reply || null, p_sender_type:senderType });
+  if (error) { showModal({title:"บันทึกไม่สำเร็จ",message:error.message,iconText:"!"}); return; }
+  if (notifyDoctor || status === "รอแพทย์") {
+    try { await sb.functions.invoke("donor-question-notify", { body:{ action:"send_doctor", publicCode:currentStaffQuestion.public_code } }); } catch (e) { console.warn(e); }
+  }
+  showToastMessage(status === "ตอบแล้ว" ? "ส่งคำตอบแล้ว" : "อัปเดตสถานะแล้ว");
+  const currentId = currentStaffQuestion.id;
+  await loadStaffQuestions();
+  await openStaffQuestionDetail(currentId);
+}
+
+function base64UrlToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+async function loadPushSubscriptionState() {
+  const status = $("pushSupportStatus");
+  if (!status) return;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    status.className = "status-pill danger"; status.innerText = "เครื่องนี้ยังไม่รองรับ"; return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    status.className = "status-pill " + (sub ? "ok" : "neutral");
+    status.innerText = sub ? "เปิดแจ้งเตือนแล้ว" : "ยังไม่ได้เปิด";
+    if (sub && currentStaffProfile?.user_id) {
+      const { data } = await sb.from("push_subscriptions").select("notify_general,notify_doctor").eq("endpoint", sub.endpoint).maybeSingle();
+      if (data) {
+        if ($("pushNotifyGeneral")) $("pushNotifyGeneral").checked = data.notify_general !== false;
+        if ($("pushNotifyDoctor")) $("pushNotifyDoctor").checked = data.notify_doctor === true;
+      }
+    }
+  } catch (err) { status.className = "status-pill danger"; status.innerText = "ตรวจสอบไม่ได้"; }
+}
+
+async function enableStaffPushNotifications() {
+  if (!currentStaffProfile?.user_id) return;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    showModal({title:"เครื่องนี้ยังไม่รองรับ",message:"หากใช้ iPhone/iPad ให้เพิ่มเว็บไว้ที่ Home Screen แล้วเปิดจากไอคอนที่ติดตั้งก่อน หากยังไม่ได้ ให้ใช้ Google Chat เป็นช่องแจ้งเตือนหลัก",iconText:"!"}); return;
+  }
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") { showModal({title:"ยังไม่ได้อนุญาตแจ้งเตือน",message:"กรุณาอนุญาต Notification ในเครื่องก่อน แล้วลองอีกครั้ง",iconText:"!"}); return; }
+    const { data:cfg, error:cfgErr } = await sb.functions.invoke("donor-question-notify", { body:{ action:"config" } });
+    if (cfgErr || !cfg?.publicKey) throw new Error("ยังไม่ได้ตั้งค่า VAPID_PUBLIC_KEY ใน Edge Function Secrets");
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:base64UrlToUint8Array(cfg.publicKey) });
+    const json = sub.toJSON();
+    const { error } = await sb.from("push_subscriptions").upsert({
+      user_id:currentStaffProfile.user_id,
+      endpoint:sub.endpoint,
+      p256dh:json.keys?.p256dh || "",
+      auth:json.keys?.auth || "",
+      notify_general:$("pushNotifyGeneral")?.checked !== false,
+      notify_doctor:$("pushNotifyDoctor")?.checked === true,
+      user_agent:navigator.userAgent
+    }, { onConflict:"endpoint" });
+    if (error) throw error;
+    await loadPushSubscriptionState();
+    showModal({title:"เปิดแจ้งเตือนแล้ว",message:$("pushNotifyDoctor")?.checked ? "เครื่องนี้จะรับทั้งคำถามทั่วไปและคำถามที่ต้องให้แพทย์ดู" : "เครื่องนี้จะรับแจ้งเตือนคำถามทั่วไป",iconText:"✓"});
+  } catch (err) {
+    showModal({title:"เปิดแจ้งเตือนไม่สำเร็จ",message:err.message || String(err),iconText:"!"});
+  }
+}
+
 
 async function getSessionAccessToken() {
   const { data } = await sb.auth.getSession();
@@ -4798,7 +5153,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.5").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.14").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
