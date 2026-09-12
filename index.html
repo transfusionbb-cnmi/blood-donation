@@ -17,7 +17,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.23" rel="stylesheet">
+  <link href="styles.css?v=15.24" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -572,7 +572,10 @@
             <strong id="donorChatTrackingCode">-</strong>
             <span id="donorChatTrackingStatus">ใช้กลับมาดูคำถามนี้ได้ภายหลัง</span>
           </div>
-          <button type="button" class="btn btn-soft donor-chat-copy-code" onclick="copyCurrentDonorTrackingCode()"><i class="bi bi-copy"></i> คัดลอก</button>
+          <div class="donor-chat-tracking-actions">
+            <button type="button" class="btn btn-soft donor-chat-copy-code" onclick="copyCurrentDonorTrackingCode()"><i class="bi bi-copy"></i> คัดลอก</button>
+            <button type="button" id="donorChatTrackingActionBtn" class="btn btn-soft donor-chat-cancel-question" onclick="handleDonorTrackingAction()" style="display:none;"><i class="bi bi-x-circle"></i> <span>ยกเลิกคำถาม</span></button>
+          </div>
         </div>
         <div id="donorChatMessages" class="donor-chat-messages" aria-live="polite">
           <div class="chat-row bot"><div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div><div class="chat-bubble"><b>พิมพ์คำถามได้เลยค่ะ</b><span>เรื่องที่ตอบได้ ระบบจะช่วยตอบให้ทันที หากต้องให้เจ้าหน้าที่ช่วยดู เราจะส่งต่อให้ค่ะ</span></div></div>
@@ -1172,6 +1175,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.23"></script>
+  <script src="app.js?v=15.24"></script>
 </body>
 </html>

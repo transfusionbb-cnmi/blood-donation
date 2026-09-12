@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.23 */
+/* CNMI Blood Donation Supabase Frontend v15.24 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -41,6 +41,7 @@ let donorChatIntakeState = null;
 let donorChatLocalTranscript = [];
 let donorChatPendingEscalationMessage = "";
 let donorChatRestoringLocalDraft = false;
+let donorChatTrackingActionMode = "";
 let pendingStaffQuestionCode = "";
 let donorKnowledgeCache = [];
 let donorKnowledgeLoadedAt = 0;
@@ -4694,7 +4695,10 @@ function restoreDonorChatLocalDraft() {
       appendDonorChatBubble(item?.role === "user" ? "user" : "bot", item?.content || "", !!item?.isHtml, { skipPersist:true, noScroll:true });
     });
     donorChatIntakeState = saved.intake && typeof saved.intake === "object" ? saved.intake : null;
-    if (donorChatIntakeState?.trackingCode) donorChatSetTrackingBanner(donorChatIntakeState.trackingCode, "กรุณาจดหรือแคปหน้าจอไว้");
+    if (donorChatIntakeState?.trackingCode) {
+      donorChatSetTrackingBanner(donorChatIntakeState.trackingCode, "กรุณาจดหรือแคปหน้าจอไว้");
+      donorChatSetTrackingAction("cancel-draft");
+    }
     else donorChatSetTrackingBanner("");
     if (donorChatIntakeState) {
       donorChatSetTopicChoicesVisible(false);
@@ -4959,6 +4963,104 @@ function donorChatSetTrackingBanner(code, statusText) {
   banner.style.display = "flex";
 }
 
+function donorChatSetTrackingAction(mode) {
+  donorChatTrackingActionMode = mode || "";
+  const btn = $("donorChatTrackingActionBtn");
+  if (!btn) return;
+  const label = btn.querySelector("span");
+  const icon = btn.querySelector("i");
+  if (!mode) { btn.style.display = "none"; return; }
+  btn.style.display = "inline-flex";
+  if (mode === "cancel-draft") {
+    if (label) label.textContent = "ยกเลิกคำถาม";
+    if (icon) icon.className = "bi bi-x-circle";
+    btn.classList.remove("is-close-thread");
+  } else if (mode === "close-thread") {
+    if (label) label.textContent = "ปิดคำถามนี้";
+    if (icon) icon.className = "bi bi-check2-circle";
+    btn.classList.add("is-close-thread");
+  }
+}
+
+async function releaseDonorQuestionTrackingReservation(token) {
+  token = String(token || "").trim();
+  if (!token) return { ok:true };
+  try {
+    const { data, error } = await sb.rpc("cancel_donor_question_tracking_reservation", { p_reservation_token:token });
+    if (error) throw error;
+    return data || { ok:true };
+  } catch (e) {
+    console.warn("cancel tracking reservation failed", e);
+    return { ok:false, error:e };
+  }
+}
+
+async function cancelCurrentDonorDraft() {
+  const state = donorChatIntakeState;
+  const token = state?.reservationToken || "";
+  const code = state?.trackingCode || currentDonorChatPublicCode || "";
+  await releaseDonorQuestionTrackingReservation(token);
+  donorChatIntakeState = null;
+  donorChatSetTrackingAction("");
+  donorChatSetTrackingBanner("");
+  donorChatClearDraft();
+  clearDonorChatResume();
+  const composer = $("donorChatIntakeComposer");
+  if (composer) composer.style.display = "none";
+  showDonorAskEntry();
+  renderDonorMyQuestions();
+  showToastMessage(code ? "ยกเลิกคำถามแล้ว" : "ยกเลิกแล้ว");
+}
+
+async function closeCurrentDonorQuestion() {
+  let response = null;
+  if (currentDonorChatAccessToken) {
+    response = await sb.rpc("donor_close_question_token", { p_access_token:currentDonorChatAccessToken });
+  } else if (currentDonorChatPublicCode && currentDonorChatPhoneLast4) {
+    response = await sb.rpc("donor_close_question", { p_public_code:currentDonorChatPublicCode, p_phone_last4:currentDonorChatPhoneLast4 });
+  } else {
+    showModal({ title:"ยังปิดคำถามไม่ได้", message:"กรุณาเปิดคำถามเดิมก่อนค่ะ", iconText:"!" });
+    return;
+  }
+  const { data, error } = response || {};
+  if (error || !data?.ok) {
+    showModal({ title:"ปิดคำถามไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
+    return;
+  }
+  donorChatSetTrackingAction("");
+  if (currentDonorChatAccessToken) await loadDonorQuestionByToken(currentDonorChatAccessToken, false);
+  else {
+    const { data:lookup } = await sb.rpc("lookup_donor_question", { p_public_code:currentDonorChatPublicCode, p_phone_last4:currentDonorChatPhoneLast4 });
+    if (lookup?.ok) renderDonorQuestionThread(lookup.question || {}, Array.isArray(lookup.replies) ? lookup.replies : [], { publicCode:currentDonorChatPublicCode, phoneLast4:currentDonorChatPhoneLast4 });
+  }
+  showToastMessage("ปิดคำถามแล้ว");
+}
+
+function handleDonorTrackingAction() {
+  if (donorChatTrackingActionMode === "cancel-draft") {
+    showModal({
+      title:"ยกเลิกคำถามนี้?",
+      message:"ถ้ายกเลิก คำถามนี้จะไม่ถูกส่งให้เจ้าหน้าที่ และรหัสติดตามนี้จะถูกยกเลิกค่ะ",
+      iconText:"?",
+      primaryText:"ยกเลิกคำถาม",
+      secondaryText:"กลับไปถามต่อ",
+      type:"danger",
+      onPrimary:cancelCurrentDonorDraft
+    });
+    return;
+  }
+  if (donorChatTrackingActionMode === "close-thread") {
+    showModal({
+      title:"ปิดคำถามนี้?",
+      message:"เจ้าหน้าที่จะเห็นว่าคุณไม่ต้องการติดตามเรื่องนี้ต่อ แต่ประวัติคำถามและคำตอบเดิมยังเก็บไว้ค่ะ",
+      iconText:"?",
+      primaryText:"ปิดคำถามนี้",
+      secondaryText:"กลับไป",
+      onPrimary:closeCurrentDonorQuestion
+    });
+  }
+}
+
 function copyCurrentDonorTrackingCode() {
   copyTextValue($("donorChatTrackingCode")?.textContent || currentDonorChatPublicCode || donorChatIntakeState?.trackingCode || "");
 }
@@ -5132,6 +5234,7 @@ function chooseDonorChatReply(value, label) {
 }
 
 function showDonorAskEntry() {
+  donorChatSetTrackingAction("");
   donorChatSetTrackingBanner("");
   const entry = $("donorAskEntry");
   const panel = $("donorMyQuestionsPanel");
@@ -5171,8 +5274,11 @@ function toggleDonorCrossDeviceLookup(force) {
 }
 
 function startNewDonorChat() {
+  const oldReservation = donorChatIntakeState?.reservationToken || "";
+  if (oldReservation) releaseDonorQuestionTrackingReservation(oldReservation);
   showDonorAskChat();
   donorChatIntakeState = null;
+  donorChatSetTrackingAction("");
   donorChatSetTrackingBanner("");
   clearDonorChatResume();
   donorChatClearDraft();
@@ -5200,8 +5306,10 @@ async function selectDonorQuestionCategory(category) {
   const reserved = await reserveDonorQuestionTracking(category);
   if (reserved.ok) {
     donorChatSetTrackingBanner(reserved.publicCode, "กรุณาจดหรือแคปหน้าจอไว้");
+    donorChatSetTrackingAction("cancel-draft");
     appendDonorChatBubble("bot", donorChatTrackingCardHtml(reserved.publicCode), true);
   } else {
+    donorChatSetTrackingAction("");
     donorChatSetTrackingBanner("");
     appendDonorChatBubble("bot", '<span class="chat-code-warning"><i class="bi bi-exclamation-circle"></i> ตอนนี้ยังสร้างรหัสล่วงหน้าไม่ได้ แต่ยังกรอกข้อมูลและส่งให้ทีมได้ตามปกติค่ะ ระบบจะแจ้งรหัสให้อีกครั้งหลังส่งสำเร็จ</span>', true);
   }
@@ -5270,6 +5378,7 @@ async function submitDonorChatIntake() {
       status:"ใหม่"
     });
     donorChatSetTrackingBanner(result.public_code || donorChatIntakeState.trackingCode || "", "ส่งให้ทีมแล้ว · ใช้รหัสนี้กลับมาดูคำตอบได้");
+    donorChatSetTrackingAction("close-thread");
     donorChatIntakeState = null;
     donorChatClearDraft();
     if (composer) { composer.style.display = "none"; composer.classList.remove("sending"); }
@@ -5415,6 +5524,7 @@ function renderDonorQuestionThread(q, replies, context) {
 
   const status = q.status || "ใหม่";
   donorChatSetTrackingBanner(currentDonorChatPublicCode, status === "ตอบแล้ว" ? "มีคำตอบแล้ว · ใช้รหัสนี้เปิดจากเครื่องอื่นได้" : (status === "ปิดเรื่อง" ? "ปิดเรื่องแล้ว · รหัสนี้ยังใช้เปิดประวัติได้" : "ส่งให้ทีมแล้ว · ใช้รหัสนี้กลับมาดูคำตอบได้"));
+  donorChatSetTrackingAction(status === "ปิดเรื่อง" ? "" : "close-thread");
   const category = donorQuestionCategoryLabel(q.category);
   let html = '';
   html += '<div class="chat-thread-meta"><span><i class="bi bi-chat-dots"></i> ' + escapeHtml(q.public_code || "") + '</span><b class="question-status-pill ' + questionStatusClass(status) + '">' + escapeHtml(status) + '</b></div>';
@@ -6410,7 +6520,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.23").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.24").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

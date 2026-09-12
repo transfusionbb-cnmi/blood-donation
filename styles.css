@@ -2213,3 +2213,14 @@ body[data-page="question"] .public-ask-floating,body[data-page="staff"] .public-
   .chat-tracking-card{min-width:0;width:100%;padding:13px}
   .chat-tracking-card>strong{font-size:1.45rem}
 }
+
+/* v15.24 — donor can cancel a draft / close a submitted question */
+.donor-chat-tracking-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.donor-chat-cancel-question{color:#a23b43!important;border-color:#efcfd2!important;background:#fff!important;font-weight:800!important}
+.donor-chat-cancel-question:hover{background:#fff2f3!important;border-color:#e6b7bc!important}
+.donor-chat-cancel-question.is-close-thread{color:#526068!important;border-color:#d9e0e4!important;background:#f8fafb!important}
+@media(max-width:640px){
+  .donor-chat-tracking-actions{width:100%;justify-content:flex-start}
+  .donor-chat-tracking-actions .btn{min-height:38px}
+  .donor-chat-tracking-banner{flex-wrap:wrap}
+}
