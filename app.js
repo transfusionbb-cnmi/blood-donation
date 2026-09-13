@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.30 */
+/* CNMI Blood Donation Supabase Frontend v15.31 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -6618,7 +6618,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.30").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.31").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

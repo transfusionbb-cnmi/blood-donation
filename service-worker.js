@@ -1,18 +1,19 @@
-const CACHE_NAME = "cnmi-donor-v15-30";
+const CACHE_NAME = "cnmi-donor-v15-31";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css?v=15.30",
-  "./app.js?v=15.30",
+  "./app.js?v=15.31",
   "./config.js?v=15.5",
-  "./manifest.webmanifest?v=15.28",
-  "./manifest-staff.webmanifest?v=15.28",
+  "./manifest.webmanifest?v=15.31",
+  "./manifest-staff.webmanifest?v=15.31",
   "./staff.html",
-  "./icons/donor-icon-192-v15-28.png",
-  "./icons/donor-icon-512-v15-28.png",
-  "./icons/staff-icon-180-v15-28.png",
-  "./icons/staff-icon-192-v15-28.png",
-  "./icons/staff-icon-512-v15-28.png"
+  "./icons/donor-icon-180-v15-31.png",
+  "./icons/donor-icon-192-v15-31.png",
+  "./icons/donor-icon-512-v15-31.png",
+  "./icons/staff-icon-180-v15-31.png",
+  "./icons/staff-icon-192-v15-31.png",
+  "./icons/staff-icon-512-v15-31.png"
 ];
 
 self.addEventListener("install", function(event) {
@@ -57,8 +58,8 @@ self.addEventListener("push", function(event) {
   const title = payload.title || "CNMI Donor";
   const options = {
     body: payload.body || "มีรายการใหม่ในระบบ",
-    icon: payload.icon || "./icons/staff-icon-192-v15-28.png",
-    badge: payload.badge || "./icons/donor-icon-192-v15-28.png",
+    icon: payload.icon || "./icons/staff-icon-192-v15-31.png",
+    badge: payload.badge || "./icons/donor-icon-192-v15-31.png",
     tag: payload.tag || "cnmi-donor-notification",
     data: { url:payload.url || "./staff.html#/staff/questions", extra:payload.data || {} },
     renotify: true
