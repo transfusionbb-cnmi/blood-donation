@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.31 */
+/* CNMI Blood Donation Supabase Frontend v15.32 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -6555,6 +6555,30 @@ function initInputs() {
     });
   });
 
+  // Desktop keyboard UX: allow Enter to perform the primary action on
+  // staff authentication screens. This keeps mouse/touch behavior unchanged.
+  function bindEnterAction(ids, action, buttonId) {
+    ids.forEach(function(id) {
+      const input = $(id);
+      if (!input) return;
+      input.addEventListener("keydown", function(event) {
+        if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        const button = buttonId ? $(buttonId) : null;
+        if (button && button.disabled) return;
+        action();
+      });
+    });
+  }
+
+  bindEnterAction(["staffEmail", "staffPassword"], function() {
+    staffLogin();
+  }, "btnStaffLogin");
+
+  bindEnterAction(["tempNewPassword", "tempNewPassword2"], function() {
+    changeTemporaryPassword();
+  }, "btnChangeTempPassword");
+
   const donorImportFile = $("donorImportFile");
   if (donorImportFile) donorImportFile.addEventListener("change", resetDonorImportState);
 }
@@ -6618,7 +6642,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.31").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.32").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
