@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="CNMI Donor">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="manifest.webmanifest?v=15.32">
+  <link rel="manifest" href="manifest.webmanifest?v=15.33">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/donor-icon-192-v15-31.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/donor-icon-180-v15-31.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.30" rel="stylesheet">
+  <link href="styles.css?v=15.33" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -801,11 +801,33 @@
           <div id="staffTab_infectiousImport" class="staff-tab-page">
             <div class="staff-page-head"><div><span>FOLLOW-UP</span><h3>อัปเดตผล Infectious positive</h3><p>หน้า Public จะแสดงเพียง “กรุณาติดต่อเจ้าหน้าที่”</p></div></div>
             <div class="card main-card staff-card p-4">
+              <div class="infectious-registry-card mb-4">
+                <div class="infectious-registry-head">
+                  <div>
+                    <span class="infectious-registry-kicker">รายการที่บันทึกแล้ว</span>
+                    <h4>Infectious positive ในระบบ</h4>
+                    <small id="infectiousRegistrySummary">กำลังโหลดรายการ...</small>
+                  </div>
+                  <button type="button" class="btn btn-soft infectious-registry-refresh" onclick="loadInfectiousRegistry(true)"><i class="bi bi-arrow-clockwise"></i> รีเฟรช</button>
+                </div>
+                <div class="infectious-registry-tools">
+                  <div class="infectious-registry-search"><i class="bi bi-search"></i><input type="search" id="infectiousRegistrySearch" placeholder="ค้นหา Unit No" oninput="renderInfectiousRegistry()"></div>
+                  <button type="button" class="btn btn-soft" onclick="copyInfectiousRegistry()"><i class="bi bi-copy"></i> คัดลอกรายการ</button>
+                </div>
+                <div id="infectiousRegistryList" class="infectious-registry-list"><div class="infectious-registry-empty">กำลังโหลด...</div></div>
+                <div id="infectiousRegistryNoUnit" class="infectious-registry-note" style="display:none;"></div>
+                <div class="infectious-registry-help"><i class="bi bi-info-circle"></i> แสดงเฉพาะ Unit No ที่ถูกบันทึกเป็น Infectious positive แล้ว ไม่ได้หมายความว่าเลขระหว่างกันต้องมีผล Positive ทุกเลข</div>
+              </div>
+
               <div class="upload-dropzone"><i class="bi bi-file-earmark-medical"></i><div><b>อัปเดตจาก Excel</b><small>เลือกไฟล์ผลตรวจที่เตรียมไว้</small></div><input type="file" id="infectiousFile" class="form-control" accept=".xlsx,.xls"></div>
               <button type="button" id="btnImportInfectious" class="btn btn-search w-100 mt-3" onclick="importInfectiousFile()"><i class="bi bi-cloud-arrow-up"></i> อัปเดตจากไฟล์</button>
               <div class="or-line"><span>หรือ</span></div>
               <label class="form-label">วาง Unit No ทีละบรรทัด</label><textarea id="infectiousUnitList" class="form-control mb-3" rows="5" placeholder="CN6200066&#10;CN6300038"></textarea>
-              <button type="button" id="btnUpdateUnitList" class="btn btn-soft w-100" onclick="updateInfectiousFromTextArea()">อัปเดตจาก Unit No</button>
+              <div class="infectious-unit-actions">
+                <button type="button" id="btnCheckUnitList" class="btn btn-soft" onclick="checkInfectiousUnitList()"><i class="bi bi-clipboard-check"></i> ตรวจว่าลงแล้วหรือยัง</button>
+                <button type="button" id="btnUpdateUnitList" class="btn btn-search" onclick="updateInfectiousFromTextArea()"><i class="bi bi-cloud-arrow-up"></i> อัปเดตจาก Unit No</button>
+              </div>
+              <div id="infectiousCheckResult" class="staff-result mt-3" style="display:none;"></div>
               <div id="infectiousResult" class="staff-result mt-3" style="display:none;"></div>
             </div>
           </div>
@@ -1190,6 +1212,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.32"></script>
+  <script src="app.js?v=15.33"></script>
 </body>
 </html>

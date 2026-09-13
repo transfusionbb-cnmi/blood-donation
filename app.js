@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.32 */
+/* CNMI Blood Donation Supabase Frontend v15.33 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -1909,6 +1909,7 @@ function showStaffTab(tab, options) {
   }
   if (tab === "overview") loadStaffDashboard();
   if (tab === "donorImport") loadDonorDataFreshness();
+  if (tab === "infectiousImport") loadInfectiousRegistry();
   if (tab === "importLogs") loadImportLogHistory(1);
   if (tab === "notifications") loadStaffNotifications();
   if (tab === "questions") { loadStaffQuestions(); loadPushSubscriptionState(); }
@@ -3275,6 +3276,154 @@ function setStaffResult(box, text, ok) {
   box.innerText = text;
 }
 
+
+let infectiousRegistryRows = [];
+let infectiousRegistryLoaded = false;
+
+function infectiousUnitSortDesc(a, b) {
+  return String(b || "").localeCompare(String(a || ""), "en", { numeric:true, sensitivity:"base" });
+}
+
+async function loadInfectiousRegistry(force) {
+  const summary = $("infectiousRegistrySummary");
+  const list = $("infectiousRegistryList");
+  if (!summary || !list) return;
+  if (infectiousRegistryLoaded && !force) { renderInfectiousRegistry(); return; }
+
+  summary.innerText = "กำลังโหลดรายการ...";
+  list.innerHTML = '<div class="infectious-registry-empty">กำลังโหลด...</div>';
+
+  try {
+    const rows = [];
+    const pageSize = 500;
+    let from = 0;
+    while (true) {
+      const { data, error } = await sb.from("donor_donations")
+        .select("unit_no_internal,donor_id,donation_date,updated_at")
+        .eq("infectious_flag", true)
+        .order("donation_date", { ascending:false })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      const batch = Array.isArray(data) ? data : [];
+      rows.push(...batch);
+      if (batch.length < pageSize) break;
+      from += pageSize;
+      if (from >= 10000) break;
+    }
+    infectiousRegistryRows = rows;
+    infectiousRegistryLoaded = true;
+    renderInfectiousRegistry();
+  } catch (err) {
+    summary.innerText = "โหลดรายการไม่สำเร็จ";
+    list.innerHTML = '<div class="infectious-registry-empty error">' + escapeHtml(err.message || String(err)) + '</div>';
+  }
+}
+
+function renderInfectiousRegistry() {
+  const summary = $("infectiousRegistrySummary");
+  const list = $("infectiousRegistryList");
+  const noUnitBox = $("infectiousRegistryNoUnit");
+  if (!summary || !list) return;
+
+  const q = String($("infectiousRegistrySearch")?.value || "").trim().toUpperCase();
+  const units = new Map();
+  let noUnit = 0;
+  infectiousRegistryRows.forEach(function(row) {
+    const unit = normalizeDonorId(row.unit_no_internal || "");
+    if (!unit) { noUnit++; return; }
+    const prev = units.get(unit);
+    if (!prev || String(row.donation_date || "") > String(prev.donation_date || "")) units.set(unit, row);
+  });
+
+  const allUnits = Array.from(units.keys()).sort(infectiousUnitSortDesc);
+  const filtered = q ? allUnits.filter(u => u.includes(q)) : allUnits;
+  summary.innerText = "มี Unit No ที่บันทึก Positive แล้ว " + allUnits.length + " เลข" +
+    (infectiousRegistryRows.length !== allUnits.length + noUnit ? " · พบเลขซ้ำในข้อมูล " + (infectiousRegistryRows.length - allUnits.length - noUnit) + " รายการ" : "") +
+    (noUnit ? " · รายการที่ไม่มี Unit No " + noUnit + " รายการ" : "");
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="infectious-registry-empty">' + (q ? "ไม่พบ Unit No ที่ค้นหา" : "ยังไม่มี Unit No ที่บันทึกเป็น Infectious positive") + '</div>';
+  } else {
+    list.innerHTML = filtered.map(function(unit) {
+      const row = units.get(unit) || {};
+      const d = row.donation_date ? String(row.donation_date).split("-").reverse().join("/") : "";
+      return '<div class="infectious-unit-chip" title="' + escapeHtml(d ? "วันที่บริจาค " + d : "") + '"><i class="bi bi-check-circle-fill"></i><span>' + escapeHtml(unit) + '</span>' + (d ? '<small>' + escapeHtml(d) + '</small>' : '') + '</div>';
+    }).join("");
+  }
+
+  if (noUnitBox) {
+    if (noUnit) {
+      noUnitBox.style.display = "flex";
+      noUnitBox.innerHTML = '<i class="bi bi-exclamation-circle"></i><span>มี ' + noUnit + ' รายการที่ถูกตั้งเป็น Positive แต่ไม่มี Unit No ในข้อมูล จึงไม่แสดงในรายการเลขด้านบน</span>';
+    } else {
+      noUnitBox.style.display = "none";
+      noUnitBox.innerHTML = "";
+    }
+  }
+}
+
+async function copyInfectiousRegistry() {
+  const units = Array.from(new Set(infectiousRegistryRows.map(r => normalizeDonorId(r.unit_no_internal || "")).filter(Boolean))).sort(infectiousUnitSortDesc);
+  if (!units.length) {
+    showModal({ title:"ยังไม่มีรายการ", message:"ยังไม่มี Unit No ที่บันทึกเป็น Infectious positive", iconText:"i" });
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(units.join("\n"));
+    showModal({ title:"คัดลอกแล้ว", message:"คัดลอก Unit No จำนวน " + units.length + " เลขแล้ว", iconText:"✓" });
+  } catch (err) {
+    showModal({ title:"คัดลอกไม่สำเร็จ", message:"เบราว์เซอร์ไม่อนุญาตให้คัดลอกอัตโนมัติ กรุณาเลือกคัดลอกจากรายการแทน", iconText:"!" });
+  }
+}
+
+async function checkInfectiousUnitList() {
+  const box = $("infectiousCheckResult");
+  const btn = $("btnCheckUnitList");
+  const text = $("infectiousUnitList")?.value || "";
+  const unitNos = text.split(/\r?\n/).map(x => normalizeDonorId(x)).filter(Boolean);
+  const unique = Array.from(new Set(unitNos));
+  if (!unique.length) { setStaffResult(box, "กรุณาวาง Unit No อย่างน้อย 1 รายการ", false); return; }
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+
+  showBusy(btn, true, "ตรวจว่าลงแล้วหรือยัง", "กำลังตรวจ...");
+  try {
+    const states = new Map();
+    for (let i = 0; i < unique.length; i += 100) {
+      const chunk = unique.slice(i, i + 100);
+      const { data, error } = await sb.from("donor_donations")
+        .select("unit_no_internal,infectious_flag")
+        .in("unit_no_internal", chunk);
+      if (error) throw error;
+      (data || []).forEach(function(row) {
+        const unit = normalizeDonorId(row.unit_no_internal || "");
+        if (!unit) return;
+        const prev = states.get(unit) || { exists:false, positive:false };
+        prev.exists = true;
+        if (row.infectious_flag === true) prev.positive = true;
+        states.set(unit, prev);
+      });
+    }
+
+    const already = [], notPositive = [], notFound = [];
+    unique.forEach(function(unit) {
+      const state = states.get(unit);
+      if (!state || !state.exists) notFound.push(unit);
+      else if (state.positive) already.push(unit);
+      else notPositive.push(unit);
+    });
+
+    let msg = "ตรวจเทียบทั้งหมด: " + unique.length + " Unit No\n\n";
+    msg += "ลง Infectious positive แล้ว: " + already.length + "\n" + (already.length ? already.join("\n") : "-") + "\n\n";
+    msg += "มี Unit No ในฐานข้อมูล แต่ยังไม่ได้ลง Positive: " + notPositive.length + "\n" + (notPositive.length ? notPositive.join("\n") : "-") + "\n\n";
+    msg += "ไม่พบ Unit No ในฐานข้อมูลผู้บริจาค: " + notFound.length + "\n" + (notFound.length ? notFound.join("\n") : "-");
+    setStaffResult(box, msg, notPositive.length === 0 && notFound.length === 0);
+  } catch (err) {
+    setStaffResult(box, "ตรวจรายการไม่สำเร็จ\n" + (err.message || err), false);
+  } finally {
+    showBusy(btn, false, "ตรวจว่าลงแล้วหรือยัง", "กำลังตรวจ...");
+  }
+}
+
 function parseInfectiousWorkbook(workbook) {
   const selected = getSheet(workbook, ["InfectiousResult", "Infectious", "Positive"]);
   const rows = sheetToCellRows(selected.sheet);
@@ -3340,6 +3489,7 @@ async function importInfectiousFile() {
       "หน้าเว็บผู้บริจาคจะเห็นเป็น: กรุณาติดต่อเจ้าหน้าที่ห้องบริจาคโลหิต",
       true
     );
+    await loadInfectiousRegistry(true);
   } catch (err) {
     setStaffResult(box, "อัปเดตไม่สำเร็จ\n" + (err.message || err), false);
   } finally {
@@ -3417,6 +3567,8 @@ async function updateInfectiousFromTextArea() {
     const items = unique.map(u => ({ unitNo:u, note:"manual unit list" }));
     const result = await updateInfectiousItems(items);
     setStaffResult(box, "อัปเดตจากรายการ Unit No เสร็จแล้ว\n\nรายการทั้งหมด: " + unique.length + "\nอัปเดตสำเร็จ: " + result.updated + "\nไม่พบในฐานข้อมูล: " + result.notFound, true);
+    await loadInfectiousRegistry(true);
+    if ($("infectiousCheckResult")) $("infectiousCheckResult").style.display = "none";
   } catch (err) {
     setStaffResult(box, "อัปเดตไม่สำเร็จ\n" + (err.message || err), false);
   } finally {
@@ -6642,7 +6794,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.32").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.33").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

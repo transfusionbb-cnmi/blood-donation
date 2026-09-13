@@ -2501,3 +2501,41 @@ body.staff-launcher-shell[data-page="staffLogin"] .brand-header{display:none!imp
   .staff-auth-loading{padding:16px}
   .staff-auth-loading-card{width:100%;max-width:360px;padding:14px;border-radius:18px}
 }
+
+/* v15.33 — Infectious positive registry / compare helper */
+.infectious-registry-card{
+  border:1px solid #f0d9dc;
+  border-radius:20px;
+  background:linear-gradient(180deg,#fffafa 0%,#fff 100%);
+  padding:18px;
+}
+.infectious-registry-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.infectious-registry-kicker{display:block;color:#c94149;font-weight:800;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.infectious-registry-head h4{margin:0;color:#26343c;font-size:1.05rem;font-weight:800}
+.infectious-registry-head small{display:block;margin-top:5px;color:#74818a;line-height:1.45}
+.infectious-registry-refresh{flex:0 0 auto;min-height:40px}
+.infectious-registry-tools{display:flex;gap:10px;margin-top:14px;align-items:center}
+.infectious-registry-search{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:1px solid #e4e7e9;background:#fff;border-radius:13px;padding:0 12px;min-height:44px}
+.infectious-registry-search i{color:#9aa4aa}
+.infectious-registry-search input{width:100%;border:0;outline:0;background:transparent;color:#26343c;font:inherit}
+.infectious-registry-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;max-height:290px;overflow:auto;padding:2px}
+.infectious-unit-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #efd7da;background:#fff;border-radius:999px;padding:7px 10px;color:#9e313a;font-weight:750;font-size:.78rem;box-shadow:0 2px 8px rgba(75,31,35,.035)}
+.infectious-unit-chip i{font-size:.72rem;color:#c94149}
+.infectious-unit-chip small{font-size:.62rem;color:#8e989e;font-weight:600;padding-left:2px}
+.infectious-registry-empty{width:100%;padding:16px;border-radius:13px;background:#f7f8f8;color:#7d888f;text-align:center;font-size:.8rem}
+.infectious-registry-empty.error{background:#fff1f2;color:#b63b43}
+.infectious-registry-note{margin-top:12px;padding:10px 12px;border-radius:12px;background:#fff7e8;color:#956617;gap:8px;align-items:flex-start;font-size:.76rem;line-height:1.45}
+.infectious-registry-help{display:flex;gap:7px;align-items:flex-start;margin-top:12px;color:#849097;font-size:.7rem;line-height:1.45}
+.infectious-unit-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.infectious-unit-actions .btn{min-height:46px}
+@media(max-width:700px){
+  .infectious-registry-card{padding:14px;border-radius:17px}
+  .infectious-registry-head{gap:9px}
+  .infectious-registry-head h4{font-size:.96rem}
+  .infectious-registry-refresh{padding:8px 10px;font-size:.72rem}
+  .infectious-registry-tools{display:grid;grid-template-columns:1fr;margin-top:12px}
+  .infectious-registry-list{max-height:230px;gap:6px}
+  .infectious-unit-chip{font-size:.72rem;padding:6px 9px}
+  .infectious-unit-chip small{display:none}
+  .infectious-unit-actions{grid-template-columns:1fr}
+}
