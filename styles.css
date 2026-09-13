@@ -1851,6 +1851,10 @@ body.staff-menu-open{overflow:hidden}
 .prepare-cta-card{display:flex;align-items:center;justify-content:space-between;gap:16px}.prepare-cta-card small{color:#c83d49;font-size:.72rem;font-weight:850}.prepare-cta-card h4{font-size:1rem;font-weight:850;margin:3px 0 0;line-height:1.45}.prepare-cta-actions{display:flex;gap:8px;flex-wrap:wrap}.prepare-cta-actions .btn{white-space:nowrap}
 .prepare-source{border:0;background:transparent;color:#74818a;font-size:.74rem}.prepare-source summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:7px 3px;font-weight:700;color:#738089}.prepare-source summary::-webkit-details-marker{display:none}.prepare-source summary::after{content:'▾';font-size:.72rem;margin-left:2px}.prepare-source[open] summary::after{content:'▴'}.prepare-source>div{margin-top:5px;padding:10px 12px;border-radius:13px;background:#f7f9fa;line-height:1.5}
 .source-note{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:#f7f9fa;color:#64727a;font-size:.76rem}.source-note a{color:#b83a45;font-weight:700;text-decoration:none}.source-note a:hover{text-decoration:underline}
+
+/* v15.34: end-to-end push notification test */
+.push-test-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:12px 14px;border:1px solid #e4e9ec;border-radius:15px;background:#f8fafb}
+.push-test-info{display:flex;align-items:center;gap:10px;min-width:0;color:#52616a}.push-test-info>i{color:#c94149;font-size:1.05rem}.push-test-info span,.push-test-info b,.push-test-info small{display:block}.push-test-info b{font-size:.84rem;color:#2d3940}.push-test-info small{margin-top:2px;color:#7d8a92;font-size:.75rem;line-height:1.35}.push-test-row .btn{white-space:nowrap}.push-test-row .btn:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:700px){.home-quick-grid{grid-template-columns:1fr 1fr}.home-more-actions{grid-template-columns:1fr}.prepare-grid{grid-template-columns:1fr}.prepare-card{padding:16px!important}.prepare-card-head{margin-bottom:12px}.prepare-tip{grid-template-columns:52px minmax(0,1fr)!important;min-height:72px;padding:10px 11px!important}.prepare-picto{width:52px;height:52px;font-size:1.6rem}.prepare-cta-card{align-items:flex-start;flex-direction:column}.prepare-cta-actions{width:100%;display:grid;grid-template-columns:1fr}.prepare-cta-actions .btn{width:100%;min-height:48px}.home-quick-card{padding:13px;grid-template-columns:42px minmax(0,1fr);min-height:94px}.home-quick-card .home-quick-icon{width:42px;height:42px;border-radius:14px}.home-quick-card b{font-size:.88rem}.home-quick-card small{font-size:.7rem}}
 @media(max-width:390px){.home-quick-grid{grid-template-columns:1fr}.home-quick-card{min-height:auto}.prepare-tip{grid-template-columns:48px minmax(0,1fr)!important}.prepare-picto{width:48px;height:48px;font-size:1.45rem}.prepare-check-list b{font-size:.9rem}}
 /* v15.13 — Donor Question Hub + Staff Inbox + Web Push */
@@ -2426,6 +2430,22 @@ body[data-page="question"] .public-ask-floating,body[data-page="staff"] .public-
     min-height: 48px;
     border-radius: 14px !important;
     font-size: .86rem;
+  }
+  #staffTab_questions .push-test-row {
+    margin-top: 8px;
+    padding: 8px 9px;
+    border-radius: 13px;
+    gap: 7px;
+  }
+  #staffTab_questions .push-test-info { gap: 6px; }
+  #staffTab_questions .push-test-info > i { font-size: .9rem; }
+  #staffTab_questions .push-test-info b { font-size: .7rem; }
+  #staffTab_questions .push-test-info small { font-size: .61rem; }
+  #staffTab_questions .push-test-row .btn {
+    min-height: 36px;
+    padding: 6px 9px;
+    border-radius: 11px !important;
+    font-size: .66rem;
   }
   #staffTab_questions .staff-install-help {
     margin-top: 8px;

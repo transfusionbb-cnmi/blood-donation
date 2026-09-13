@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.33 */
+/* CNMI Blood Donation Supabase Frontend v15.34 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -6227,17 +6227,38 @@ function base64UrlToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
 }
 
+function formatPushTestTime(iso) {
+  if (!iso) return "";
+  try {
+    return new Intl.DateTimeFormat("th-TH", { dateStyle:"short", timeStyle:"short", timeZone:"Asia/Bangkok" }).format(new Date(iso));
+  } catch (err) { return ""; }
+}
+
+function renderPushTestStatus(message) {
+  const el = $("pushTestStatus");
+  if (!el) return;
+  if (message) { el.innerText = message; return; }
+  const last = localStorage.getItem("cnmi_staff_push_test_at") || "";
+  const formatted = formatPushTestTime(last);
+  el.innerText = formatted ? "ส่งทดสอบล่าสุด " + formatted : "ยังไม่ได้ทดสอบบนเครื่องนี้";
+}
+
 async function loadPushSubscriptionState() {
   const status = $("pushSupportStatus");
   if (!status) return;
+  const testBtn = $("btnTestPush");
+  renderPushTestStatus();
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-    status.className = "status-pill danger"; status.innerText = "เครื่องนี้ยังไม่รองรับ"; return;
+    status.className = "status-pill danger"; status.innerText = "เครื่องนี้ยังไม่รองรับ";
+    if (testBtn) testBtn.disabled = true;
+    return;
   }
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
     status.className = "status-pill " + (sub ? "ok" : "neutral");
     status.innerText = sub ? "เปิดแจ้งเตือนแล้ว" : "ยังไม่ได้เปิด";
+    if (testBtn) testBtn.disabled = !sub;
     if (sub && currentStaffProfile?.user_id) {
       const { data } = await sb.from("push_subscriptions").select("notify_general,notify_doctor").eq("endpoint", sub.endpoint).maybeSingle();
       if (data) {
@@ -6245,7 +6266,10 @@ async function loadPushSubscriptionState() {
         if ($("pushNotifyDoctor")) $("pushNotifyDoctor").checked = data.notify_doctor === true;
       }
     }
-  } catch (err) { status.className = "status-pill danger"; status.innerText = "ตรวจสอบไม่ได้"; }
+  } catch (err) {
+    status.className = "status-pill danger"; status.innerText = "ตรวจสอบไม่ได้";
+    if (testBtn) testBtn.disabled = true;
+  }
 }
 
 async function enableStaffPushNotifications() {
@@ -6279,6 +6303,59 @@ async function enableStaffPushNotifications() {
   }
 }
 
+
+async function testStaffPushNotification() {
+  const btn = $("btnTestPush");
+  if (!currentStaffProfile?.user_id) return;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    showModal({title:"เครื่องนี้ยังไม่รองรับ",message:"เครื่องนี้ยังไม่สามารถรับ Web Push ได้",iconText:"!"});
+    return;
+  }
+  if (Notification.permission !== "granted") {
+    showModal({title:"ยังไม่ได้อนุญาตแจ้งเตือน",message:"กด “เปิดแจ้งเตือน” และอนุญาต Notification ก่อน แล้วจึงทดสอบอีกครั้ง",iconText:"!"});
+    return;
+  }
+
+  const originalHtml = btn ? btn.innerHTML : "";
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      showModal({title:"ยังไม่ได้เปิดแจ้งเตือน",message:"กรุณากด “เปิดแจ้งเตือน” ก่อน แล้วจึงกดทดสอบ",iconText:"!"});
+      await loadPushSubscriptionState();
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังส่ง'; }
+    renderPushTestStatus("กำลังส่ง Push ทดสอบ...");
+
+    const token = await getSessionAccessToken();
+    if (!token) throw new Error("ไม่พบ session เจ้าหน้าที่ กรุณาเข้าสู่ระบบใหม่");
+    const { data, error } = await sb.functions.invoke("donor-question-notify", {
+      body:{ action:"test_push", endpoint:sub.endpoint },
+      headers:{ Authorization:"Bearer " + token }
+    });
+    if (error) throw error;
+    if (!data?.ok || data?.push?.status !== "sent") {
+      throw new Error(data?.message || data?.push?.message || "ระบบยังส่ง Push ทดสอบไม่สำเร็จ");
+    }
+
+    const now = new Date().toISOString();
+    localStorage.setItem("cnmi_staff_push_test_at", now);
+    renderPushTestStatus();
+    showModal({
+      title:"ส่งทดสอบแล้ว",
+      message:"ระบบส่ง Push ทดสอบไปยังเครื่องนี้แล้ว หากเห็น Notification “CNMI Donor Staff · ทดสอบแจ้งเตือน” แสดงว่าเครื่องนี้พร้อมรับคำถามผู้บริจาค หากไม่เห็น ให้ตรวจการอนุญาต Notifications ของเครื่อง",
+      iconText:"✓"
+    });
+  } catch (err) {
+    renderPushTestStatus("ทดสอบไม่สำเร็จ · ลองใหม่อีกครั้ง");
+    showModal({title:"ทดสอบแจ้งเตือนไม่สำเร็จ",message:err?.message || String(err),iconText:"!"});
+  } finally {
+    if (btn) { btn.innerHTML = originalHtml || '<i class="bi bi-send-check"></i> ทดสอบแจ้งเตือน'; }
+    await loadPushSubscriptionState();
+  }
+}
 
 async function getSessionAccessToken() {
   const { data } = await sb.auth.getSession();
@@ -6794,7 +6871,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.33").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.34").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
