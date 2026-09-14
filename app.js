@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.34 */
+/* CNMI Blood Donation Supabase Frontend v15.35 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -3121,6 +3121,7 @@ async function previewDonorFile() {
   const importBtn = $("btnImportDonor");
   const previewBox = $("donorImportPreview");
   const resultBox = $("donorImportResult");
+  const dataThroughDate = $("donorDataThroughDate")?.value || "";
 
   if (!file) { setStaffResult(previewBox, "กรุณาเลือกไฟล์ Excel ก่อน", false); return; }
   const isStaff = await ensureStaff(true); if (!isStaff) return;
@@ -6871,7 +6872,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.34").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.35").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
