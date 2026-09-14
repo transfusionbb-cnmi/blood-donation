@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="CNMI Donor">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="manifest.webmanifest?v=15.36">
+  <link rel="manifest" href="manifest.webmanifest?v=15.37">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/donor-icon-192-v15-31.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/donor-icon-180-v15-31.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.36" rel="stylesheet">
+  <link href="styles.css?v=15.37" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -895,10 +895,11 @@
               <div class="question-reply-box mt-3">
                 <label class="form-label">ข้อความตอบกลับ</label>
                 <textarea id="staffQuestionReplyText" class="form-control" rows="4" placeholder="พิมพ์คำตอบที่ต้องการให้ผู้บริจาคเห็น"></textarea>
+                <div id="staffQuestionSendStatus" class="staff-question-send-status mt-2"><i class="bi bi-info-circle"></i> เมื่อส่งสำเร็จ ข้อความจะขึ้นในบทสนทนาด้านบน</div>
                 <div class="question-reply-actions mt-3">
                   <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('รับเรื่องแล้ว')"><i class="bi bi-person-check"></i> รับเรื่อง</button>
                   <button type="button" class="btn btn-warning-soft" onclick="updateStaffQuestion('รอแพทย์', true)"><i class="bi bi-stethoscope"></i> ส่งให้แพทย์</button>
-                  <button type="button" class="btn btn-search" onclick="updateStaffQuestion('ตอบแล้ว')"><i class="bi bi-send-check"></i> ส่งคำตอบ</button>
+                  <button type="button" id="staffQuestionSendBtn" class="btn btn-search" onclick="updateStaffQuestion('ตอบแล้ว')"><i class="bi bi-send-check"></i> ส่งคำตอบ</button>
                   <button type="button" id="staffQuestionSaveKnowledgeBtn" class="btn btn-soft" style="display:none;" onclick="addCurrentQuestionToKnowledge()"><i class="bi bi-journal-plus"></i> เก็บเป็นคำตอบมาตรฐาน</button>
                   <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('ปิดเรื่อง')"><i class="bi bi-check2-circle"></i> ปิดเรื่อง</button>
                 </div>
@@ -1216,6 +1217,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.36"></script>
+  <script src="app.js?v=15.37"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.36 */
+/* CNMI Blood Donation Supabase Frontend v15.37 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -40,6 +40,7 @@ let pendingStaffRouteTab = "overview";
 let suppressRouteSync = false;
 let staffQuestionFilter = "all";
 let currentStaffQuestion = null;
+let staffQuestionSending = false;
 let currentDonorChatAccessToken = "";
 let currentDonorChatPublicCode = "";
 let currentDonorChatPhoneLast4 = "";
@@ -5838,7 +5839,7 @@ function renderDonorQuestionThread(q, replies, context) {
   html += '<div class="chat-row user"><div class="chat-bubble"><span>' + escapeHtml(q.message || '') + '</span><small>คุณ · ' + escapeHtml(formatBangkokLogTime(q.created_at, false)) + '</small></div></div>';
   (replies || []).forEach(function(r){
     const donor = r.sender_type === 'donor';
-    const label = donor ? 'คุณ' : (r.sender_type === 'doctor' ? 'แพทย์ / ผู้รับผิดชอบ' : 'เจ้าหน้าที่');
+    const label = donor ? 'คุณ' : 'เจ้าหน้าที่';
     html += '<div class="chat-row ' + (donor ? 'user' : 'bot') + '">' + (donor ? '' : '<div class="chat-avatar-mini"><i class="bi bi-droplet-fill"></i></div>') + '<div class="chat-bubble"><span>' + escapeHtml(r.message || '') + '</span><small>' + escapeHtml(label) + ' · ' + escapeHtml(formatBangkokLogTime(r.created_at, false)) + '</small></div></div>';
   });
   if (!(replies || []).length) {
@@ -6017,9 +6018,10 @@ async function loadStaffQuestions() {
   if (!filtered.length) { box.innerHTML = '<div class="staff-result">ยังไม่มีคำถามในหมวดนี้</div>'; return; }
   box.innerHTML = '<div class="staff-question-list">' + filtered.map(function(q){
     const medical = q.needs_doctor ? '<span class="question-medical-tag"><i class="bi bi-stethoscope"></i> ต้องให้แพทย์ดู</span>' : '';
+    const latestReply = q.last_reply ? '<div class="staff-question-last-reply"><i class="bi bi-check2-circle"></i><span><b>ตอบล่าสุดโดย ' + escapeHtml(q.replied_by_name || "เจ้าหน้าที่") + '</b><small>' + escapeHtml(formatBangkokLogTime(q.replied_at || q.updated_at, true)) + '</small></span></div>' : '<div class="staff-question-last-reply pending"><i class="bi bi-chat-dots"></i><span><b>ยังไม่มีคำตอบจากทีม</b><small>เปิดรายการเพื่อรับเรื่องหรือตอบกลับ</small></span></div>';
     return '<article class="staff-question-card ' + questionStatusClass(q.status) + '">' +
-      '<div class="staff-question-main"><div class="staff-question-icon"><i class="bi ' + donorQuestionCategoryIcon(q.category) + '"></i></div><div><div class="staff-question-tags"><span>' + escapeHtml(q.public_code) + '</span>' + medical + '</div><h5>' + escapeHtml(donorQuestionCategoryLabel(q.category)) + '</h5><p>' + escapeHtml(String(q.message || "").slice(0,180)) + (String(q.message || "").length > 180 ? '…' : '') + '</p><small>' + escapeHtml(formatBangkokLogTime(q.created_at, true)) + '</small></div></div>' +
-      '<div class="staff-question-side"><span class="question-status-pill ' + questionStatusClass(q.status) + '">' + escapeHtml(q.status) + '</span><button type="button" class="btn btn-soft btn-sm" onclick="openStaffQuestionDetail(\'' + escapeHtml(q.id) + '\')">ดูรายละเอียด</button></div>' +
+      '<div class="staff-question-main"><div class="staff-question-icon"><i class="bi ' + donorQuestionCategoryIcon(q.category) + '"></i></div><div><div class="staff-question-tags"><span>' + escapeHtml(q.public_code) + '</span>' + medical + '</div><h5>' + escapeHtml(donorQuestionCategoryLabel(q.category)) + '</h5><p>' + escapeHtml(String(q.message || "").slice(0,180)) + (String(q.message || "").length > 180 ? '…' : '') + '</p><small>ถามเมื่อ ' + escapeHtml(formatBangkokLogTime(q.created_at, true)) + '</small>' + latestReply + '</div></div>' +
+      '<div class="staff-question-side"><span class="question-status-pill ' + questionStatusClass(q.status) + '">' + escapeHtml(q.status) + '</span><button type="button" class="btn btn-soft btn-sm" onclick="openStaffQuestionDetail(\'' + escapeHtml(q.id) + '\')"><i class="bi bi-chat-left-text"></i> เปิดแชท</button></div>' +
     '</article>';
   }).join('') + '</div>';
 }
@@ -6053,45 +6055,141 @@ async function openStaffQuestionByPublicCode(publicCode) {
 async function openStaffQuestionDetail(id) {
   const { data:q, error } = await sb.from("donor_questions").select("*").eq("id", id).maybeSingle();
   if (error || !q) { showModal({title:"ไม่พบรายการ",message:error?.message || "คำถามนี้อาจถูกลบหรือเปลี่ยนแปลงแล้ว",iconText:"!"}); return; }
-  const { data: replies } = await sb.from("donor_question_replies").select("*").eq("question_id", id).order("created_at", { ascending:true });
+  const { data:replyRows, error:replyError } = await sb.from("donor_question_replies").select("*").eq("question_id", id).order("created_at", { ascending:true });
+  let replies = Array.isArray(replyRows) ? replyRows.slice() : [];
+
+  // Fallback สำหรับข้อมูลเก่าหรือกรณีโหลดตาราง reply ไม่ครบ: อย่างน้อยต้องเห็นคำตอบล่าสุดบนหน้า Staff
+  if (q.last_reply) {
+    const hasLatest = replies.some(function(r){
+      return r.sender_type !== "donor" && String(r.message || "").trim() === String(q.last_reply || "").trim() && Math.abs(new Date(r.created_at || 0).getTime() - new Date(q.replied_at || 0).getTime()) < 120000;
+    });
+    if (!hasLatest) {
+      replies.push({
+        id:"fallback-last-reply",
+        sender_type:"staff",
+        sender_name:q.replied_by_name || "เจ้าหน้าที่",
+        message:q.last_reply,
+        created_at:q.replied_at || q.updated_at || q.created_at,
+        _fallback:true
+      });
+    }
+  }
+  replies.sort(function(a,b){ return new Date(a.created_at || 0) - new Date(b.created_at || 0); });
+
   currentStaffQuestion = q;
   if ($("staffQuestionDetailTitle")) $("staffQuestionDetailTitle").innerText = q.public_code + " · " + donorQuestionCategoryLabel(q.category);
-  if ($("staffQuestionDetailMeta")) $("staffQuestionDetailMeta").innerText = formatBangkokLogTime(q.created_at, true) + " · สถานะ " + q.status;
-  const replyHistory = (replies || []).length ? '<div class="question-reply-history"><h6>บทสนทนา</h6>' + replies.map(function(r){ const who = r.sender_type === "donor" ? "ผู้บริจาค" : (r.sender_type === "doctor" ? "แพทย์/ผู้รับผิดชอบ" : "เจ้าหน้าที่"); return '<div class="' + (r.sender_type === "donor" ? 'from-donor' : 'from-team') + '"><b>' + escapeHtml(who) + '</b><span>' + escapeHtml(r.message) + '</span><small>' + escapeHtml(r.sender_name || "") + ' · ' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</small></div>'; }).join('') + '</div>' : '';
+  if ($("staffQuestionDetailMeta")) {
+    const replyCount = replies.filter(function(r){ return r.sender_type !== "donor"; }).length;
+    $("staffQuestionDetailMeta").innerText = "สถานะ " + q.status + " · " + (replyCount ? "ทีมตอบแล้ว " + replyCount + " ข้อความ" : "ยังไม่มีคำตอบจากทีม");
+  }
+
+  const conversationRows = [{
+    id:"initial-question",
+    sender_type:"donor",
+    sender_name:q.donor_name || "ผู้บริจาค",
+    message:q.message || "",
+    created_at:q.created_at
+  }].concat(replies);
+
+  const conversationHtml = conversationRows.map(function(r){
+    const donor = r.sender_type === "donor";
+    const role = donor ? "ผู้บริจาค" : (r.sender_type === "doctor" ? "แพทย์/ผู้รับผิดชอบ" : "เจ้าหน้าที่");
+    const name = donor ? "ผู้บริจาค" : (String(r.sender_name || "").trim() || role);
+    return '<div class="staff-chat-row ' + (donor ? 'from-donor' : 'from-team') + '">' +
+      '<div class="staff-chat-bubble">' +
+        '<div class="staff-chat-sender"><b>' + escapeHtml(name) + '</b>' + (donor ? '' : '<span>' + escapeHtml(role) + '</span>') + '</div>' +
+        '<p>' + escapeHtml(r.message || "") + '</p>' +
+        '<small>' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</small>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  const latestStaffReply = replies.filter(function(r){ return r.sender_type !== "donor"; }).slice(-1)[0];
+  const latestAnswerHtml = latestStaffReply ? '<div class="staff-chat-latest"><i class="bi bi-check2-circle"></i><span><b>ตอบล่าสุดโดย ' + escapeHtml(latestStaffReply.sender_name || "เจ้าหน้าที่") + '</b><small>' + escapeHtml(formatBangkokLogTime(latestStaffReply.created_at, true)) + '</small></span></div>' : '<div class="staff-chat-latest pending"><i class="bi bi-chat-dots"></i><span><b>ยังไม่มีเจ้าหน้าที่ตอบ</b><small>ข้อความที่ส่งสำเร็จจะขึ้นในบทสนทนานี้ทันที</small></span></div>';
+
   if ($("staffQuestionDetailBody")) $("staffQuestionDetailBody").innerHTML = '<div class="question-detail-grid">' +
     '<div><small>ชื่อ</small><b>' + escapeHtml(q.donor_name || "-") + '</b></div><div><small>โทร</small><b><a href="tel:' + escapeHtml(q.phone || "") + '">' + escapeHtml(q.phone || "-") + '</a></b></div>' +
     '<div><small>อีเมล</small><b>' + (q.email ? '<a href="mailto:' + escapeHtml(q.email) + '">' + escapeHtml(q.email) + '</a>' : '-') + '</b></div><div><small>Donor ID</small><b>' + escapeHtml(q.donor_id || "-") + '</b></div>' +
     (q.donation_date ? '<div><small>วันที่บริจาคที่เกี่ยวข้อง</small><b>' + escapeHtml(isoToThaiDate(q.donation_date, true)) + '</b></div>' : '') +
     (q.symptom_type ? '<div><small>อาการหลัก</small><b>' + escapeHtml(q.symptom_type) + '</b></div>' : '') + '</div>' +
-    '<div class="question-detail-message"><small>รายละเอียดจากผู้บริจาค</small><p>' + escapeHtml(q.message || "") + '</p></div>' + replyHistory;
+    '<div class="staff-conversation-card">' +
+      '<div class="staff-conversation-head"><div><i class="bi bi-chat-heart"></i><span><b>บทสนทนา</b><small>ฝั่ง Staff เห็นชื่อผู้ตอบเพื่อกันตอบซ้ำ · ฝั่งผู้บริจาคเห็นเพียง “เจ้าหน้าที่”</small></span></div><span class="staff-conversation-count">' + conversationRows.length + ' ข้อความ</span></div>' +
+      latestAnswerHtml +
+      (replyError ? '<div class="staff-chat-load-warning"><i class="bi bi-exclamation-triangle"></i> โหลดประวัติบางส่วนไม่สำเร็จ ระบบจะแสดงคำตอบล่าสุดที่บันทึกไว้ให้ก่อน</div>' : '') +
+      '<div id="staffConversationThread" class="staff-conversation-thread">' + conversationHtml + '</div>' +
+    '</div>';
+
   const saveToKnowledgeBtn = $("staffQuestionSaveKnowledgeBtn");
   if (saveToKnowledgeBtn) {
     saveToKnowledgeBtn.style.display = q.last_reply ? "inline-flex" : "none";
     saveToKnowledgeBtn.disabled = !q.last_reply;
   }
   if ($("staffQuestionReplyText")) $("staffQuestionReplyText").value = "";
-  if ($("staffQuestionDetailCard")) { $("staffQuestionDetailCard").style.display = "block"; $("staffQuestionDetailCard").scrollIntoView({ behavior:"smooth", block:"start" }); }
+  if ($("staffQuestionSendStatus")) $("staffQuestionSendStatus").innerHTML = q.last_reply ? '<i class="bi bi-check2-circle"></i> คำตอบล่าสุดถูกบันทึกแล้ว · ' + escapeHtml(q.replied_by_name || "เจ้าหน้าที่") + ' · ' + escapeHtml(formatBangkokLogTime(q.replied_at || q.updated_at, true)) : '<i class="bi bi-info-circle"></i> เมื่อส่งสำเร็จ ข้อความจะขึ้นในบทสนทนาด้านบน';
+  if ($("staffQuestionDetailCard")) {
+    $("staffQuestionDetailCard").style.display = "block";
+    $("staffQuestionDetailCard").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+  setTimeout(function(){
+    const thread = $("staffConversationThread");
+    if (thread) thread.scrollTop = thread.scrollHeight;
+  }, 60);
 }
 
 function closeStaffQuestionDetail() {
   currentStaffQuestion = null;
+  staffQuestionSending = false;
   if ($("staffQuestionDetailCard")) $("staffQuestionDetailCard").style.display = "none";
 }
 
 async function updateStaffQuestion(status, notifyDoctor) {
-  if (!currentStaffQuestion) return;
+  if (!currentStaffQuestion || staffQuestionSending) return;
   const reply = String($("staffQuestionReplyText")?.value || "").trim();
   if (status === "ตอบแล้ว" && !reply) { showModal({title:"ยังไม่มีข้อความตอบ",message:"กรุณาพิมพ์คำตอบก่อนกดส่งคำตอบ",iconText:"!"}); return; }
-  const senderType = status === "ตอบแล้ว" && currentStaffQuestion.needs_doctor ? "doctor" : "staff";
-  const { error } = await sb.rpc("staff_update_donor_question", { p_question_id:currentStaffQuestion.id, p_status:status, p_reply:reply || null, p_sender_type:senderType });
-  if (error) { showModal({title:"บันทึกไม่สำเร็จ",message:error.message,iconText:"!"}); return; }
-  if (notifyDoctor || status === "รอแพทย์") {
-    try { await sb.functions.invoke("donor-question-notify", { body:{ action:"send_doctor", publicCode:currentStaffQuestion.public_code } }); } catch (e) { console.warn(e); }
+
+  const isSendingReply = status === "ตอบแล้ว";
+  const sendBtn = $("staffQuestionSendBtn");
+  const statusBox = $("staffQuestionSendStatus");
+  const originalBtnHtml = sendBtn ? sendBtn.innerHTML : "";
+  if (isSendingReply) {
+    staffQuestionSending = true;
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> กำลังส่ง...';
+    }
+    if (statusBox) statusBox.innerHTML = '<i class="bi bi-hourglass-split"></i> กำลังส่งคำตอบ กรุณารอสักครู่';
   }
-  showToastMessage(status === "ตอบแล้ว" ? "ส่งคำตอบแล้ว" : "อัปเดตสถานะแล้ว");
+
+  const senderType = status === "ตอบแล้ว" && currentStaffQuestion.needs_doctor ? "doctor" : "staff";
   const currentId = currentStaffQuestion.id;
-  await loadStaffQuestions();
-  await openStaffQuestionDetail(currentId);
+  const currentCode = currentStaffQuestion.public_code;
+  try {
+    const { data, error } = await sb.rpc("staff_update_donor_question", { p_question_id:currentId, p_status:status, p_reply:reply || null, p_sender_type:senderType });
+    if (error) {
+      if (statusBox && isSendingReply) statusBox.innerHTML = '<i class="bi bi-exclamation-circle"></i> ส่งไม่สำเร็จ กรุณาลองใหม่';
+      showModal({title:"บันทึกไม่สำเร็จ",message:error.message,iconText:"!"});
+      return;
+    }
+    if (notifyDoctor || status === "รอแพทย์") {
+      try { await sb.functions.invoke("donor-question-notify", { body:{ action:"send_doctor", publicCode:currentCode } }); } catch (e) { console.warn(e); }
+    }
+    if (isSendingReply && $("staffQuestionReplyText")) $("staffQuestionReplyText").value = "";
+    showToastMessage(status === "ตอบแล้ว" ? "ส่งคำตอบแล้ว" : "อัปเดตสถานะแล้ว");
+    await loadStaffQuestions();
+    await openStaffQuestionDetail(currentId);
+    if (statusBox && status === "ตอบแล้ว") {
+      const actor = data?.actor_name || currentStaffProfile?.display_name || "เจ้าหน้าที่";
+      statusBox.innerHTML = '<i class="bi bi-check2-circle"></i> ส่งแล้ว · ' + escapeHtml(actor) + ' · ' + escapeHtml(formatBangkokLogTime(new Date().toISOString(), true));
+    }
+  } finally {
+    if (isSendingReply) {
+      staffQuestionSending = false;
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalBtnHtml || '<i class="bi bi-send-check"></i> ส่งคำตอบ';
+      }
+    }
+  }
 }
 
 
@@ -6929,7 +7027,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.36").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.37").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
