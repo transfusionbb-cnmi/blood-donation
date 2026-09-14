@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.35 */
+/* CNMI Blood Donation Supabase Frontend v15.36 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -2765,9 +2765,55 @@ function changeImportLogHistoryPage(delta) {
   if (next !== importLogHistoryPage) loadImportLogHistory(next);
 }
 
+function decodeDonorCsvBytes(bytes) {
+  // ไฟล์ CSV จากระบบเดิมมักเป็น Windows-874/TIS-620 ไม่ใช่ UTF-8
+  // ต้อง decode ให้ถูกก่อนส่งเข้า SheetJS มิฉะนั้นชื่อ/ที่อยู่ภาษาไทยอาจเพี้ยน
+  if (bytes && bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+    return { text: new TextDecoder("utf-8").decode(bytes), encoding: "UTF-8" };
+  }
+
+  try {
+    const utf8 = new TextDecoder("utf-8", { fatal:true }).decode(bytes);
+    return { text:utf8, encoding:"UTF-8" };
+  } catch (_) {
+    try {
+      const thai = new TextDecoder("windows-874").decode(bytes);
+      return { text:thai, encoding:"Windows-874" };
+    } catch (_) {
+      // fallback สำหรับ browser ที่ไม่รู้จัก label windows-874
+      const thai = new TextDecoder("tis-620").decode(bytes);
+      return { text:thai, encoding:"TIS-620" };
+    }
+  }
+}
+
 async function readWorkbookFromFile(file) {
   const buffer = await file.arrayBuffer();
-  return XLSX.read(new Uint8Array(buffer), { type:"array", cellDates:false, cellNF:true, cellText:true });
+  const bytes = new Uint8Array(buffer);
+  const fileName = String(file?.name || "");
+  const isCsv = /\.csv$/i.test(fileName) || String(file?.type || "").toLowerCase().includes("csv");
+
+  if (isCsv) {
+    const decoded = decodeDonorCsvBytes(bytes);
+    // raw:true = เก็บ Donor_ID / เลขบัตร / โทรศัพท์ / Unit No / วันที่ เป็นข้อความตามไฟล์ต้นฉบับ
+    // ลดความเสี่ยง Excel แปลงเลขเป็น scientific notation หรือสลับรูปแบบวันที่
+    const workbook = XLSX.read(decoded.text, {
+      type:"string",
+      raw:true,
+      cellDates:false,
+      cellNF:true,
+      cellText:true,
+      FS:","
+    });
+    workbook.__cnmiInputFormat = "CSV";
+    workbook.__cnmiCsvEncoding = decoded.encoding;
+    return workbook;
+  }
+
+  const workbook = XLSX.read(bytes, { type:"array", cellDates:false, cellNF:true, cellText:true });
+  workbook.__cnmiInputFormat = "Excel";
+  workbook.__cnmiCsvEncoding = "";
+  return workbook;
 }
 
 function getSheet(workbook, preferredNames) {
@@ -2946,20 +2992,26 @@ function getCellByHeader(row, map, names) {
 function parseDonorWorkbook(workbook) {
   const donorSheet = workbook.SheetNames.find(n => n.trim().toLowerCase() === "donordata");
   const rawSheet = workbook.SheetNames.find(n => n.trim().toLowerCase() === "rawupload");
+  const sourceMeta = {
+    inputFormat: workbook.__cnmiInputFormat || "Excel",
+    encoding: workbook.__cnmiCsvEncoding || ""
+  };
 
+  let parsed;
   if (donorSheet) {
-    return parseExistingDonorDataSheet(sheetToCellRows(workbook.Sheets[donorSheet]));
+    parsed = parseExistingDonorDataSheet(sheetToCellRows(workbook.Sheets[donorSheet]));
+  } else if (rawSheet) {
+    parsed = parseRawUploadSheet(sheetToCellRows(workbook.Sheets[rawSheet]), sourceMeta);
+  } else {
+    const firstSheet = workbook.SheetNames[0];
+    const rows = sheetToCellRows(workbook.Sheets[firstSheet]);
+    const headerRow = findHeaderRow(rows, ["Donor_ID", "DONOR_ID", "Donor ID"]);
+    parsed = headerRow >= 0 ? parseRawUploadSheet(rows, sourceMeta) : parseExistingDonorDataSheet(rows);
   }
 
-  if (rawSheet) {
-    return parseRawUploadSheet(sheetToCellRows(workbook.Sheets[rawSheet]));
-  }
-
-  const firstSheet = workbook.SheetNames[0];
-  const rows = sheetToCellRows(workbook.Sheets[firstSheet]);
-  const headerRow = findHeaderRow(rows, ["Donor_ID", "DONOR_ID", "Donor ID"]);
-  if (headerRow >= 0) return parseRawUploadSheet(rows);
-  return parseExistingDonorDataSheet(rows);
+  parsed.inputFormat = sourceMeta.inputFormat;
+  parsed.encoding = sourceMeta.encoding;
+  return parsed;
 }
 
 function parseExistingDonorDataSheet(rows) {
@@ -3008,7 +3060,7 @@ function parseExistingDonorDataSheet(rows) {
   return { records, skippedNoUnit:0, skippedCannotDonate:0, skippedMissing, mode:"DonorData" };
 }
 
-function parseRawUploadSheet(rows) {
+function parseRawUploadSheet(rows, sourceMeta) {
   const records = [];
   let skippedNoUnit = 0;
   let skippedCannotDonate = 0;
@@ -3030,8 +3082,11 @@ function parseRawUploadSheet(rows) {
     if (!unitNoText) { skippedNoUnit++; continue; }
     if (unitNoText.includes("บริจาคไม่ได้")) { skippedCannotDonate++; continue; }
 
-    const dobParsed = parseDateCell(row[7], "MDY", true);
-    const donateParsed = parseDateCell(row[17], "MDY", false);
+    // CSV ที่ export จากระบบใช้วัน/เดือน/ปี เช่น 13/2/1975 และ 10/9/2026
+    // Excel เดิมคง behavior เดิมไว้เพื่อไม่กระทบ workflow ที่ใช้อยู่
+    const dateOrder = sourceMeta?.inputFormat === "CSV" ? "DMY" : "MDY";
+    const dobParsed = parseDateCell(row[7], dateOrder, true);
+    const donateParsed = parseDateCell(row[17], dateOrder, false);
     const phone = normalizePhone(cellRawText(row[14], true));
     const donationType = cellRawText(row[18], false).trim() || "Whole Blood";
 
@@ -3123,7 +3178,7 @@ async function previewDonorFile() {
   const resultBox = $("donorImportResult");
   const dataThroughDate = $("donorDataThroughDate")?.value || "";
 
-  if (!file) { setStaffResult(previewBox, "กรุณาเลือกไฟล์ Excel ก่อน", false); return; }
+  if (!file) { setStaffResult(previewBox, "กรุณาเลือกไฟล์ Excel หรือ CSV ก่อน", false); return; }
   const isStaff = await ensureStaff(true); if (!isStaff) return;
 
   if (resultBox) resultBox.style.display = "none";
@@ -3146,7 +3201,8 @@ async function previewDonorFile() {
       if (importBtn) importBtn.disabled = true;
       setStaffResult(previewBox,
         "ตรวจไฟล์แล้ว แต่ยังไม่มีรายการที่พร้อมนำเข้า\n\n" +
-        "โหมดไฟล์: " + (parsed.mode || "-") + "\n" +
+        "ชนิดไฟล์: " + (parsed.inputFormat || "-") + (parsed.encoding ? " (" + parsed.encoding + ")" : "") + "\n" +
+        "โหมดข้อมูล: " + (parsed.mode || "-") + "\n" +
         "ข้าม เพราะไม่มี Unit No: " + (parsed.skippedNoUnit || 0) + " รายการ\n" +
         "ข้าม เพราะบริจาคไม่ได้: " + (parsed.skippedCannotDonate || 0) + " รายการ\n" +
         "ข้าม เพราะข้อมูลสำคัญไม่ครบ: " + (parsed.skippedMissing || 0) + " รายการ\n" +
@@ -3160,7 +3216,8 @@ async function previewDonorFile() {
     setStaffResult(previewBox,
       "ตรวจไฟล์เรียบร้อย รอยืนยันนำเข้า\n\n" +
       "ชื่อไฟล์: " + file.name + "\n" +
-      "โหมดไฟล์: " + (parsed.mode || "-") + "\n" +
+      "ชนิดไฟล์: " + (parsed.inputFormat || "-") + (parsed.encoding ? " (" + parsed.encoding + ")" : "") + "\n" +
+      "โหมดข้อมูล: " + (parsed.mode || "-") + "\n" +
       "พร้อมส่งเข้า Supabase: " + ready + " รายการ\n" +
       "ข้าม เพราะไม่มี Unit No: " + (parsed.skippedNoUnit || 0) + " รายการ\n" +
       "ข้าม เพราะบริจาคไม่ได้: " + (parsed.skippedCannotDonate || 0) + " รายการ\n" +
@@ -6872,7 +6929,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.35").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.36").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
