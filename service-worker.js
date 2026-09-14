@@ -1,12 +1,12 @@
-const CACHE_NAME = "cnmi-donor-v15-37";
+const CACHE_NAME = "cnmi-donor-v15-38";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=15.37",
-  "./app.js?v=15.37",
+  "./styles.css?v=15.38",
+  "./app.js?v=15.38",
   "./config.js?v=15.5",
-  "./manifest.webmanifest?v=15.37",
-  "./manifest-staff.webmanifest?v=15.37",
+  "./manifest.webmanifest?v=15.38",
+  "./manifest-staff.webmanifest?v=15.38",
   "./staff.html",
   "./icons/donor-icon-180-v15-31.png",
   "./icons/donor-icon-192-v15-31.png",

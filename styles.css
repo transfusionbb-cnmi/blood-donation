@@ -2575,3 +2575,30 @@ body.staff-launcher-shell[data-page="staffLogin"] .brand-header{display:none!imp
 .staff-chat-sender{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}.staff-chat-sender b{font-size:.78rem;color:#27343b}.staff-chat-sender span{font-size:.64rem;font-weight:800;color:#a24a50;background:#fff3f4;padding:3px 6px;border-radius:999px}.staff-chat-bubble p{margin:0;white-space:pre-wrap;line-height:1.65;color:#2d3940}.staff-chat-bubble small{display:block;margin-top:5px;color:#7f8b92;font-size:.66rem}
 .staff-question-send-status{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:11px;background:#f6f8f9;color:#6d7980;font-size:.73rem;line-height:1.4}.staff-question-send-status i{color:#5d6b72}.staff-question-send-status .bi-check2-circle{color:#4b8b68}.staff-question-send-status .bi-exclamation-circle{color:#c6454e}
 @media(max-width:700px){.staff-conversation-head{align-items:flex-start}.staff-conversation-head small{font-size:.64rem}.staff-conversation-count{font-size:.66rem}.staff-conversation-thread{max-height:none;padding:11px}.staff-chat-bubble{max-width:91%;padding:10px 11px}.staff-question-last-reply{max-width:none}.staff-question-side .btn{white-space:nowrap}}
+
+
+/* v15.38 — Staff chat inbox, closed history and duplicate guard */
+.question-list-note{display:flex;align-items:flex-start;gap:7px;margin-top:10px;padding:9px 11px;border-radius:12px;background:#f7f8f9;color:#738088;font-size:.72rem;line-height:1.45}
+.staff-chat-workspace{padding:0!important;overflow:hidden;border-radius:22px;background:#f7f9fa}
+.staff-chat-workspace-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-bottom:1px solid #e9edef;position:sticky;top:0;z-index:3}
+.staff-chat-workspace-head>div{min-width:0}.staff-chat-workspace-head h5{margin:0;font-size:1rem;font-weight:850}.staff-chat-workspace-head small{display:block;color:#7b878e;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staff-chat-workspace #staffQuestionDetailBody{padding:0 14px 12px}
+.staff-chat-workspace .staff-conversation-card{margin-top:14px;border-radius:18px;box-shadow:0 8px 24px rgba(42,52,58,.04)}
+.staff-chat-workspace .staff-conversation-thread{min-height:330px;max-height:56vh;background:#f2f5f5;padding:16px 14px}
+.staff-chat-workspace .staff-chat-row.from-donor{justify-content:flex-start}.staff-chat-workspace .staff-chat-row.from-team{justify-content:flex-end}
+.staff-chat-workspace .staff-chat-row.from-donor .staff-chat-bubble{background:#fff;border:1px solid #e2e7e9;border-bottom-left-radius:5px;border-bottom-right-radius:16px}
+.staff-chat-workspace .staff-chat-row.from-team .staff-chat-bubble{background:#f9dfe2;border:1px solid #efc8cc;border-bottom-right-radius:5px;border-bottom-left-radius:16px}
+.staff-chat-workspace .staff-chat-row.from-team .staff-chat-sender{justify-content:flex-end}.staff-chat-workspace .staff-chat-row.from-team .staff-chat-bubble small{text-align:right}
+.staff-chat-closed-banner{display:flex;align-items:center;gap:9px;margin:11px 13px 0;padding:10px 12px;border-radius:13px;background:#eef7f1;color:#426856}.staff-chat-closed-banner i{font-size:1.1rem}.staff-chat-closed-banner b,.staff-chat-closed-banner small{display:block}.staff-chat-closed-banner small{font-size:.69rem;color:#71847a;margin-top:2px}
+.staff-donor-context{margin:12px 0 0;background:#fff;border:1px solid #e7ebed;border-radius:15px;overflow:hidden}.staff-donor-context summary{cursor:pointer;list-style:none;padding:11px 13px;font-weight:800;color:#536169;display:flex;align-items:center;gap:8px}.staff-donor-context summary::-webkit-details-marker{display:none}.staff-donor-context[open] summary{border-bottom:1px solid #edf0f2}.staff-donor-context .question-detail-grid{padding:12px}
+.staff-chat-composer{margin:0;padding:13px 14px 14px;background:#fff;border-top:1px solid #e4e9eb;position:sticky;bottom:0;z-index:4;box-shadow:0 -8px 24px rgba(48,58,63,.05)}
+.staff-chat-composer textarea{border-radius:16px;min-height:82px;resize:vertical}.staff-chat-composer.is-closed textarea{background:#f5f6f7;color:#98a1a6}.staff-chat-composer.is-closed .form-label{color:#879198}
+.knowledge-summary.duplicate{background:#fff8e9;border-color:#f0ddb1}.knowledge-summary.duplicate b{color:#9a6818}
+.knowledge-duplicate-notice{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #f0ddb1;background:#fffaf0;border-radius:15px;color:#76571c}.knowledge-duplicate-notice>div{display:flex;align-items:flex-start;gap:9px}.knowledge-duplicate-notice>div>i{font-size:1.1rem;margin-top:1px}.knowledge-duplicate-notice b,.knowledge-duplicate-notice small{display:block}.knowledge-duplicate-notice small{margin-top:2px;color:#8a7448;font-size:.7rem;line-height:1.45}.kb-duplicate{background:#fff0d7;color:#96620f!important}
+@media(max-width:700px){
+  .staff-chat-workspace{border-radius:18px;margin-left:-2px;margin-right:-2px}
+  .staff-chat-workspace-head{padding:11px 12px;align-items:flex-start}.staff-chat-workspace-head .btn{padding:7px 9px;white-space:nowrap}.staff-chat-workspace-head h5{font-size:.92rem}.staff-chat-workspace-head small{font-size:.65rem;max-width:58vw}
+  .staff-chat-workspace #staffQuestionDetailBody{padding:0 8px 8px}.staff-chat-workspace .staff-conversation-card{margin-top:8px;border-radius:15px}.staff-chat-workspace .staff-conversation-thread{min-height:42vh;max-height:54vh;padding:12px 9px;gap:8px}.staff-chat-workspace .staff-chat-bubble{max-width:88%;padding:9px 10px}.staff-chat-workspace .staff-chat-sender b{font-size:.72rem}.staff-chat-workspace .staff-chat-bubble p{font-size:.88rem;line-height:1.55}
+  .staff-chat-composer{padding:10px 9px calc(10px + env(safe-area-inset-bottom));}.staff-chat-composer .question-reply-actions{display:grid;grid-template-columns:1fr 1fr}.staff-chat-composer .question-reply-actions .btn{min-width:0;width:100%}.staff-chat-composer #staffQuestionSendBtn{grid-column:1/-1;order:-1}
+  .knowledge-duplicate-notice{align-items:stretch;flex-direction:column}.knowledge-duplicate-notice .btn{width:100%}
+}

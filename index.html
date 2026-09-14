@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="CNMI Donor">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="manifest.webmanifest?v=15.37">
+  <link rel="manifest" href="manifest.webmanifest?v=15.38">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/donor-icon-192-v15-31.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/donor-icon-180-v15-31.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.37" rel="stylesheet">
+  <link href="styles.css?v=15.38" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -865,7 +865,7 @@
           <div id="staffTab_questions" class="staff-tab-page">
             <div class="staff-page-head"><div><span>INBOX</span><h3>คำถามผู้บริจาค</h3><p>คำถามใหม่และรายการที่ต้องให้แพทย์ดู</p></div><div class="page-head-actions"><button type="button" class="btn btn-soft btn-sm" onclick="loadStaffQuestions()" aria-label="รีเฟรชรายการคำถาม" title="รีเฟรช"><i class="bi bi-arrow-clockwise"></i> <span class="refresh-text">Refresh</span></button></div></div>
 
-            <div class="card main-card staff-card p-4 mb-3 push-settings-card">
+            <div id="staffQuestionPushCard" class="card main-card staff-card p-4 mb-3 push-settings-card">
               <div class="staff-section-head"><div><h5><i class="bi bi-bell"></i> แจ้งเตือนคำถาม</h5><small>รับแจ้งเตือนคำถามใหม่บนเครื่องนี้</small></div><span id="pushSupportStatus" class="status-pill neutral">กำลังตรวจสอบ</span></div>
               <div class="push-setting-grid mt-3">
                 <label class="push-check"><input type="checkbox" id="pushNotifyGeneral" checked><span><b>ทั่วไป</b></span></label>
@@ -879,29 +879,31 @@
               <div class="staff-install-help"><div><i class="bi bi-phone"></i><span><b>ติดตั้ง Staff บน Home Screen</b></span></div><a class="btn btn-soft btn-sm" href="staff.html#/staff/questions" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> ติดตั้ง Staff</a></div>
             </div>
 
-            <div class="card main-card staff-card p-4 mb-3 question-list-card">
+            <div id="staffQuestionListCard" class="card main-card staff-card p-4 mb-3 question-list-card">
               <div class="question-inbox-filters">
                 <button type="button" class="active" data-question-filter="all" onclick="setStaffQuestionFilter('all')">ทั้งหมด <b id="questionCountAll">0</b></button>
                 <button type="button" data-question-filter="ใหม่" onclick="setStaffQuestionFilter('ใหม่')">ใหม่ <b id="questionCountNew">0</b></button>
                 <button type="button" data-question-filter="doctor" onclick="setStaffQuestionFilter('doctor')">รอแพทย์ <b id="questionCountDoctor">0</b></button>
                 <button type="button" data-question-filter="answered" onclick="setStaffQuestionFilter('answered')">ตอบแล้ว <b id="questionCountAnswered">0</b></button>
+                <button type="button" data-question-filter="closed" onclick="setStaffQuestionFilter('closed')">ปิดแล้ว <b id="questionCountClosed">0</b></button>
               </div>
+              <div class="question-list-note"><i class="bi bi-info-circle"></i> ปิดเรื่องแล้วจะยังอยู่ใน “ทั้งหมด” และ “ปิดแล้ว” เพื่อเปิดดูประวัติแชทได้เสมอ</div>
               <div id="staffQuestionList" class="mt-3"><div class="staff-result">กำลังโหลด...</div></div>
             </div>
 
-            <div id="staffQuestionDetailCard" class="card main-card staff-card p-4" style="display:none;">
-              <div class="staff-section-head mb-3"><div><h5 id="staffQuestionDetailTitle">รายละเอียดคำถาม</h5><small id="staffQuestionDetailMeta"></small></div><button type="button" class="btn btn-soft btn-sm" onclick="closeStaffQuestionDetail()"><i class="bi bi-x-lg"></i> ปิด</button></div>
+            <div id="staffQuestionDetailCard" class="card main-card staff-card staff-chat-workspace" style="display:none;">
+              <div class="staff-chat-workspace-head"><button type="button" class="btn btn-soft btn-sm" onclick="closeStaffQuestionDetail()"><i class="bi bi-arrow-left"></i> กลับรายการ</button><div><h5 id="staffQuestionDetailTitle">บทสนทนา</h5><small id="staffQuestionDetailMeta"></small></div></div>
               <div id="staffQuestionDetailBody"></div>
-              <div class="question-reply-box mt-3">
-                <label class="form-label">ข้อความตอบกลับ</label>
-                <textarea id="staffQuestionReplyText" class="form-control" rows="4" placeholder="พิมพ์คำตอบที่ต้องการให้ผู้บริจาคเห็น"></textarea>
-                <div id="staffQuestionSendStatus" class="staff-question-send-status mt-2"><i class="bi bi-info-circle"></i> เมื่อส่งสำเร็จ ข้อความจะขึ้นในบทสนทนาด้านบน</div>
+              <div id="staffQuestionReplyBox" class="question-reply-box staff-chat-composer">
+                <label class="form-label">ตอบผู้บริจาค</label>
+                <textarea id="staffQuestionReplyText" class="form-control" rows="3" placeholder="พิมพ์ข้อความตอบกลับ..."></textarea>
+                <div id="staffQuestionSendStatus" class="staff-question-send-status mt-2"><i class="bi bi-info-circle"></i> เมื่อส่งสำเร็จ ข้อความจะขึ้นในแชททันที</div>
                 <div class="question-reply-actions mt-3">
-                  <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('รับเรื่องแล้ว')"><i class="bi bi-person-check"></i> รับเรื่อง</button>
-                  <button type="button" class="btn btn-warning-soft" onclick="updateStaffQuestion('รอแพทย์', true)"><i class="bi bi-stethoscope"></i> ส่งให้แพทย์</button>
+                  <button type="button" id="staffQuestionReceiveBtn" class="btn btn-soft" onclick="updateStaffQuestion('รับเรื่องแล้ว')"><i class="bi bi-person-check"></i> รับเรื่อง</button>
+                  <button type="button" id="staffQuestionDoctorBtn" class="btn btn-warning-soft" onclick="updateStaffQuestion('รอแพทย์', true)"><i class="bi bi-stethoscope"></i> ส่งให้แพทย์</button>
                   <button type="button" id="staffQuestionSendBtn" class="btn btn-search" onclick="updateStaffQuestion('ตอบแล้ว')"><i class="bi bi-send-check"></i> ส่งคำตอบ</button>
                   <button type="button" id="staffQuestionSaveKnowledgeBtn" class="btn btn-soft" style="display:none;" onclick="addCurrentQuestionToKnowledge()"><i class="bi bi-journal-plus"></i> เก็บเป็นคำตอบมาตรฐาน</button>
-                  <button type="button" class="btn btn-soft" onclick="updateStaffQuestion('ปิดเรื่อง')"><i class="bi bi-check2-circle"></i> ปิดเรื่อง</button>
+                  <button type="button" id="staffQuestionCloseBtn" class="btn btn-soft" onclick="updateStaffQuestion('ปิดเรื่อง')"><i class="bi bi-check2-circle"></i> ปิดเรื่อง</button>
                 </div>
               </div>
             </div>
@@ -914,7 +916,9 @@
               <div class="knowledge-summary"><span>ทั้งหมด</span><b id="knowledgeCountAll">0</b></div>
               <div class="knowledge-summary auto"><span>ตอบอัตโนมัติ</span><b id="knowledgeCountAuto">0</b></div>
               <div class="knowledge-summary paused"><span>พักใช้ / ไม่ตอบเอง</span><b id="knowledgeCountPaused">0</b></div>
+              <div class="knowledge-summary duplicate"><span>รายการซ้ำ</span><b id="knowledgeCountDuplicates">0</b></div>
             </div>
+            <div id="knowledgeDuplicateNotice" class="knowledge-duplicate-notice mb-3" style="display:none;"><div><i class="bi bi-files"></i><span><b>พบคำตอบมาตรฐานที่ซ้ำกัน</b><small>หน้าจอจะรวมรายการซ้ำให้เหลือใบเดียวก่อน และสามารถลบเฉพาะสำเนาที่เหมือนกันทุกอย่างได้</small></span></div><button type="button" id="knowledgeCleanupBtn" class="btn btn-soft btn-sm" onclick="cleanupKnowledgeDuplicates()"><i class="bi bi-stars"></i> ล้างรายการซ้ำ</button></div>
 
             <div id="knowledgeEditorCard" class="card main-card staff-card p-4 mb-3" style="display:none;">
               <div class="staff-section-head mb-3"><div><h5 id="knowledgeFormTitle">เพิ่มคำตอบมาตรฐาน</h5><small>คำตอบนี้จะเป็นแหล่งอ้างอิงกลางของหน่วย แก้ครั้งเดียว ผู้บริจาคที่ถามเรื่องเดิมจะได้คำตอบล่าสุด</small></div><button type="button" class="btn btn-soft btn-sm" onclick="resetKnowledgeForm(); document.getElementById('knowledgeEditorCard').style.display='none';"><i class="bi bi-x-lg"></i> ปิด</button></div>
@@ -1217,6 +1221,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.37"></script>
+  <script src="app.js?v=15.38"></script>
 </body>
 </html>
