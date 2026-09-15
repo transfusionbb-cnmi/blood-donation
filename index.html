@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="CNMI Donor">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="manifest.webmanifest?v=15.38">
+  <link rel="manifest" href="manifest.webmanifest?v=15.39">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/donor-icon-192-v15-31.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/donor-icon-180-v15-31.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.38" rel="stylesheet">
+  <link href="styles.css?v=15.39" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -918,7 +918,7 @@
               <div class="knowledge-summary paused"><span>พักใช้ / ไม่ตอบเอง</span><b id="knowledgeCountPaused">0</b></div>
               <div class="knowledge-summary duplicate"><span>รายการซ้ำ</span><b id="knowledgeCountDuplicates">0</b></div>
             </div>
-            <div id="knowledgeDuplicateNotice" class="knowledge-duplicate-notice mb-3" style="display:none;"><div><i class="bi bi-files"></i><span><b>พบคำตอบมาตรฐานที่ซ้ำกัน</b><small>หน้าจอจะรวมรายการซ้ำให้เหลือใบเดียวก่อน และสามารถลบเฉพาะสำเนาที่เหมือนกันทุกอย่างได้</small></span></div><button type="button" id="knowledgeCleanupBtn" class="btn btn-soft btn-sm" onclick="cleanupKnowledgeDuplicates()"><i class="bi bi-stars"></i> ล้างรายการซ้ำ</button></div>
+            <div id="knowledgeDuplicateNotice" class="knowledge-duplicate-notice mb-3" style="display:none;"><div><i class="bi bi-files"></i><span><b>พบคำตอบมาตรฐานที่ซ้ำกัน</b><small>ระบบจะรวมรายการที่คำถามและคำตอบเหมือนกันให้เหลือใบเดียว และ Staff ทุกคนสามารถลบสำเนาที่ซ้ำได้</small></span></div><button type="button" id="knowledgeCleanupBtn" class="btn btn-soft btn-sm" onclick="cleanupKnowledgeDuplicates()"><i class="bi bi-stars"></i> ล้างรายการซ้ำ</button></div>
 
             <div id="knowledgeEditorCard" class="card main-card staff-card p-4 mb-3" style="display:none;">
               <div class="staff-section-head mb-3"><div><h5 id="knowledgeFormTitle">เพิ่มคำตอบมาตรฐาน</h5><small>คำตอบนี้จะเป็นแหล่งอ้างอิงกลางของหน่วย แก้ครั้งเดียว ผู้บริจาคที่ถามเรื่องเดิมจะได้คำตอบล่าสุด</small></div><button type="button" class="btn btn-soft btn-sm" onclick="resetKnowledgeForm(); document.getElementById('knowledgeEditorCard').style.display='none';"><i class="bi bi-x-lg"></i> ปิด</button></div>
@@ -937,7 +937,7 @@
             </div>
 
             <div class="card main-card staff-card p-4 mb-3">
-              <div class="staff-section-head mb-3"><div><h5><i class="bi bi-journal-check"></i> คำตอบมาตรฐานที่ใช้อยู่</h5><small>ค้นหา แก้ไข เปิด/ปิด หรือหยุดตอบอัตโนมัติได้ ทุกการแก้ไขมีประวัติว่าใครแก้และเมื่อไร</small></div></div>
+              <div class="staff-section-head mb-3"><div><h5><i class="bi bi-journal-check"></i> คำตอบมาตรฐานที่ใช้อยู่</h5><small>Staff ทุกคนค้นหา แก้ไข ลบ เปิด/ปิด หรือหยุดตอบอัตโนมัติได้</small></div></div>
               <div class="knowledge-toolbar">
                 <div class="input-with-icon"><i class="bi bi-search"></i><input type="search" id="knowledgeSearch" class="form-control" placeholder="ค้นหาคำถาม คำตอบ หรือคำสำคัญ" oninput="renderKnowledgeList()"></div>
                 <select id="knowledgeFilterCategory" class="form-select" onchange="renderKnowledgeList()"><option value="all">ทุกหมวด</option><option value="general">ข้อมูลทั่วไป</option><option value="booking">การจอง / นัดหมาย</option><option value="eligibility">คุณสมบัติ / ยา / วัคซีน / เพิ่งป่วย</option><option value="post_donation">อาการหลังบริจาค</option><option value="test_result">ผลตรวจ / ติดต่อกลับ</option><option value="other">อื่น ๆ</option></select>
@@ -1221,6 +1221,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.38"></script>
+  <script src="app.js?v=15.39"></script>
 </body>
 </html>

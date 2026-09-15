@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.38 */
+/* CNMI Blood Donation Supabase Frontend v15.39 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -6361,14 +6361,11 @@ async function loadStaffKnowledgeBase() {
 }
 
 function knowledgeDuplicateKey(row) {
-  const keywords = Array.isArray(row?.keywords) ? row.keywords.map(function(x){ return donorChatNormalizeText(x); }).filter(Boolean).sort().join("|") : "";
+  // v15.39: ถือว่าเป็นรายการซ้ำเมื่อคำถาม + คำตอบเหมือนกัน
+  // ไม่แยกตามสถานะตอบอัตโนมัติ/พักใช้/หมวด/keyword เพราะแก้ค่าพวกนี้ได้ในรายการหลัก
   return [
     donorChatNormalizeText(row?.canonical_question || ""),
-    donorChatNormalizeText(row?.answer_text || ""),
-    String(row?.category || "other"),
-    row?.is_active ? "1" : "0",
-    row?.auto_answer_enabled ? "1" : "0",
-    keywords
+    donorChatNormalizeText(row?.answer_text || "")
   ].join("::");
 }
 
@@ -6395,12 +6392,66 @@ function getKnowledgeDuplicateInfo(rows) {
   return { visibleRows:visibleRows, duplicateIds:duplicateIds, duplicateGroups:duplicateGroups, duplicateCount:duplicateIds.size };
 }
 
+async function deleteKnowledgeRows(ids, successMessage) {
+  const cleanIds = Array.from(new Set((Array.isArray(ids) ? ids : []).filter(Boolean)));
+  if (!cleanIds.length) return false;
+  const { data, error } = await sb.from("donor_knowledge_base").delete().in("id", cleanIds).select("id");
+  if (error) {
+    showModal({title:"ลบไม่สำเร็จ",message:error.message || "กรุณาลองใหม่",iconText:"!"});
+    return false;
+  }
+  const deleted = Array.isArray(data) ? data.length : 0;
+  if (deleted < cleanIds.length) {
+    showModal({title:"ลบไม่ครบ",message:"ระบบลบได้ " + deleted + " จาก " + cleanIds.length + " รายการ กรุณา Refresh แล้วลองอีกครั้ง",iconText:"!"});
+    return false;
+  }
+  donorKnowledgeLoadedAt = 0;
+  showToastMessage(successMessage || ("ลบแล้ว " + deleted + " รายการ"));
+  await loadStaffKnowledgeBase();
+  return true;
+}
+
+async function deleteKnowledgeEntry(id) {
+  const row = staffKnowledgeRows.find(function(x){ return x.id === id; });
+  if (!row) { showToastMessage("ไม่พบรายการนี้"); return; }
+  const info = getKnowledgeDuplicateInfo(staffKnowledgeRows);
+  const group = info.duplicateGroups.find(function(g){ return g.keep.id === id || g.remove.some(function(x){ return x.id === id; }); });
+  const extraNote = group ? "\n\nรายการนี้มีสำเนาซ้ำอยู่ " + (group.remove.length + 1) + " รายการ การลบครั้งนี้จะลบเฉพาะรายการที่เลือกเท่านั้น" : "";
+  showModal({
+    title:"ลบคำตอบมาตรฐานนี้?",
+    message:"คำถาม: " + String(row.canonical_question || "").slice(0,160) + extraNote + "\n\nการลบมีผลกับคลังคำตอบของหน่วยและการตอบอัตโนมัติทันที",
+    iconText:"!",
+    secondaryText:"ยกเลิก",
+    primaryText:"ลบรายการ",
+    onPrimary:async function(){
+      await deleteKnowledgeRows([id], "ลบคำตอบมาตรฐานแล้ว");
+    }
+  });
+}
+
+async function cleanupKnowledgeDuplicatesFor(id) {
+  const info = getKnowledgeDuplicateInfo(staffKnowledgeRows);
+  const group = info.duplicateGroups.find(function(g){ return g.keep.id === id || g.remove.some(function(x){ return x.id === id; }); });
+  if (!group || !group.remove.length) { showToastMessage("ไม่พบรายการซ้ำของคำตอบนี้"); return; }
+  const ids = group.remove.map(function(r){ return r.id; });
+  showModal({
+    title:"ลบรายการซ้ำของคำตอบนี้?",
+    message:"พบคำถามและคำตอบเหมือนกันทั้งหมด " + (ids.length + 1) + " รายการ ระบบจะเก็บรายการที่แก้ไขล่าสุดไว้ 1 รายการ และลบสำเนาอีก " + ids.length + " รายการ",
+    iconText:"!",
+    secondaryText:"ยกเลิก",
+    primaryText:"ลบรายการซ้ำ",
+    onPrimary:async function(){
+      await deleteKnowledgeRows(ids, "ลบรายการซ้ำแล้ว " + ids.length + " รายการ");
+    }
+  });
+}
+
 async function cleanupKnowledgeDuplicates() {
   const info = getKnowledgeDuplicateInfo(staffKnowledgeRows);
   if (!info.duplicateCount) { showToastMessage("ไม่พบรายการซ้ำ"); return; }
   showModal({
     title:"ลบคำตอบมาตรฐานที่ซ้ำ?",
-    message:"พบสำเนาที่เหมือนกันทุกอย่าง " + info.duplicateCount + " รายการ ระบบจะเก็บรายการล่าสุดไว้ 1 รายการต่อชุด และลบเฉพาะสำเนาที่ซ้ำกัน",
+    message:"พบคำถามและคำตอบที่เหมือนกันซ้ำ " + info.duplicateCount + " รายการ ระบบจะเก็บรายการที่แก้ไขล่าสุดไว้ 1 รายการต่อชุด และลบเฉพาะสำเนาที่ซ้ำ",
     iconText:"!",
     secondaryText:"ยกเลิก",
     primaryText:"ลบรายการซ้ำ",
@@ -6408,12 +6459,9 @@ async function cleanupKnowledgeDuplicates() {
       const btn = $("knowledgeCleanupBtn");
       showBusy(btn,true,"ล้างรายการซ้ำ","กำลังลบ...");
       const ids = Array.from(info.duplicateIds);
-      const { error } = await sb.from("donor_knowledge_base").delete().in("id", ids);
+      const ok = await deleteKnowledgeRows(ids, "ลบรายการซ้ำแล้ว " + ids.length + " รายการ");
       showBusy(btn,false,"ล้างรายการซ้ำ","กำลังลบ...");
-      if (error) { showModal({title:"ลบไม่สำเร็จ",message:error.message,iconText:"!"}); return; }
-      donorKnowledgeLoadedAt = 0;
-      showToastMessage("ลบรายการซ้ำแล้ว " + ids.length + " รายการ");
-      await loadStaffKnowledgeBase();
+      return ok;
     }
   });
 }
@@ -6441,7 +6489,7 @@ function renderKnowledgeList() {
     const auto = !!r.auto_answer_enabled;
     const dupGroup = duplicateInfo.duplicateGroups.find(function(g){ return g.keep.id === r.id; });
     const dupBadge = dupGroup ? '<b class="kb-duplicate"><i class="bi bi-files"></i> ซ้ำ ' + (dupGroup.remove.length + 1) + ' รายการ</b>' : '';
-    return '<article class="knowledge-card ' + (!active?'is-paused':'') + '"><div class="knowledge-card-main"><div class="knowledge-card-tags"><span>' + escapeHtml(donorKnowledgeCategoryLabel(r.category)) + '</span>' + (auto&&active?'<b class="kb-auto"><i class="bi bi-stars"></i> ตอบอัตโนมัติ</b>':'<b class="kb-paused">ไม่ตอบอัตโนมัติ</b>') + dupBadge + '</div><h5>' + escapeHtml(r.canonical_question || '') + '</h5><p>' + escapeHtml(String(r.answer_text||'').slice(0,260)) + (String(r.answer_text||'').length>260?'…':'') + '</p><small>แก้ล่าสุด ' + escapeHtml(r.updated_by_name || r.created_by_name || 'เจ้าหน้าที่') + ' · ' + escapeHtml(formatBangkokLogTime(r.updated_at,true)) + '</small></div><div class="knowledge-card-actions"><button type="button" class="btn btn-soft btn-sm" onclick="editKnowledgeEntry(\'' + escapeHtml(r.id) + '\')"><i class="bi bi-pencil-square"></i> แก้ไข</button><button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleKnowledgeEntry(\'' + escapeHtml(r.id) + '\',' + (!active) + ',' + auto + ')">' + (active?'พักใช้':'เปิดใช้') + '</button><button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleKnowledgeEntry(\'' + escapeHtml(r.id) + '\',' + active + ',' + (!auto) + ')">' + (auto?'หยุดตอบเอง':'ให้ตอบเอง') + '</button></div></article>';
+    return '<article class="knowledge-card ' + (!active?'is-paused':'') + '"><div class="knowledge-card-main"><div class="knowledge-card-tags"><span>' + escapeHtml(donorKnowledgeCategoryLabel(r.category)) + '</span>' + (auto&&active?'<b class="kb-auto"><i class="bi bi-stars"></i> ตอบอัตโนมัติ</b>':'<b class="kb-paused">ไม่ตอบอัตโนมัติ</b>') + dupBadge + '</div><h5>' + escapeHtml(r.canonical_question || '') + '</h5><p>' + escapeHtml(String(r.answer_text||'').slice(0,260)) + (String(r.answer_text||'').length>260?'…':'') + '</p><small>แก้ล่าสุด ' + escapeHtml(r.updated_by_name || r.created_by_name || 'เจ้าหน้าที่') + ' · ' + escapeHtml(formatBangkokLogTime(r.updated_at,true)) + '</small></div><div class="knowledge-card-actions"><button type="button" class="btn btn-soft btn-sm" onclick="editKnowledgeEntry(\'' + escapeHtml(r.id) + '\')"><i class="bi bi-pencil-square"></i> แก้ไข</button>' + (dupGroup ? '<button type="button" class="btn btn-outline-warning btn-sm" onclick="cleanupKnowledgeDuplicatesFor(\'' + escapeHtml(r.id) + '\')"><i class="bi bi-files"></i> ลบซ้ำ ' + dupGroup.remove.length + '</button>' : '') + '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleKnowledgeEntry(\'' + escapeHtml(r.id) + '\',' + (!active) + ',' + auto + ')">' + (active?'พักใช้':'เปิดใช้') + '</button><button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleKnowledgeEntry(\'' + escapeHtml(r.id) + '\',' + active + ',' + (!auto) + ')">' + (auto?'หยุดตอบเอง':'ให้ตอบเอง') + '</button><button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteKnowledgeEntry(\'' + escapeHtml(r.id) + '\')"><i class="bi bi-trash3"></i> ลบ</button></div></article>';
   }).join('') + '</div>';
 }
 
@@ -7138,7 +7186,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.38").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.39").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
