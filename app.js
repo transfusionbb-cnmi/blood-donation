@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.39 */
+/* CNMI Blood Donation Supabase Frontend v15.40 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -210,7 +210,7 @@ sb.auth.onAuthStateChange(async function(event, session) {
 });
 
 const defaultScreeningQuestions = [
-  { text:"ท่านนอนหลับพักผ่อนเพียงพอหรือไม่ อย่างน้อยประมาณ 5 ชั่วโมง", passAnswer:"yes", failMessage:"ท่านควรพักผ่อนให้เพียงพอก่อนบริจาคโลหิต" },
+  { text:"ท่านนอนหลับพักผ่อนเพียงพอหรือไม่ อย่างน้อยประมาณ 6 ชั่วโมง", passAnswer:"yes", failMessage:"ท่านควรพักผ่อนให้เพียงพอก่อนบริจาคโลหิต" },
   { text:"ภายใน 4 ชั่วโมงที่ผ่านมา ท่านได้รับประทานอาหารมาแล้วหรือไม่", passAnswer:"yes", failMessage:"แนะนำให้รับประทานอาหารก่อนมาบริจาคโลหิต และหลีกเลี่ยงอาหารไขมันสูง" },
   { text:"ขณะนี้ท่านรู้สึกสบายดี ไม่มีไข้ ไอ เจ็บคอ หรืออาการเจ็บป่วยชัดเจน ใช่หรือไม่", passAnswer:"yes", failMessage:"หากมีอาการไม่สบาย แนะนำให้พักผ่อนก่อน และติดต่อเจ้าหน้าที่หากต้องการสอบถามเพิ่มเติม" },
   { text:"ช่วงนี้ท่านมีแผลอักเสบ ติดเชื้อ หรืออยู่ระหว่างรับประทานยาปฏิชีวนะหรือไม่", passAnswer:"no", failMessage:"กรุณาติดต่อเจ้าหน้าที่ก่อนจองคิว เพื่อประเมินความพร้อมในการบริจาคโลหิต" },
@@ -5105,7 +5105,7 @@ async function donorChatRespondToKind(kind) {
     appendDonorAutoAnswer('<b>บริจาคเกล็ดเลือดต้องจองล่วงหน้าค่ะ</b><span>เปิดวันจันทร์–ศุกร์ รอบ 09:00 และ 13:00 น. รอบละ 2 คน และต้องจองล่วงหน้าอย่างน้อย 24 ชั่วโมง</span><div class="chat-inline-actions">' + donorChatActionButton('ดูคิว / จองเกล็ดเลือด','screening','bi-droplet-half') + '</div>'); return true;
   }
   if (kind === 'prepare') {
-    appendDonorAutoAnswer('<b>ก่อนบริจาค</b><span>• พักผ่อนให้พอ อย่างน้อยประมาณ 5 ชั่วโมง<br>• รับประทานอาหารตามปกติ และเลี่ยงอาหารไขมันสูง<br>• ดื่มน้ำประมาณ 300–500 มล. ก่อนบริจาคราว 30 นาที<br>• งดแอลกอฮอล์อย่างน้อย 24 ชั่วโมง</span><div class="chat-inline-actions">' + donorChatActionButton('ดูวิธีเตรียมตัวทั้งหมด','prepare','bi-cup-straw') + '</div>'); return true;
+    appendDonorAutoAnswer('<b>ก่อนบริจาค</b><span>• พักผ่อนให้พอ อย่างน้อยประมาณ 6 ชั่วโมง<br>• รับประทานอาหารตามปกติ และเลี่ยงอาหารไขมันสูง<br>• ดื่มน้ำประมาณ 300–500 มล. ก่อนบริจาคราว 30 นาที<br>• งดแอลกอฮอล์อย่างน้อย 24 ชั่วโมง</span><div class="chat-inline-actions">' + donorChatActionButton('ดูวิธีเตรียมตัวทั้งหมด','prepare','bi-cup-straw') + '</div>'); return true;
   }
   if (kind === 'donate') {
     appendDonorAutoAnswer('<b>เลือกได้ตามนี้ค่ะ</b><span>• เลือดแดง: Walk-in ได้ในวันเปิดทำการ<br>• หมู่คณะมากกว่า 10 คน: แจ้งนัดหมายล่วงหน้า<br>• ขอออกหน่วยนอกสถานที่: สำหรับประมาณ 40 คนขึ้นไป</span><div class="chat-inline-actions">' + donorChatActionButton('เลือกประเภทการบริจาค','donationChoice','bi-heart-pulse') + '</div>'); return true;
@@ -7186,7 +7186,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.39").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.40").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
