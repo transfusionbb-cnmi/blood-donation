@@ -2602,3 +2602,11 @@ body.staff-launcher-shell[data-page="staffLogin"] .brand-header{display:none!imp
   .staff-chat-composer{padding:10px 9px calc(10px + env(safe-area-inset-bottom));}.staff-chat-composer .question-reply-actions{display:grid;grid-template-columns:1fr 1fr}.staff-chat-composer .question-reply-actions .btn{min-width:0;width:100%}.staff-chat-composer #staffQuestionSendBtn{grid-column:1/-1;order:-1}
   .knowledge-duplicate-notice{align-items:stretch;flex-direction:column}.knowledge-duplicate-notice .btn{width:100%}
 }
+
+/* v15.41 platelet booking audit visibility */
+.booking-audit-inline{display:block;margin-top:.38rem;color:#7a8790;font-size:.78rem;line-height:1.35}
+.booking-audit-inline i{margin-right:.2rem}
+.booking-audit-reason{display:block;margin-top:.3rem;color:#7b5d36;font-style:normal;font-size:.82rem;line-height:1.4}
+@media (max-width:768px){
+  .booking-audit-inline{font-size:.8rem;margin-top:.45rem}
+}

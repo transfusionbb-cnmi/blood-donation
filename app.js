@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.40 */
+/* CNMI Blood Donation Supabase Frontend v15.43 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -58,6 +58,8 @@ let staffKnowledgeRows = [];
 let knowledgeSaving = false;
 let lastStaffGateState = "";
 let staffGateRequestId = 0;
+let plateletCancelResendInFlight = new Set();
+let plateletPlannerCancelCleanup = new Set();
 
 const DONOR_CHAT_STORAGE = {
   token:"cnmiDonorChatToken",
@@ -750,6 +752,84 @@ async function syncStaffPlannerEvent(sourceType, sourceId, eventType) {
   } catch (err) {
     // Cross-app sync must never block the main Donor App workflow.
     console.warn("CNMI Staff Planner sync unavailable:", err);
+  }
+}
+
+function plateletResendMetaId(bookingId) {
+  return "plateletCancelResendMeta_" + String(bookingId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+async function loadPlateletCancelResendStatuses(bookingIds) {
+  const ids = Array.from(new Set((bookingIds || []).map(x => String(x || "").trim()).filter(Boolean)));
+  if (!ids.length || !currentStaffProfile) return;
+  try {
+    const { data, error } = await sb.functions.invoke("notify-donor-request", {
+      body: { sourceType:"platelet", eventType:"cancel_resend_status", sourceIds:ids }
+    });
+    if (error || !data?.ok) return;
+    const statuses = data.statuses || {};
+    ids.forEach(function(id){
+      const el = $(plateletResendMetaId(id));
+      if (!el) return;
+      const item = statuses[id];
+      if (!item || !item.sentAt) {
+        el.style.display = "none";
+        el.innerHTML = "";
+        return;
+      }
+      el.style.display = "block";
+      el.innerHTML = '<i class="bi bi-send-check"></i> ส่ง Google Chat ล่าสุด ' + escapeHtml(formatBangkokLogTime(item.sentAt, true)) + ' · โดย ' + escapeHtml(item.actorName || "เจ้าหน้าที่");
+    });
+  } catch (err) {
+    console.warn("CNMI cancel resend status unavailable:", err);
+  }
+}
+
+function cleanupCancelledPlateletPlannerEvents(rows) {
+  (rows || []).filter(r => r && r.status === "ยกเลิก" && r.booking_id).forEach(function(r){
+    const id = String(r.booking_id);
+    if (plateletPlannerCancelCleanup.has(id)) return;
+    plateletPlannerCancelCleanup.add(id);
+    syncStaffPlannerEvent("platelet", id, "cancel_cleanup");
+  });
+}
+
+function confirmResendPlateletCancellationGoogleChat(bookingId, publicCode) {
+  const label = publicCode || bookingId || "รายการนี้";
+  showModal({
+    title:"ส่ง Google Chat อีกครั้ง",
+    message:"ต้องการส่งแจ้งเตือนการยกเลิกคิว " + label + " ไปยัง Google Chat อีกครั้งใช่หรือไม่\n\nระบบจะบันทึกว่าใครเป็นผู้กดส่งซ้ำและวันเวลาไว้ตรวจสอบย้อนหลัง",
+    iconText:"↻",
+    primaryText:"ส่งอีกครั้ง",
+    secondaryText:"ยกเลิก",
+    onPrimary:function(){ resendPlateletCancellationGoogleChat(bookingId); }
+  });
+}
+
+async function resendPlateletCancellationGoogleChat(bookingId) {
+  const isStaff = await ensureStaff(true); if (!isStaff) return;
+  const id = String(bookingId || "").trim();
+  if (!id || plateletCancelResendInFlight.has(id)) return;
+  plateletCancelResendInFlight.add(id);
+  try {
+    const { data, error } = await sb.functions.invoke("notify-donor-request", {
+      body: { sourceType:"platelet", sourceId:id, eventType:"cancel_resend" }
+    });
+    if (error || !data?.ok || data?.results?.google_chat !== "sent") {
+      showModal({ title:"ส่ง Google Chat ไม่สำเร็จ", message:error?.message || data?.message || "กรุณาตรวจสอบ GOOGLE_CHAT_WEBHOOK_URL แล้วลองใหม่", iconText:"!" });
+      return;
+    }
+    const info = data.resend || {};
+    const el = $(plateletResendMetaId(id));
+    if (el) {
+      el.style.display = "block";
+      el.innerHTML = '<i class="bi bi-send-check"></i> ส่ง Google Chat ล่าสุด ' + escapeHtml(formatBangkokLogTime(info.sentAt || new Date().toISOString(), true)) + ' · โดย ' + escapeHtml(info.actorName || currentStaffDisplayName());
+    }
+    showModal({ title:"ส่ง Google Chat แล้ว", message:"ส่งแจ้งเตือนการยกเลิกคิวซ้ำเรียบร้อยแล้ว\nผู้ส่ง: " + (info.actorName || currentStaffDisplayName()), iconText:"✓", type:"success" });
+  } catch (err) {
+    showModal({ title:"ส่ง Google Chat ไม่สำเร็จ", message:err?.message || String(err), iconText:"!" });
+  } finally {
+    plateletCancelResendInFlight.delete(id);
   }
 }
 
@@ -1454,7 +1534,7 @@ async function cancelBookingUI() {
     return;
   }
 
-  syncStaffPlannerEvent("platelet", currentManageBooking.bookingId, "cancel");
+  triggerExternalNotification("platelet", currentManageBooking.bookingId, "cancel");
 
   showModal({
     title:"ยกเลิกนัดหมายสำเร็จ",
@@ -3797,6 +3877,46 @@ async function loadPlateletMonthAdmin() {
   calendar.innerHTML = html;
 }
 
+
+function plateletAuditActorText(r) {
+  if (!r) return "";
+  const actorType = String(r.actor_type || "").toLowerCase();
+  let actor = r.acted_by_name || r.acted_by_email || "";
+  if (!actor) {
+    if (actorType === "donor") actor = "ผู้บริจาค";
+    else if (actorType === "system") actor = "ระบบอัตโนมัติ";
+    else if (actorType === "unknown") actor = "ไม่ทราบผู้ดำเนินการ";
+    else actor = "เจ้าหน้าที่";
+  }
+  let source = r.action_source || "";
+  if (!source) {
+    if (actorType === "donor") source = "Donor App";
+    else if (actorType === "system") source = "System";
+    else if (r.acted_by_name || r.acted_by_email || r.acted_by) source = "Staff";
+  }
+  return actor + (source ? " · " + source : "");
+}
+
+async function fetchPlateletBookingAuditRows(date, limitCount) {
+  const limit = Number(limitCount || 100);
+  const fullSelect = "id,booking_id,public_code,booking_date,time_slot,full_name,action,old_status,new_status,acted_by,acted_by_name,acted_by_email,actor_type,action_source,reason,booking_snapshot,created_at";
+  let result = await sb.from("staff_booking_audit_log")
+    .select(fullSelect)
+    .eq("donation_type", "Platelet")
+    .eq("booking_date", date)
+    .order("created_at", { ascending:false })
+    .limit(limit);
+  if (result.error && /actor_type|action_source|reason/i.test(result.error.message || "")) {
+    result = await sb.from("staff_booking_audit_log")
+      .select("id,booking_id,public_code,booking_date,time_slot,full_name,action,old_status,new_status,acted_by,acted_by_name,acted_by_email,booking_snapshot,created_at")
+      .eq("donation_type", "Platelet")
+      .eq("booking_date", date)
+      .order("created_at", { ascending:false })
+      .limit(limit);
+  }
+  return result;
+}
+
 async function loadStaffBookings() {
   const date = $("bookingListDate")?.value || todayISO();
   const box = $("staffBookingsResult");
@@ -3805,11 +3925,21 @@ async function loadStaffBookings() {
   const isStaff = await ensureStaff(true); if (!isStaff) return;
 
   box.innerHTML = '<div class="staff-result">กำลังโหลด...</div>';
-  const { data, error } = await sb.from("bookings")
-    .select("booking_id,public_code,full_name,phone,email,donor_id,booking_date,time_slot,donation_type,status,note")
-    .eq("booking_date", date)
-    .eq("donation_type", "Platelet")
-    .order("time_slot", { ascending:true });
+  const [bookingResult, auditResult] = await Promise.all([
+    sb.from("bookings")
+      .select("booking_id,public_code,full_name,phone,email,donor_id,booking_date,time_slot,donation_type,status,note")
+      .eq("booking_date", date)
+      .eq("donation_type", "Platelet")
+      .order("time_slot", { ascending:true }),
+    fetchPlateletBookingAuditRows(date, 100)
+  ]);
+  const data = bookingResult.data;
+  const error = bookingResult.error;
+  const auditRows = (!auditResult.error && Array.isArray(auditResult.data)) ? auditResult.data : [];
+  const latestCancelAudit = {};
+  auditRows.forEach(r => {
+    if (r.action === "status_change" && r.new_status === "ยกเลิก" && !latestCancelAudit[r.booking_id]) latestCancelAudit[r.booking_id] = r;
+  });
   if (error) {
     box.innerHTML = '<div class="staff-result fail">โหลดไม่สำเร็จ<br>' + escapeHtml(error.message) + '</div>';
     await loadPlateletBookingAuditLog();
@@ -3826,23 +3956,35 @@ async function loadStaffBookings() {
       const safeName = encodeURIComponent(String(r.full_name || ""));
       const safeDate = encodeURIComponent(String(r.booking_date || ""));
       const safeTime = encodeURIComponent(String(r.time_slot || "").slice(0,5));
+      const safeCode = encodeURIComponent(String(r.public_code || r.booking_id || ""));
       const statusClass = r.status === 'ต้องติดต่อ' ? 'booking-status-contact' : (r.status === 'ยกเลิก' ? 'booking-status-cancel' : 'booking-status-ok');
+      const cancelAudit = r.status === 'ยกเลิก' ? latestCancelAudit[r.booking_id] : null;
+      const resendMetaId = plateletResendMetaId(r.booking_id);
+      const cancelMeta = r.status === 'ยกเลิก'
+        ? '<small class="booking-audit-inline"><i class="bi bi-person-check"></i> ' + escapeHtml(cancelAudit ? plateletAuditActorText(cancelAudit) : 'ยังไม่มีข้อมูลผู้ดำเนินการ') + (cancelAudit?.created_at ? ' · ' + escapeHtml(formatBangkokLogTime(cancelAudit.created_at, true)) : '') + '</small><small id="' + escapeHtml(resendMetaId) + '" class="booking-audit-inline" style="display:none"></small>'
+        : '';
       const statusActions = r.status === 'ต้องติดต่อ'
         ? "<button type='button' class='btn btn-sm btn-outline-success me-1' onclick=\"staffSetPlateletBookingStatus(decodeURIComponent('" + safeId + "'),'จองแล้ว')\">ยืนยันคิว</button><button type='button' class='btn btn-sm btn-outline-secondary me-1' onclick=\"staffSetPlateletBookingStatus(decodeURIComponent('" + safeId + "'),'ยกเลิก')\">ยกเลิกคิว</button>"
         : (r.status !== 'ยกเลิก' ? "<button type='button' class='btn btn-sm btn-outline-secondary me-1' onclick=\"staffSetPlateletBookingStatus(decodeURIComponent('" + safeId + "'),'ยกเลิก')\">ยกเลิกคิว</button>" : '');
+      const resendAction = r.status === 'ยกเลิก'
+        ? "<button type='button' class='btn btn-sm btn-outline-primary me-1' onclick=\"confirmResendPlateletCancellationGoogleChat(decodeURIComponent('" + safeId + "'),decodeURIComponent('" + safeCode + "'))\"><i class='bi bi-send'></i> ส่ง Google Chat อีกครั้ง</button>"
+        : '';
       const deleteAction = "<button type='button' class='btn btn-sm btn-outline-danger' onclick=\"confirmStaffDeletePlateletBooking(decodeURIComponent('" + safeId + "'),decodeURIComponent('" + safeName + "'),decodeURIComponent('" + safeDate + "'),decodeURIComponent('" + safeTime + "'))\"><i class='bi bi-trash3'></i> ลบรายการ</button>";
-      const actions = statusActions + deleteAction;
+      const actions = statusActions + resendAction + deleteAction;
       return '<tr>' +
         '<td data-label="เวลา">' + escapeHtml(String(r.time_slot).slice(0,5)) + '</td>' +
         '<td data-label="เลขนัด">' + escapeHtml(r.public_code || r.booking_id || '') + '</td>' +
         '<td data-label="ชื่อ">' + escapeHtml(r.full_name) + '</td>' +
         '<td data-label="ติดต่อ"><a href="tel:' + escapeHtml(r.phone) + '">' + escapeHtml(r.phone) + '</a>' + (r.email ? '<br><a class="mail-link-btn" href="' + escapeHtml(buildMailtoHref(r.email, 'CNMI Blood Donation — นัดบริจาคเกล็ดเลือด', 'เรียน ' + (r.full_name || '') + '\n\nเกี่ยวกับนัดบริจาคเกล็ดเลือด เลขนัด ' + (r.public_code || r.booking_id || '') + '\nวันที่ ' + isoToThaiDate(r.booking_date, true) + ' เวลา ' + String(r.time_slot).slice(0,5) + ' น.\n\nห้องบริจาคโลหิต CNMI')) + '"><i class="bi bi-envelope"></i> ' + escapeHtml(r.email) + '</a>' : '') + '</td>' +
         '<td data-label="Donor ID">' + escapeHtml(r.donor_id || '') + '</td>' +
-        '<td data-label="สถานะ"><span class="booking-status-pill ' + statusClass + '">' + escapeHtml(r.status) + '</span></td>' +
+        '<td data-label="สถานะ"><span class="booking-status-pill ' + statusClass + '">' + escapeHtml(r.status) + '</span>' + cancelMeta + '</td>' +
         '<td data-label="จัดการ"><div class="booking-row-actions">' + actions + '</div></td>' +
         '</tr>';
     }).join("") +
     '</tbody></table>';
+  const cancelledIds = data.filter(r => r.status === 'ยกเลิก').map(r => r.booking_id).filter(Boolean);
+  loadPlateletCancelResendStatuses(cancelledIds);
+  cleanupCancelledPlateletPlannerEvents(data);
   await loadPlateletBookingAuditLog();
 }
 
@@ -3853,7 +3995,11 @@ async function staffSetPlateletBookingStatus(bookingId, status) {
     showModal({ title:"บันทึกไม่สำเร็จ", message:error?.message || data?.message || "กรุณาลองใหม่", iconText:"!" });
     return;
   }
-  syncStaffPlannerEvent("platelet", bookingId, "status");
+  if (status === "ยกเลิก" && data.unchanged !== true) {
+    triggerExternalNotification("platelet", bookingId, "cancel");
+  } else {
+    syncStaffPlannerEvent("platelet", bookingId, "status");
+  }
   await loadStaffBookings();
   await loadPlateletMonthAdmin();
 }
@@ -3888,12 +4034,7 @@ async function loadPlateletBookingAuditLog() {
   const box = $("bookingAuditResult"); if (!box || !currentStaffProfile) return;
   const date = $("bookingListDate")?.value || todayISO();
   box.innerHTML = '<div class="staff-result">กำลังโหลดประวัติ...</div>';
-  const { data, error } = await sb.from("staff_booking_audit_log")
-    .select("id,booking_id,public_code,booking_date,time_slot,full_name,action,old_status,new_status,acted_by_name,acted_by_email,created_at")
-    .eq("donation_type", "Platelet")
-    .eq("booking_date", date)
-    .order("created_at", { ascending:false })
-    .limit(50);
+  const { data, error } = await fetchPlateletBookingAuditRows(date, 50);
   if (error) {
     box.innerHTML = '<div class="staff-result fail">โหลด Audit Log ไม่สำเร็จ<br>' + escapeHtml(error.message || '') + '</div>';
     return;
@@ -3904,13 +4045,17 @@ async function loadPlateletBookingAuditLog() {
     return;
   }
   box.innerHTML = '<div class="booking-audit-list">' + rows.map(r => {
-    const actionLabel = r.action === 'delete' ? 'ลบรายการ' : 'เปลี่ยนสถานะ';
+    let actionLabel = 'เปลี่ยนสถานะ';
+    if (r.action === 'create') actionLabel = 'สร้างนัด';
+    else if (r.action === 'delete') actionLabel = 'ลบรายการ';
+    else if (r.action === 'status_change' && r.new_status === 'ยกเลิก') actionLabel = 'ยกเลิกนัด';
     const actionClass = r.action === 'delete' ? 'audit-delete' : 'audit-status';
-    const statusText = r.action === 'status_change' ? (' · ' + escapeHtml(r.old_status || '-') + ' → ' + escapeHtml(r.new_status || '-')) : '';
-    const actor = r.acted_by_name || r.acted_by_email || 'เจ้าหน้าที่';
+    const statusText = r.action === 'status_change' ? (' · ' + escapeHtml(r.old_status || 'ไม่ทราบ') + ' → ' + escapeHtml(r.new_status || '-')) : (r.action === 'create' ? (' · สถานะ ' + escapeHtml(r.new_status || 'จองแล้ว')) : '');
+    const actor = plateletAuditActorText(r);
+    const reasonText = r.reason ? '<em class="booking-audit-reason">เหตุผล: ' + escapeHtml(r.reason) + '</em>' : '';
     return '<article class="booking-audit-item ' + actionClass + '">' +
-      '<div><b>' + escapeHtml(actionLabel) + '</b><span>' + escapeHtml(r.public_code || r.booking_id || '-') + ' · ' + escapeHtml(r.full_name || '-') + statusText + '</span></div>' +
-      '<small><i class="bi bi-person-check"></i> ' + escapeHtml(actor) + ' · ' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</small>' +
+      '<div><b>' + escapeHtml(actionLabel) + '</b><span>' + escapeHtml(r.public_code || r.booking_id || '-') + ' · ' + escapeHtml(r.full_name || '-') + statusText + '</span>' + reasonText + '</div>' +
+      '<small><i class="bi bi-person-check"></i> ' + escapeHtml(actor || 'ไม่ทราบผู้ดำเนินการ') + ' · ' + escapeHtml(formatBangkokLogTime(r.created_at, true)) + '</small>' +
     '</article>';
   }).join('') + '</div>';
 }
@@ -7186,7 +7331,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.40").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.43").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
