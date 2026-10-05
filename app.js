@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.43 */
+/* CNMI Blood Donation Supabase Frontend v15.44 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -60,6 +60,131 @@ let lastStaffGateState = "";
 let staffGateRequestId = 0;
 let plateletCancelResendInFlight = new Set();
 let plateletPlannerCancelCleanup = new Set();
+
+// v15.44 — Desktop Staff inactivity security
+// Shared workstations must not keep a Staff account signed in when nobody is using the computer.
+// Mobile phones/tablets are intentionally excluded because each device is treated as personal.
+const STAFF_DESKTOP_IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+const STAFF_DESKTOP_IDLE_CHECK_MS = 10 * 1000;
+const STAFF_DESKTOP_IDLE_ACTIVITY_KEY = "cnmi_staff_desktop_last_activity_v15_44";
+let staffDesktopIdleGuardReady = false;
+let staffDesktopIdleCheckTimer = null;
+let staffDesktopIdleLastWriteAt = 0;
+let staffDesktopIdleMemoryActivity = 0;
+let staffDesktopIdleLogoutRunning = false;
+
+function isMobileOrTabletStaffDevice() {
+  try {
+    if (navigator.userAgentData && navigator.userAgentData.mobile === true) return true;
+  } catch (err) {}
+  const ua = String(navigator.userAgent || "");
+  if (/Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
+  // iPadOS may identify itself as MacIntel while still being a touch-first tablet.
+  if (navigator.platform === "MacIntel" && Number(navigator.maxTouchPoints || 0) > 1) return true;
+  return false;
+}
+
+function desktopStaffIdleGuardEnabled() {
+  return !isMobileOrTabletStaffDevice();
+}
+
+function readDesktopStaffLastActivity() {
+  try {
+    const value = Number(localStorage.getItem(STAFF_DESKTOP_IDLE_ACTIVITY_KEY) || 0);
+    if (Number.isFinite(value) && value > 0) {
+      staffDesktopIdleMemoryActivity = value;
+      return value;
+    }
+  } catch (err) {}
+  return staffDesktopIdleMemoryActivity || 0;
+}
+
+function writeDesktopStaffActivity(force) {
+  if (!desktopStaffIdleGuardEnabled()) return;
+  const now = Date.now();
+  // Mousemove fires very frequently; one write every 5 seconds is enough.
+  if (!force && now - staffDesktopIdleLastWriteAt < 5000) return;
+  staffDesktopIdleLastWriteAt = now;
+  staffDesktopIdleMemoryActivity = now;
+  try { localStorage.setItem(STAFF_DESKTOP_IDLE_ACTIVITY_KEY, String(now)); } catch (err) {}
+}
+
+function clearDesktopStaffActivity() {
+  staffDesktopIdleLastWriteAt = 0;
+  staffDesktopIdleMemoryActivity = 0;
+  try { localStorage.removeItem(STAFF_DESKTOP_IDLE_ACTIVITY_KEY); } catch (err) {}
+}
+
+function isDesktopStaffIdleExpired() {
+  if (!desktopStaffIdleGuardEnabled()) return false;
+  const last = readDesktopStaffLastActivity();
+  return !!last && (Date.now() - last >= STAFF_DESKTOP_IDLE_TIMEOUT_MS);
+}
+
+async function logoutDesktopStaffForInactivity() {
+  if (!desktopStaffIdleGuardEnabled() || staffDesktopIdleLogoutRunning) return false;
+  const session = await getPersistedStaffSession();
+  if (!session || !session.user) return false;
+  if (!isDesktopStaffIdleExpired()) return false;
+
+  staffDesktopIdleLogoutRunning = true;
+  try {
+    await staffLogout({ idleTimeout:true });
+    showModal({
+      title:"ออกจากระบบอัตโนมัติ",
+      message:"เพื่อความปลอดภัย ระบบออกจากบัญชี Staff บนคอมพิวเตอร์แล้ว เนื่องจากไม่มีการใช้งานติดต่อกัน 15 นาที กรุณาเข้าสู่ระบบใหม่",
+      iconText:"!"
+    });
+    return true;
+  } finally {
+    staffDesktopIdleLogoutRunning = false;
+  }
+}
+
+function initDesktopStaffIdleGuard() {
+  if (!desktopStaffIdleGuardEnabled() || staffDesktopIdleGuardReady) return;
+  staffDesktopIdleGuardReady = true;
+
+  const markActivity = function() {
+    if (!currentStaffProfile || staffDesktopIdleLogoutRunning) return;
+    writeDesktopStaffActivity(false);
+  };
+
+  ["mousemove", "mousedown", "pointerdown", "keydown", "wheel", "scroll", "input"].forEach(function(eventName) {
+    document.addEventListener(eventName, markActivity, { passive:true, capture:true });
+  });
+
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState !== "visible") return;
+    // Check expiry before counting the act of returning to the tab as activity.
+    logoutDesktopStaffForInactivity().then(function(didLogout) {
+      if (!didLogout && currentStaffProfile) writeDesktopStaffActivity(true);
+    });
+  });
+
+  window.addEventListener("focus", function() {
+    logoutDesktopStaffForInactivity().then(function(didLogout) {
+      if (!didLogout && currentStaffProfile) writeDesktopStaffActivity(true);
+    });
+  });
+
+  window.addEventListener("storage", function(event) {
+    if (event.key !== STAFF_DESKTOP_IDLE_ACTIVITY_KEY) return;
+    // Activity in another Staff tab keeps the same workstation session alive.
+    if (event.newValue) {
+      const sharedValue = Number(event.newValue) || 0;
+      if (sharedValue) {
+        staffDesktopIdleLastWriteAt = sharedValue;
+        staffDesktopIdleMemoryActivity = sharedValue;
+      }
+    }
+  });
+
+  staffDesktopIdleCheckTimer = window.setInterval(function() {
+    if (!currentStaffProfile || document.visibilityState === "hidden") return;
+    logoutDesktopStaffForInactivity();
+  }, STAFF_DESKTOP_IDLE_CHECK_MS);
+}
 
 const DONOR_CHAT_STORAGE = {
   token:"cnmiDonorChatToken",
@@ -1597,6 +1722,15 @@ async function showStaffGate() {
   }
   setStaffAuthLoading(false);
   showPage("staffLogin");
+  if (lastStaffGateState === "idle") {
+    setTimeout(function() {
+      showModal({
+        title:"หมดเวลาใช้งานบนคอมพิวเตอร์",
+        message:"ไม่มีการใช้งาน Staff ติดต่อกัน 15 นาที ระบบจึงออกจากบัญชีอัตโนมัติ กรุณาเข้าสู่ระบบใหม่",
+        iconText:"!"
+      });
+    }, 80);
+  }
 }
 
 async function staffLogin() {
@@ -1616,6 +1750,7 @@ async function staffLogin() {
     return;
   }
 
+  if (desktopStaffIdleGuardEnabled()) writeDesktopStaffActivity(true);
   setStaffAuthLoading(true);
   const ok = await ensureStaff(true);
   setStaffAuthLoading(false);
@@ -1771,6 +1906,20 @@ async function ensureStaff(showError) {
     return false;
   }
 
+  if (desktopStaffIdleGuardEnabled()) {
+    const lastActivity = readDesktopStaffLastActivity();
+    if (lastActivity && Date.now() - lastActivity >= STAFF_DESKTOP_IDLE_TIMEOUT_MS) {
+      // Local sign-out only: desktop timeout must never revoke the Staff session on the user's phone.
+      await sb.auth.signOut({ scope:"local" });
+      currentStaffProfile = null;
+      clearDesktopStaffActivity();
+      lastStaffGateState = "idle";
+      return false;
+    }
+    // Existing sessions created before v15.44 get a fresh 15-minute window on first load.
+    if (!lastActivity) writeDesktopStaffActivity(true);
+  }
+
   let syncData = null;
   let syncError = null;
   try {
@@ -1804,6 +1953,10 @@ async function ensureStaff(showError) {
 
   currentStaffProfile = syncData.profile || null;
   applyStaffProfileUI();
+  if (desktopStaffIdleGuardEnabled()) {
+    initDesktopStaffIdleGuard();
+    writeDesktopStaffActivity(true);
+  }
   lastStaffGateState = "ready";
   return true;
 }
@@ -1923,14 +2076,18 @@ async function requireAdmin() {
   return true;
 }
 
-async function staffLogout() {
+async function staffLogout(options) {
+  options = options || {};
   staffGateRequestId += 1;
   setStaffAuthLoading(false);
-  await sb.auth.signOut();
+  // Sign out only this browser/device. A shared-computer logout must not sign the same person out of the Staff PWA on their phone.
+  await sb.auth.signOut({ scope:"local" });
   currentStaffProfile = null;
   staffViewMode = null;
+  clearDesktopStaffActivity();
   const staffLauncher = window.CNMI_STAFF_LAUNCHER === true || /\/staff\.html$/i.test(window.location.pathname || "");
   showPage(staffLauncher ? "staffLogin" : "home");
+  if (!options.idleTimeout) return;
 }
 
 function toggleStaffNavGroup(groupId, forceOpen) {
@@ -7331,7 +7488,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.43").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.44").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
@@ -7343,6 +7500,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   initInputs();
   initMobileViewportPolish();
   initPwaShell();
+  initDesktopStaffIdleGuard();
   updateMobileNav("home");
 
   const hashText = String(window.location.hash || "") + " " + String(window.location.search || "");
