@@ -2610,3 +2610,9 @@ body.staff-launcher-shell[data-page="staffLogin"] .brand-header{display:none!imp
 @media (max-width:768px){
   .booking-audit-inline{font-size:.8rem;margin-top:.45rem}
 }
+
+/* v15.45 — Staff question send lock: make slow sends visibly non-clickable */
+.staff-chat-composer.is-sending{background:#fffaf3}
+.staff-chat-composer.is-sending textarea{background:#f4f6f7;color:#7e888e;cursor:wait}
+.staff-chat-composer.is-sending .question-reply-actions .btn:disabled,.staff-chat-workspace.is-sending .staff-chat-workspace-head .btn:disabled{opacity:.48;cursor:not-allowed;pointer-events:none}
+.staff-chat-composer.is-sending .staff-question-send-status{background:#fff3d8;color:#8a6619;font-weight:700}

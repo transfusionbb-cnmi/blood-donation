@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.44 */
+/* CNMI Blood Donation Supabase Frontend v15.45 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -6451,6 +6451,7 @@ async function openStaffQuestionDetail(id) {
   if (closeBtn) closeBtn.style.display = isClosed ? "none" : "inline-flex";
   if ($("staffQuestionReplyBox")) $("staffQuestionReplyBox").classList.toggle("is-closed", isClosed);
   if ($("staffQuestionSendStatus")) $("staffQuestionSendStatus").innerHTML = isClosed ? '<i class="bi bi-lock"></i> ปิดเรื่องแล้ว · ประวัติแชทยังเก็บไว้ครบ' : (q.last_reply ? '<i class="bi bi-check2-circle"></i> คำตอบล่าสุดถูกบันทึกแล้ว · ' + escapeHtml(q.replied_by_name || "เจ้าหน้าที่") + ' · ' + escapeHtml(formatBangkokLogTime(q.replied_at || q.updated_at, true)) : '<i class="bi bi-info-circle"></i> เมื่อส่งสำเร็จ ข้อความจะขึ้นในแชททันที');
+  syncStaffQuestionSendingUi();
   if ($("staffQuestionDetailCard")) {
     $("staffQuestionDetailCard").style.display = "block";
     $("staffQuestionDetailCard").scrollIntoView({ behavior:"smooth", block:"start" });
@@ -6461,7 +6462,37 @@ async function openStaffQuestionDetail(id) {
   }, 60);
 }
 
+function syncStaffQuestionSendingUi() {
+  const busy = !!staffQuestionSending;
+  const isClosed = currentStaffQuestion?.status === "ปิดเรื่อง";
+  const composer = $("staffQuestionReplyBox");
+  const detailCard = $("staffQuestionDetailCard");
+  const replyText = $("staffQuestionReplyText");
+  const receiveBtn = $("staffQuestionReceiveBtn");
+  const doctorBtn = $("staffQuestionDoctorBtn");
+  const sendBtn = $("staffQuestionSendBtn");
+  const saveKnowledgeBtn = $("staffQuestionSaveKnowledgeBtn");
+  const closeBtn = $("staffQuestionCloseBtn");
+  const backBtn = $("staffQuestionBackBtn");
+
+  composer?.classList.toggle("is-sending", busy);
+  detailCard?.classList.toggle("is-sending", busy);
+
+  if (replyText) {
+    replyText.readOnly = busy && !isClosed;
+    replyText.setAttribute("aria-busy", busy ? "true" : "false");
+  }
+  [receiveBtn, doctorBtn, sendBtn, closeBtn, backBtn].forEach(function(btn){
+    if (btn) btn.disabled = busy;
+  });
+  if (saveKnowledgeBtn) saveKnowledgeBtn.disabled = busy || !currentStaffQuestion?.last_reply;
+}
+
 function closeStaffQuestionDetail() {
+  if (staffQuestionSending) {
+    showToastMessage("กำลังส่งคำตอบ กรุณารอให้ส่งเสร็จก่อน");
+    return;
+  }
   currentStaffQuestion = null;
   staffQuestionSending = false;
   if ($("staffQuestionDetailCard")) $("staffQuestionDetailCard").style.display = "none";
@@ -6471,7 +6502,11 @@ function closeStaffQuestionDetail() {
 }
 
 async function updateStaffQuestion(status, notifyDoctor) {
-  if (!currentStaffQuestion || staffQuestionSending) return;
+  if (!currentStaffQuestion) return;
+  if (staffQuestionSending) {
+    showToastMessage("กำลังส่งคำตอบ กรุณารอสักครู่");
+    return;
+  }
   const reply = String($("staffQuestionReplyText")?.value || "").trim();
   if (status === "ตอบแล้ว" && !reply) { showModal({title:"ยังไม่มีข้อความตอบ",message:"กรุณาพิมพ์คำตอบก่อนกดส่งคำตอบ",iconText:"!"}); return; }
 
@@ -6480,12 +6515,14 @@ async function updateStaffQuestion(status, notifyDoctor) {
   const statusBox = $("staffQuestionSendStatus");
   const originalBtnHtml = sendBtn ? sendBtn.innerHTML : "";
   if (isSendingReply) {
+    // Lock the whole composer immediately. The RPC can take a few seconds on mobile/slow networks,
+    // so every action button is disabled until this send attempt finishes.
     staffQuestionSending = true;
+    syncStaffQuestionSendingUi();
     if (sendBtn) {
-      sendBtn.disabled = true;
-      sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> กำลังส่ง...';
+      sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> กำลังส่ง... ห้ามกดซ้ำ';
     }
-    if (statusBox) statusBox.innerHTML = '<i class="bi bi-hourglass-split"></i> กำลังส่งคำตอบ กรุณารอสักครู่';
+    if (statusBox) statusBox.innerHTML = '<i class="bi bi-hourglass-split"></i> กำลังส่งคำตอบ · ระบบล็อกปุ่มไว้จนกว่าจะส่งเสร็จ';
   }
 
   const senderType = status === "ตอบแล้ว" && currentStaffQuestion.needs_doctor ? "doctor" : "staff";
@@ -6512,8 +6549,8 @@ async function updateStaffQuestion(status, notifyDoctor) {
   } finally {
     if (isSendingReply) {
       staffQuestionSending = false;
+      syncStaffQuestionSendingUi();
       if (sendBtn) {
-        sendBtn.disabled = false;
         sendBtn.innerHTML = originalBtnHtml || '<i class="bi bi-send-check"></i> ส่งคำตอบ';
       }
     }
@@ -7488,7 +7525,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.44").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.45").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
