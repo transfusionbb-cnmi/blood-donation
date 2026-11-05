@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.46 */
+/* CNMI Blood Donation Supabase Frontend v15.47 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -4301,14 +4301,15 @@ async function loadGroupPublicCalendar(allowAutoNext) {
     const iso = month + "-" + pad2(day);
     const row = dayMap[iso];
     const past = iso < today;
-    const open = !past && row && row.open === true;
+    const weekend = isWeekendISO(iso);
+    const open = !past && !weekend && row && row.open === true;
 
     if (open) {
       html += '<button type="button" class="group-public-day open" data-date="' + iso + '" onclick="selectGroupPublicDate(\'' + iso + '\')"><b>' + day + '</b><span>เปิดรับ</span></button>';
     } else {
-      let reason = past ? "ผ่านแล้ว" : "งดรับ";
-      if (!past && row && row.leadTimeOk === false) reason = "ไม่ถึง 24 ชม.";
-      else if (!past && row && row.roomOpen === false) reason = "ห้องปิด";
+      let reason = past ? "ผ่านแล้ว" : (weekend ? "เสาร์–อาทิตย์ปิด" : "งดรับ");
+      if (!past && !weekend && row && row.leadTimeOk === false) reason = "ไม่ถึง 24 ชม.";
+      else if (!past && !weekend && row && row.roomOpen === false) reason = "ห้องปิด";
       html += '<div class="group-public-day closed ' + (past ? 'past' : '') + '"><b>' + day + '</b><span>' + escapeHtml(reason) + '</span></div>';
     }
   }
@@ -4360,7 +4361,10 @@ async function setGroupBookingDayOpen(open) {
     setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
   } else {
     const affected = Number(data.affectedRequests || 0);
-    setStaffResult(box, (open ? "นำวันที่นี้กลับไปอิงตามปฏิทินห้องแล้ว" : "งดรับหมู่คณะวันที่นี้แล้ว") + (affected ? "\nมีคำขอเดิม " + affected + " รายการ เปลี่ยนเป็น “ต้องติดต่อ”" : ""), true);
+    const baseMessage = data.weekendBlocked
+      ? "เสาร์–อาทิตย์ปิดรับหมู่คณะอัตโนมัติ ไม่สามารถเปิดรับได้"
+      : (open ? "นำวันที่นี้กลับไปอิงตามปฏิทินห้องแล้ว" : "งดรับหมู่คณะวันที่นี้แล้ว");
+    setStaffResult(box, baseMessage + (affected ? "\nมีคำขอเดิม " + affected + " รายการ เปลี่ยนเป็น “ต้องติดต่อ”" : ""), true);
   }
   await loadGroupBookingMonthAdmin();
 }
@@ -4408,11 +4412,16 @@ async function loadGroupBookingMonthAdmin() {
       continue;
     }
 
-    let cls = row.open ? 'group-open' : 'day-closed';
-    let label = row.open ? 'เปิดรับ' : 'งดรับ';
+    const weekend = isWeekendISO(iso);
+    let cls = row.open && !weekend ? 'group-open' : 'day-closed';
+    let label = row.open && !weekend ? 'เปิดรับ' : 'งดรับ';
     let sub = escapeHtml(String(row.requests || 0)) + ' คำขอ';
     let note = row.note || "";
-    if (row.roomOpen === false) {
+    if (weekend || row.weekendBlocked) {
+      cls = 'day-closed';
+      label = 'ปิดรับ';
+      sub = 'เสาร์–อาทิตย์';
+    } else if (row.roomOpen === false) {
       cls = 'day-closed';
       label = 'ห้องปิด';
       sub = row.roomTitle ? escapeHtml(row.roomTitle) : 'อิงปฏิทินห้อง';
@@ -7546,7 +7555,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.46").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.47").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
