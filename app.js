@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.45 */
+/* CNMI Blood Donation Supabase Frontend v15.46 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -3930,15 +3930,18 @@ function selectPlateletAdminDate(value) {
   const el = $("plateletCloseDate"); if (el) el.focus({ preventScroll:true });
 }
 
-function calendarSlotHtml(slot, used, bookingDate) {
-  if (!slot) return '<div class="platelet-slot-mini missing"><b>-</b><span>ยังไม่เตรียม</span></div>';
-  const time = String(slot.time_slot || "").slice(0,5);
-  const closed = slot.status === "ปิด";
+function calendarSlotHtml(slot, used, bookingDate, roomBlocked, roomReason, fallbackTime) {
+  const time = slot ? String(slot.time_slot || "").slice(0,5) : String(fallbackTime || "");
+  if (!slot && !roomBlocked) return '<div class="platelet-slot-mini missing"><b>-</b><span>ยังไม่เตรียม</span></div>';
+  const closed = !!roomBlocked || slot?.status === "ปิด";
   const count = Number(used || 0);
   const hasBooking = count > 0;
-  const content = '<b>' + escapeHtml(time) + '</b><span>' + (closed ? (hasBooking ? escapeHtml(String(count)) + ' คิว · งดรับ' : 'งดรับ') : escapeHtml(String(count)) + '/' + escapeHtml(String(slot.max_queue || 2))) + '</span>';
-  if (!hasBooking) return '<div class="platelet-slot-mini ' + (closed ? 'closed' : '') + '">' + content + '</div>';
-  return '<button type="button" class="platelet-slot-mini has-booking ' + (closed ? 'closed' : '') + '" title="ดูรายละเอียดผู้จอง" onclick="event.stopPropagation(); showPlateletSlotDetails(\'' + bookingDate + '\',\'' + time + '\')">' + content + '</button>';
+  const maxQueue = Number(slot?.max_queue || 2);
+  const closedText = roomBlocked ? (hasBooking ? escapeHtml(String(count)) + ' คิว · ห้องปิด' : 'ห้องปิด') : (hasBooking ? escapeHtml(String(count)) + ' คิว · งดรับ' : 'งดรับ');
+  const content = '<b>' + escapeHtml(time || '-') + '</b><span>' + (closed ? closedText : escapeHtml(String(count)) + '/' + escapeHtml(String(maxQueue))) + '</span>';
+  const title = roomBlocked ? ('ปิดอัตโนมัติจากปฏิทินห้อง' + (roomReason ? ': ' + roomReason : '')) : 'ดูรายละเอียดผู้จอง';
+  if (!hasBooking) return '<div class="platelet-slot-mini ' + (closed ? 'closed' : '') + '" title="' + escapeHtml(title) + '">' + content + '</div>';
+  return '<button type="button" class="platelet-slot-mini has-booking ' + (closed ? 'closed' : '') + '" title="' + escapeHtml(title) + '" onclick="event.stopPropagation(); showPlateletSlotDetails(\'' + bookingDate + '\',\'' + time + '\')">' + content + '</button>';
 }
 
 async function showPlateletSlotDetails(bookingDate, timeSlot) {
@@ -3987,13 +3990,14 @@ async function loadPlateletMonthAdmin() {
   const isStaff = await ensureStaff(false); if (!isStaff) return;
   calendar.innerHTML = '<div class="staff-result">กำลังโหลดตาราง...</div>';
 
-  const [{ data:monthRows, error:monthErr }, { data:slots, error:slotErr }, { data:bookings, error:bookErr }] = await Promise.all([
+  const [{ data:monthRows, error:monthErr }, { data:slots, error:slotErr }, { data:bookings, error:bookErr }, { data:roomEvents, error:roomErr }] = await Promise.all([
     sb.from("platelet_booking_months").select("month_start,is_published,published_at").eq("month_start", range.start).limit(1),
     sb.from("booking_slots").select("booking_date,time_slot,max_queue,status,note").gte("booking_date", range.start).lte("booking_date", range.end).order("booking_date").order("time_slot"),
-    sb.from("bookings").select("booking_date,time_slot,status").eq("donation_type","Platelet").gte("booking_date", range.start).lte("booking_date", range.end).neq("status","ยกเลิก")
+    sb.from("bookings").select("booking_date,time_slot,status").eq("donation_type","Platelet").gte("booking_date", range.start).lte("booking_date", range.end).neq("status","ยกเลิก"),
+    sb.from("room_calendar_events").select("event_date,event_type,title,public_note").gte("event_date", range.start).lte("event_date", range.end).in("event_type", ["closed","mobile_unit"])
   ]);
-  if (monthErr || slotErr || bookErr) {
-    calendar.innerHTML = '<div class="staff-result fail">โหลดตารางไม่สำเร็จ<br>' + escapeHtml(monthErr?.message || slotErr?.message || bookErr?.message || "") + '</div>';
+  if (monthErr || slotErr || bookErr || roomErr) {
+    calendar.innerHTML = '<div class="staff-result fail">โหลดตารางไม่สำเร็จ<br>' + escapeHtml(monthErr?.message || slotErr?.message || bookErr?.message || roomErr?.message || "") + '</div>';
     return;
   }
 
@@ -4009,6 +4013,12 @@ async function loadPlateletMonthAdmin() {
   (slots || []).forEach(r => { const d=String(r.booking_date); const t=String(r.time_slot).slice(0,5); (slotMap[d] ||= {})[t]=r; });
   const usedMap = {};
   (bookings || []).forEach(r => { const key=String(r.booking_date)+'|'+String(r.time_slot).slice(0,5); usedMap[key]=(usedMap[key]||0)+1; });
+  const roomBlockMap = {};
+  (roomEvents || []).forEach(r => {
+    const d = String(r.event_date || "");
+    const label = r.event_type === "mobile_unit" ? "ออกหน่วย · ห้องปิด" : (r.title || "ปิดทำการ");
+    roomBlockMap[d] = { type:r.event_type, label:label };
+  });
 
   const first = new Date(range.year, range.month - 1, 1, 12);
   const offset = (first.getDay() + 6) % 7;
@@ -4023,10 +4033,13 @@ async function loadPlateletMonthAdmin() {
       html += '<div class="platelet-day-cell weekend"><div class="platelet-day-number">'+day+'</div><span>ไม่เปิด</span></div>';
     } else {
       const sm = slotMap[iso] || {};
-      const bothClosed = sm['09:00']?.status === 'ปิด' && sm['13:00']?.status === 'ปิด';
+      const roomBlock = roomBlockMap[iso] || null;
+      const roomBlocked = !!roomBlock;
+      const bothClosed = roomBlocked || (sm['09:00']?.status === 'ปิด' && sm['13:00']?.status === 'ปิด');
       html += '<div class="platelet-day-cell weekday ' + (bothClosed ? 'day-closed' : '') + '" role="button" tabindex="0" onclick="selectPlateletAdminDate(\''+iso+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();selectPlateletAdminDate(\''+iso+'\')}">' +
         '<div class="platelet-day-number">'+day+'</div>' +
-        '<div class="platelet-mini-grid">' + calendarSlotHtml(sm['09:00'], usedMap[iso+'|09:00'], iso) + calendarSlotHtml(sm['13:00'], usedMap[iso+'|13:00'], iso) + '</div>' +
+        (roomBlocked ? '<div class="platelet-room-auto-note"><i class="bi bi-link-45deg"></i> ' + escapeHtml(roomBlock.label) + '</div>' : '') +
+        '<div class="platelet-mini-grid">' + calendarSlotHtml(sm['09:00'], usedMap[iso+'|09:00'], iso, roomBlocked, roomBlock?.label, '09:00') + calendarSlotHtml(sm['13:00'], usedMap[iso+'|13:00'], iso, roomBlocked, roomBlock?.label, '13:00') + '</div>' +
         '</div>';
     }
   }
@@ -4634,7 +4647,15 @@ async function saveRoomCalendarEvent() {
     p_is_public:true
   });
   if (error || !data || data.ok !== true) setStaffResult(box, "บันทึกไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
-  else setStaffResult(box, "บันทึกสถานะวันที่ " + isoToThaiDate(date, true) + " แล้ว", true);
+  else {
+    let message = "บันทึกสถานะวันที่ " + isoToThaiDate(date, true) + " แล้ว";
+    if (data.plateletAutoClosed === true) {
+      message += "\nปิดคิวจองเกล็ดเลือด 09:00 และ 13:00 อัตโนมัติแล้ว";
+      const affected = Number(data.contactBookings || 0);
+      if (affected > 0) message += "\nมีคิวเดิม " + affected + " รายการ เปลี่ยนเป็น ‘ต้องติดต่อ’";
+    }
+    setStaffResult(box, message, true);
+  }
   await loadRoomCalendarAdmin();
 }
 
@@ -4646,7 +4667,7 @@ async function deleteRoomCalendarEvent() {
   const { data, error } = await sb.rpc("delete_room_calendar_event", { p_event_date:date });
   if (error || !data || data.ok !== true) setStaffResult(box, "ลบไม่สำเร็จ\n" + (error?.message || data?.message || ""), false);
   else {
-    setStaffResult(box, "ลบสถานะพิเศษของวันที่นี้แล้ว ระบบจะกลับเป็น “เปิดตามปกติ”", true);
+    setStaffResult(box, "ลบสถานะพิเศษของวันที่นี้แล้ว ระบบจะกลับเป็น “เปิดตามปกติ” และวันจองเกล็ดเลือดจะกลับไปอิงตารางเดิมอัตโนมัติ", true);
     ["roomEventTitle","roomEventNote","roomEventLocation","roomEventTime"].forEach(id => { if ($(id)) $(id).value = ""; });
   }
   await loadRoomCalendarAdmin();
@@ -7525,7 +7546,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.45").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.46").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });

@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="CNMI Donor">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="manifest" href="manifest.webmanifest?v=15.45">
+  <link rel="manifest" href="manifest.webmanifest?v=15.46">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/donor-icon-192-v15-31.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/donor-icon-180-v15-31.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="styles.css?v=15.45" rel="stylesheet">
+  <link href="styles.css?v=15.46" rel="stylesheet">
 </head>
 <body class="p-3" data-page="home">
   <div class="container py-2 public-shell">
@@ -952,7 +952,7 @@
           </div>
 
           <div id="staffTab_slots" class="staff-tab-page">
-            <div class="staff-page-head"><div><span>PLATELET BOOKING</span><h3>ตารางรับบริจาคเกล็ดเลือด</h3><p>วันจันทร์–ศุกร์ 09:00 และ 13:00 รอบละ 2 คน · เปิดจองเดือนได้เมื่อพร้อม โดยไม่ต้องรอตารางเวร</p></div></div>
+            <div class="staff-page-head"><div><span>PLATELET BOOKING</span><h3>ตารางรับบริจาคเกล็ดเลือด</h3><p>วันจันทร์–ศุกร์ 09:00 และ 13:00 รอบละ 2 คน · วันปิดห้องหรือออกหน่วยจะงดจองอัตโนมัติ</p></div></div>
 
             <div class="card main-card staff-card p-4 mb-3">
               <div class="platelet-month-toolbar">
@@ -968,7 +968,7 @@
             </div>
 
             <div class="card main-card staff-card p-4 mb-3">
-              <div class="staff-section-head mb-3"><div><h5>งดรับ / เปิดรับเฉพาะวัน</h5><small>เลือกวันแล้วปิดทั้งวัน หรือปิดเฉพาะรอบ 09:00 / 13:00 ได้</small></div></div>
+              <div class="staff-section-head mb-3"><div><h5>งดรับ / เปิดรับเฉพาะวัน</h5><small>ใช้สำหรับงดรับเฉพาะกรณีพิเศษ · วันปิดห้อง/ออกหน่วยไม่ต้องปิดซ้ำ ระบบเชื่อมให้อัตโนมัติ</small></div></div>
               <div class="staff-form-grid platelet-close-grid">
                 <div class="field-block"><label class="form-label">วันที่</label><input type="date" id="plateletCloseDate" class="form-control"></div>
                 <div class="field-block"><label class="form-label">ช่วงเวลา</label><select id="plateletCloseScope" class="form-select"><option value="all">ทั้งวัน</option><option value="09:00">09:00 น.</option><option value="13:00">13:00 น.</option></select></div>
@@ -978,11 +978,11 @@
                 <button type="button" id="btnClosePlateletSlot" class="btn btn-outline-danger flex-grow-1" onclick="setPlateletSlotClosed(true)"><i class="bi bi-calendar-x"></i> งดรับช่วงนี้</button>
                 <button type="button" id="btnOpenPlateletSlot" class="btn btn-soft flex-grow-1" onclick="setPlateletSlotClosed(false)"><i class="bi bi-calendar-check"></i> เปิดรับอีกครั้ง</button>
               </div>
-              <div class="form-text mt-2">หากมีผู้จองอยู่แล้ว ระบบจะไม่ลบคิว แต่จะเปลี่ยนเป็น “ต้องติดต่อ” เพื่อให้เจ้าหน้าที่ประสานผู้บริจาค</div>
+              <div class="form-text mt-2">หากมีผู้จองอยู่แล้ว ระบบจะไม่ลบคิว แต่จะเปลี่ยนเป็น “ต้องติดต่อ” เพื่อให้เจ้าหน้าที่ประสานผู้บริจาค · วันที่ตั้ง “ปิดทำการ” หรือ “ออกหน่วย” ในเมนูเปิด–ปิดห้อง จะปิดคิวเกล็ดเลือดทั้งวันอัตโนมัติ</div>
             </div>
 
             <div class="card main-card staff-card p-3 p-md-4">
-              <div class="staff-section-head mb-3"><div><h5>ปฏิทินเกล็ดเลือด</h5><small>คลิกวันที่เพื่อเลือกไปจัดการด้านบนได้ทันที</small></div><button type="button" class="btn btn-soft btn-sm" onclick="loadPlateletMonthAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+              <div class="staff-section-head mb-3"><div><h5>ปฏิทินเกล็ดเลือด</h5><small>คลิกวันที่เพื่อเลือกไปจัดการด้านบนได้ทันที · วันที่เชื่อมจากปฏิทินห้องจะแสดง “ห้องปิด” อัตโนมัติ</small></div><button type="button" class="btn btn-soft btn-sm" onclick="loadPlateletMonthAdmin()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
               <div id="plateletMonthCalendar" class="platelet-admin-calendar"><div class="staff-result">เลือกเดือนเพื่อโหลดตาราง</div></div>
             </div>
           </div>
@@ -1221,6 +1221,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="config.js?v=15.5"></script>
-  <script src="app.js?v=15.45"></script>
+  <script src="app.js?v=15.46"></script>
 </body>
 </html>

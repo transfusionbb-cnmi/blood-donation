@@ -2616,3 +2616,11 @@ body.staff-launcher-shell[data-page="staffLogin"] .brand-header{display:none!imp
 .staff-chat-composer.is-sending textarea{background:#f4f6f7;color:#7e888e;cursor:wait}
 .staff-chat-composer.is-sending .question-reply-actions .btn:disabled,.staff-chat-workspace.is-sending .staff-chat-workspace-head .btn:disabled{opacity:.48;cursor:not-allowed;pointer-events:none}
 .staff-chat-composer.is-sending .staff-question-send-status{background:#fff3d8;color:#8a6619;font-weight:700}
+
+/* v15.46 — room calendar automatically blocks platelet booking */
+.platelet-room-auto-note{
+  margin:4px 0 6px; padding:3px 6px; border-radius:999px;
+  font-size:.68rem; font-weight:700; line-height:1.2;
+  color:#9a4f22; background:#fff1df; display:inline-flex; align-items:center; gap:3px;
+}
+.platelet-day-cell.day-closed .platelet-room-auto-note{color:#9b2f38;background:#fff0f1;}
