@@ -1,4 +1,4 @@
-/* CNMI Blood Donation Supabase Frontend v15.47 */
+/* CNMI Blood Donation Supabase Frontend v15.48 */
 
 const CONFIG = window.CNMI_CONFIG || {};
 const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
@@ -976,10 +976,16 @@ async function loadHomeRoomStatus() {
     const events = Array.isArray(data.events) ? data.events : [];
     const e = events.find(x => x.date === today);
     if (!e) {
-      box.className = "home-room-status mb-3 status-open";
       const hours = roomRegularHours(today);
-      copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>เปิดรับลงทะเบียนตามปกติ</b><span>' + escapeHtml(hours.full) + ' · พักเที่ยง ' + escapeHtml(hours.breakTime) + ' น.</span>';
-      if (icon) icon.className = "bi bi-check-circle";
+      if (hours.closed) {
+        box.className = "home-room-status mb-3 status-closed";
+        copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>ปิดทำการ</b><span>เสาร์–อาทิตย์ปิดทำการ กรุณาตรวจสอบวันเปิดทำการถัดไปในปฏิทิน</span>';
+        if (icon) icon.className = "bi bi-x-circle";
+      } else {
+        box.className = "home-room-status mb-3 status-open";
+        copy.innerHTML = '<small>สถานะห้องบริจาควันนี้</small><b>เปิดรับลงทะเบียนตามปกติ</b><span>' + escapeHtml(hours.full) + ' · พักเที่ยง ' + escapeHtml(hours.breakTime) + ' น.</span>';
+        if (icon) icon.className = "bi bi-check-circle";
+      }
       return;
     }
     const meta = roomEventMeta(e.type);
@@ -4455,13 +4461,15 @@ function roomRegularHours(dateIso) {
   const weekend = d.getDay() === 0 || d.getDay() === 6;
   return weekend ? {
     dayLabel:"เสาร์–อาทิตย์",
-    morning:"09:30–11:30",
-    afternoon:"13:00–16:30",
-    breakTime:"12:00–13:00",
-    compact:"09:30–11:30 · 13:00–16:30",
-    full:"09:30–11:30 น. และ 13:00–16:30 น."
+    closed:true,
+    morning:"",
+    afternoon:"",
+    breakTime:"",
+    compact:"",
+    full:"ปิดทำการ"
   } : {
     dayLabel:"จันทร์–ศุกร์",
+    closed:false,
     morning:"08:30–11:30",
     afternoon:"13:00–15:30",
     breakTime:"12:00–13:00",
@@ -4472,12 +4480,16 @@ function roomRegularHours(dateIso) {
 
 function roomHoursForEvent(dateIso, event) {
   const regular = roomRegularHours(dateIso);
-  if (!event) return { show:true, text:regular.compact, full:regular.full, breakTime:regular.breakTime, custom:false };
-  if (event.type === "closed" || event.type === "mobile_unit") {
-    return { show:!!event.time, text:event.time || "", full:event.time || "", breakTime:"", custom:!!event.time };
+  if (!event) {
+    if (regular.closed) return { show:false, text:"", full:regular.full, breakTime:"", custom:false, closed:true };
+    return { show:true, text:regular.compact, full:regular.full, breakTime:regular.breakTime, custom:false, closed:false };
   }
-  if (event.time) return { show:true, text:event.time, full:event.time, breakTime:"", custom:true };
-  return { show:true, text:regular.compact, full:regular.full, breakTime:regular.breakTime, custom:false };
+  if (event.type === "closed" || event.type === "mobile_unit") {
+    return { show:!!event.time, text:event.time || "", full:event.time || "", breakTime:"", custom:!!event.time, closed:true };
+  }
+  if (event.time) return { show:true, text:event.time, full:event.time, breakTime:"", custom:true, closed:false };
+  if (regular.closed) return { show:false, text:"", full:"", breakTime:"", custom:false, closed:false };
+  return { show:true, text:regular.compact, full:regular.full, breakTime:regular.breakTime, custom:false, closed:false };
 }
 
 function thaiWeekdayClass(dateIso) {
@@ -4508,6 +4520,11 @@ function roomCalendarCellHtml(day, iso, range, event, clickable, publicMode) {
     label = compactLabels[event.type] || meta.label;
     icon = '<i class="bi ' + meta.icon + '"></i>';
     detail = event.title || event.location || "";
+  } else if (regular.closed) {
+    className += " event-closed event-weekend";
+    label = "ปิด";
+    icon = '<i class="bi bi-x-circle"></i>';
+    detail = "เสาร์–อาทิตย์";
   } else {
     className += " event-normal";
     label = "เปิด";
@@ -4705,10 +4722,10 @@ function buildRoomAnnouncement(month, events) {
   lines.push("");
   lines.push("เวลารับลงทะเบียนปกติ");
   lines.push("• จันทร์–ศุกร์ 08:30–11:30 น. และ 13:00–15:30 น.");
-  lines.push("• เสาร์–อาทิตย์ 09:30–11:30 น. และ 13:00–16:30 น.");
+  lines.push("• เสาร์–อาทิตย์ ปิดทำการ");
   lines.push("• พักเที่ยง 12:00–13:00 น.");
   lines.push("");
-  lines.push("วันที่ไม่มีประกาศพิเศษ: เปิดตามเวลาปกติด้านบน");
+  lines.push("วันจันทร์–ศุกร์ที่ไม่มีประกาศพิเศษ: เปิดตามเวลาปกติด้านบน");
   if (!sorted.length) {
     lines.push("เดือนนี้ไม่มีประกาศเปลี่ยนแปลงเพิ่มเติม");
   } else {
@@ -4796,31 +4813,65 @@ function posterRoundRect(ctx, x, y, w, h, radius, fill, stroke) {
   if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
 }
 
-function posterWrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
-  const words = String(text || "").split(/\s+/).filter(Boolean);
-  if (!words.length) return y;
-  let line = "";
-  let lineCount = 0;
-  for (let i = 0; i < words.length; i++) {
-    const test = line ? line + " " + words[i] : words[i];
-    if (ctx.measureText(test).width > maxWidth && line) {
-      ctx.fillText(line, x, y);
-      y += lineHeight;
-      lineCount++;
-      line = words[i];
-      if (maxLines && lineCount >= maxLines - 1) {
-        const rest = [line].concat(words.slice(i + 1)).join(" ");
-        let clipped = rest;
-        while (clipped.length > 1 && ctx.measureText(clipped + "…").width > maxWidth) clipped = clipped.slice(0, -1);
-        ctx.fillText(clipped + (clipped !== rest ? "…" : ""), x, y);
-        return y + lineHeight;
-      }
-    } else {
-      line = test;
+function posterTextLines(ctx, text, maxWidth) {
+  const raw = String(text || "");
+  if (!raw) return [];
+  let units;
+  try {
+    if (typeof Intl !== "undefined" && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter("th", { granularity:"word" });
+      units = Array.from(segmenter.segment(raw), item => item.segment);
     }
+  } catch (err) {}
+  if (!units || !units.length) units = Array.from(raw);
+
+  const lines = [];
+  let line = "";
+  units.forEach(unit => {
+    const candidate = line + unit;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      line = candidate;
+      return;
+    }
+    if (line) {
+      lines.push(line.trimEnd());
+      line = "";
+    }
+    const cleanUnit = String(unit).trimStart();
+    if (ctx.measureText(cleanUnit).width <= maxWidth) {
+      line = cleanUnit;
+      return;
+    }
+    let piece = "";
+    Array.from(cleanUnit).forEach(ch => {
+      const test = piece + ch;
+      if (piece && ctx.measureText(test).width > maxWidth) {
+        lines.push(piece);
+        piece = ch;
+      } else {
+        piece = test;
+      }
+    });
+    line = piece;
+  });
+  if (line) lines.push(line.trimEnd());
+  return lines;
+}
+
+function posterWrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+  let lines = posterTextLines(ctx, text, maxWidth);
+  if (!lines.length) return y;
+  if (maxLines && lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    let last = lines[maxLines - 1];
+    while (last.length > 1 && ctx.measureText(last + "…").width > maxWidth) last = last.slice(0, -1);
+    lines[maxLines - 1] = last + "…";
   }
-  if (line) ctx.fillText(line, x, y);
-  return y + lineHeight;
+  lines.forEach(line => {
+    ctx.fillText(line, x, y);
+    y += lineHeight;
+  });
+  return y;
 }
 
 function posterEventStyle(type) {
@@ -4844,57 +4895,66 @@ async function downloadRoomCalendarPoster() {
 
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1350;
-    const ctx = canvas.getContext("2d");
+
+    const width = 1440;
+    const scratch = document.createElement("canvas");
+    scratch.width = width;
+    scratch.height = 4800;
+    const ctx = scratch.getContext("2d");
     const events = [...(currentRoomAdminEvents || [])].sort((a,b) => String(a.date).localeCompare(String(b.date)));
     const eventMap = {};
     events.forEach(e => eventMap[e.date] = e);
 
-    ctx.fillStyle = "#f8f5f4";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#f7f5f4";
+    ctx.fillRect(0, 0, scratch.width, scratch.height);
 
-    // Header
-    posterRoundRect(ctx, 46, 46, 988, 190, 34, "#fffafb", "#efdfe0");
+    // Header — สัดส่วนใกล้เคียงหน้าที่เห็นในแอปมากขึ้น
+    posterRoundRect(ctx, 56, 52, 1328, 212, 34, "#fffafb", "#eedfe0");
     ctx.fillStyle = "#c94149";
-    ctx.font = '800 56px "Noto Sans Thai", sans-serif';
-    ctx.fillText("CNMI Blood Donation", 92, 116);
+    ctx.font = '800 64px "Noto Sans Thai", sans-serif';
+    ctx.fillText("CNMI Blood Donation", 94, 126);
     ctx.fillStyle = "#1f2933";
-    ctx.font = '800 48px "Noto Sans Thai", sans-serif';
-    ctx.fillText("ตารางห้องบริจาคโลหิต", 92, 174);
+    ctx.font = '800 52px "Noto Sans Thai", sans-serif';
+    ctx.fillText("ตารางห้องบริจาคโลหิต", 94, 190);
     ctx.fillStyle = "#69757c";
-    ctx.font = '600 28px "Noto Sans Thai", sans-serif';
-    ctx.fillText(thaiMonthLabel(month), 92, 215);
+    ctx.font = '650 29px "Noto Sans Thai", sans-serif';
+    ctx.fillText(thaiMonthLabel(month), 94, 236);
     if (currentRoomAdminVersion > 0) {
       const revText = "v." + currentRoomAdminVersion;
       const publishedText = currentRoomAdminPublishedAt ? formatBangkokLogTime(currentRoomAdminPublishedAt, true).replace(/:\d{2}(?=\s|$)/, '') : "";
       ctx.textAlign = "right";
       ctx.fillStyle = "#8b7376";
-      ctx.font = '600 20px "Noto Sans Thai", sans-serif';
-      ctx.fillText(revText + (publishedText ? " · " + publishedText : ""), 994, 211);
+      ctx.font = '650 22px "Noto Sans Thai", sans-serif';
+      ctx.fillText(revText + (publishedText ? " · " + publishedText : ""), 1340, 235);
       ctx.textAlign = "left";
     }
 
-    // Calendar frame
-    const calX = 46, calY = 270, calW = 988;
-    const gap = 8;
+    // เวลาทำการสรุปให้เห็นก่อนอ่านตาราง
+    posterRoundRect(ctx, 56, 282, 1328, 58, 18, "#ffffff", "#e7e2df");
+    ctx.fillStyle = "#596970";
+    ctx.font = '650 22px "Noto Sans Thai", sans-serif';
+    ctx.fillText("จันทร์–ศุกร์ 08:30–11:30 · 13:00–15:30 น.   •   เสาร์–อาทิตย์ ปิดทำการ", 82, 319);
+
+    // Calendar
+    const calX = 56, calY = 370, calW = 1328;
+    const gap = 10;
     const colW = (calW - gap * 6) / 7;
-    const headerH = 48;
-    const cellH = 112;
+    const headerH = 52;
+    const cellH = 142;
     const headers = ["จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์","อาทิตย์"];
-    ctx.font = '700 22px "Noto Sans Thai", sans-serif';
+    const dayColors = ["#c5a127","#dd7896","#4f9a76","#e79a42","#5f8fca","#9a73ad","#d55f62"];
+    ctx.font = '750 22px "Noto Sans Thai", sans-serif';
     ctx.textAlign = "center";
     headers.forEach((h, idx) => {
       const x = calX + idx * (colW + gap);
-      posterRoundRect(ctx, x, calY, colW, headerH, 14, idx >= 5 ? "#f0eeee" : "#f3e7e8", null);
-      ctx.fillStyle = idx >= 5 ? "#747b7f" : "#9c3a40";
-      ctx.fillText(h, x + colW / 2, calY + 31);
+      posterRoundRect(ctx, x, calY, colW, headerH, 15, idx >= 5 ? "#f0eeee" : "#f4e8e9", null);
+      ctx.fillStyle = idx >= 5 ? "#747b7f" : "#96393f";
+      ctx.fillText(h, x + colW / 2, calY + 34);
     });
 
     const offset = calendarMonthOffset(range);
     const rows = Math.ceil((offset + range.days) / 7);
-    const startY = calY + headerH + 10;
+    const startY = calY + headerH + 12;
     ctx.textAlign = "left";
 
     for (let i = 0; i < rows * 7; i++) {
@@ -4904,73 +4964,127 @@ async function downloadRoomCalendarPoster() {
       const x = calX + col * (colW + gap);
       const y = startY + row * (cellH + gap);
       if (day < 1 || day > range.days) {
-        posterRoundRect(ctx, x, y, colW, cellH, 16, "#f5f3f2", null);
+        posterRoundRect(ctx, x, y, colW, cellH, 18, "#f4f2f1", null);
         continue;
       }
 
       const iso = month + "-" + pad2(day);
-      const dt = new Date(range.year, range.month - 1, day, 12);
       const event = eventMap[iso];
+      const regular = roomRegularHours(iso);
+      const hours = roomHoursForEvent(iso, event);
       let fill = "#ffffff";
-      let stroke = "#e6e1df";
+      let stroke = "#e5e0de";
       let statusColor = "#43805f";
       let statusText = "เปิด";
-      let detail = "ปกติ";
+      let detail = "";
 
       if (event) {
         const st = posterEventStyle(event.type);
         fill = st.fill; stroke = st.stroke; statusColor = st.text; statusText = st.short;
-        detail = event.title || event.location || event.time || "";
+        detail = event.title || event.location || "";
+      } else if (regular.closed) {
+        const st = posterEventStyle("closed");
+        fill = st.fill; stroke = st.stroke; statusColor = st.text; statusText = "ปิด";
+        detail = "เสาร์–อาทิตย์";
       }
 
-      posterRoundRect(ctx, x, y, colW, cellH, 16, fill, stroke);
-      ctx.fillStyle = "#505d63";
-      ctx.font = '800 26px "Noto Sans Thai", sans-serif';
-      ctx.fillText(String(day), x + 12, y + 31);
+      posterRoundRect(ctx, x, y, colW, cellH, 18, fill, stroke);
+      ctx.fillStyle = dayColors[col];
+      posterRoundRect(ctx, x, y, colW, 6, 3, dayColors[col], null);
+
+      ctx.fillStyle = "#536168";
+      ctx.font = '800 27px "Noto Sans Thai", sans-serif';
+      ctx.fillText(String(day), x + 14, y + 34);
 
       ctx.fillStyle = statusColor;
       ctx.font = '800 22px "Noto Sans Thai", sans-serif';
-      ctx.fillText(statusText, x + 12, y + 61);
+      ctx.fillText(statusText, x + 14, y + 65);
 
-      ctx.fillStyle = "#758087";
-      ctx.font = '500 16px "Noto Sans Thai", sans-serif';
-      const short = String(detail || "").slice(0, 25);
-      posterWrapText(ctx, short, x + 12, y + 86, colW - 24, 18, 2);
-    }
+      if (detail) {
+        ctx.fillStyle = event?.type === "closed" || (!event && regular.closed) ? "#896568" : "#748087";
+        ctx.font = '550 16px "Noto Sans Thai", sans-serif';
+        posterWrapText(ctx, detail, x + 14, y + 88, colW - 28, 19, hours.show ? 2 : 3);
+      }
 
-    // Highlights / footer
-    const highY = startY + rows * (cellH + gap) + 24;
-    ctx.fillStyle = "#1f2933";
-    ctx.font = '800 28px "Noto Sans Thai", sans-serif';
-    ctx.fillText("ประกาศพิเศษ", 62, highY);
-    let y = highY + 38;
-    const special = events.filter(e => e.type !== "open" || e.title || e.note || e.location || e.time);
-    ctx.font = '600 21px "Noto Sans Thai", sans-serif';
-    if (!special.length) {
-      ctx.fillStyle = "#68757c";
-      ctx.fillText("เดือนนี้ไม่มีประกาศเปลี่ยนแปลงเพิ่มเติม", 62, y);
-      y += 32;
-    } else {
-      special.slice(0, 3).forEach(e => {
-        const meta = roomEventMeta(e.type);
-        const bits = [e.title || meta.label, e.time, e.location].filter(Boolean);
-        ctx.fillStyle = "#4d5960";
-        y = posterWrapText(ctx, "• " + isoToThaiDate(e.date, true) + " — " + bits.join(" · "), 62, y, 956, 28, 1);
-        y += 3;
-      });
-      if (special.length > 3) {
-        ctx.fillStyle = "#7a858b";
-        ctx.fillText("ดูรายละเอียดเพิ่มเติมที่ donor.cnmiblood.com/#/calendar", 62, y);
-        y += 30;
+      if (hours.show && hours.text) {
+        ctx.fillStyle = "#66747b";
+        ctx.font = '650 15px "Noto Sans Thai", sans-serif';
+        const hourParts = String(hours.text).split("·").map(v => v.trim()).filter(Boolean);
+        const baseY = y + cellH - (hourParts.length > 1 ? 36 : 18);
+        hourParts.slice(0, 2).forEach((line, idx) => ctx.fillText(line, x + 14, baseY + idx * 19));
       }
     }
 
+    // ประกาศพิเศษ — แสดงครบทุกเหตุการณ์และขยายความสูงตามเนื้อหาจริง
+    let y = startY + rows * (cellH + gap) + 36;
+    ctx.fillStyle = "#1f2933";
+    ctx.font = '800 31px "Noto Sans Thai", sans-serif';
+    ctx.fillText("ประกาศพิเศษ", 72, y);
+    y += 24;
+
+    const special = events.filter(e => e.type !== "open" || e.title || e.note || e.location || e.time);
+    if (!special.length) {
+      y += 26;
+      posterRoundRect(ctx, 56, y, 1328, 78, 18, "#ffffff", "#e5e1de");
+      ctx.fillStyle = "#68757c";
+      ctx.font = '600 21px "Noto Sans Thai", sans-serif';
+      ctx.fillText("เดือนนี้ไม่มีประกาศเปลี่ยนแปลงเพิ่มเติม", 82, y + 48);
+      y += 98;
+    } else {
+      for (const e of special) {
+        const meta = roomEventMeta(e.type);
+        const st = posterEventStyle(e.type);
+        const titleBits = [meta.label];
+        if (e.title && e.title !== meta.label) titleBits.push(e.title);
+        const titleText = isoToThaiDate(e.date, true) + " — " + titleBits.join(" · ");
+        const detailBits = [];
+        if (e.time) detailBits.push(e.time);
+        if (e.location) detailBits.push("สถานที่ " + e.location);
+        if (e.note) detailBits.push(e.note);
+        const detailText = detailBits.join(" · ");
+
+        ctx.font = '750 22px "Noto Sans Thai", sans-serif';
+        const titleLines = posterTextLines(ctx, titleText, 1268);
+        ctx.font = '550 19px "Noto Sans Thai", sans-serif';
+        const detailLines = detailText ? posterTextLines(ctx, detailText, 1268) : [];
+        const cardH = 28 + Math.max(1, titleLines.length) * 29 + detailLines.length * 25 + 24;
+
+        y += 14;
+        posterRoundRect(ctx, 56, y, 1328, cardH, 18, st.fill, st.stroke);
+        ctx.fillStyle = st.text;
+        ctx.font = '750 22px "Noto Sans Thai", sans-serif';
+        let ty = y + 36;
+        titleLines.forEach(line => { ctx.fillText(line, 82, ty); ty += 29; });
+        if (detailLines.length) {
+          ctx.fillStyle = "#5e6b72";
+          ctx.font = '550 19px "Noto Sans Thai", sans-serif';
+          ty += 2;
+          detailLines.forEach(line => { ctx.fillText(line, 82, ty); ty += 25; });
+        }
+        y += cardH;
+      }
+      y += 8;
+    }
+
+    // Footer วางต่อจากเนื้อหาจริง จึงไม่ทับ/ตัดข้อความด้านล่าง
+    const footerTop = y + 26;
+    posterRoundRect(ctx, 56, footerTop, 1328, 118, 22, "#fffafb", "#eadfe0");
     ctx.fillStyle = "#69757c";
     ctx.font = '600 20px "Noto Sans Thai", sans-serif';
-    ctx.fillText("วันที่ไม่มีสถานะพิเศษถือว่าเปิดทำการตามปกติ", 62, 1288);
+    ctx.fillText("วันที่ไม่มีสถานะพิเศษถือว่าเปิดทำการตามปกติในวันจันทร์–ศุกร์", 82, footerTop + 40);
     ctx.fillStyle = "#c94149";
     ctx.font = '800 22px "Noto Sans Thai", sans-serif';
-    ctx.fillText("สอบถาม " + (CONFIG.PHONE_TEXT || "02-839-6050") + "  •  donor.cnmiblood.com/#/calendar", 62, 1322);
+    ctx.fillText("สอบถาม " + (CONFIG.PHONE_TEXT || "02-839-6050") + "  •  donor.cnmiblood.com/#/calendar", 82, footerTop + 79);
+
+    const usedHeight = footerTop + 164;
+    const finalHeight = Math.max(1800, Math.ceil(usedHeight / 10) * 10);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = finalHeight;
+    const out = canvas.getContext("2d");
+    out.fillStyle = "#f7f5f4";
+    out.fillRect(0, 0, canvas.width, canvas.height);
+    out.drawImage(scratch, 0, 0, width, Math.min(finalHeight, scratch.height), 0, 0, width, Math.min(finalHeight, scratch.height));
 
     const link = document.createElement("a");
     link.download = "CNMI-Donor-Calendar-" + month + ".png";
@@ -4979,7 +5093,7 @@ async function downloadRoomCalendarPoster() {
     link.click();
     link.remove();
 
-    showModal({ title:"สร้างภาพประกาศแล้ว", message:"ได้ภาพแนวตั้งสำหรับนำไปโพสต์ต่อใน Facebook, LINE OA หรือ Instagram ได้เลย", iconText:"✓", type:"success" });
+    showModal({ title:"สร้างภาพประกาศแล้ว", message:"ภาพประกาศแสดงรายละเอียดครบขึ้น และขยายความสูงอัตโนมัติตามจำนวนประกาศพิเศษ", iconText:"✓", type:"success" });
   } catch (err) {
     showModal({ title:"สร้างภาพไม่สำเร็จ", message:"กรุณาลองใหม่อีกครั้ง หรือใช้ปุ่มคัดลอกข้อความแทน", iconText:"!" });
   }
@@ -7555,7 +7669,7 @@ function initPwaShell() {
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function() {
-      navigator.serviceWorker.register("service-worker.js?v=15.47").catch(function(err) {
+      navigator.serviceWorker.register("service-worker.js?v=15.48").catch(function(err) {
         console.warn("Service worker registration failed", err);
       });
     });
